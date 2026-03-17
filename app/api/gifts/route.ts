@@ -19,9 +19,13 @@ export async function GET(req: NextRequest) {
   const budget = budgetParam ? parseFloat(budgetParam) : undefined;
   const queries = getGiftQueries(recipient, interests, budget);
 
+  // Exclude toy categories for adult recipients
+  const ADULT_RECIPIENTS = ["dad", "mom", "partner", "friend", "grandparent", "colleague"];
+  const excludeToys = ADULT_RECIPIENTS.includes(recipient);
+
   // Run all providers across all queries in parallel
   const [bestBuyResults, etsyResults, ebayResults] = await Promise.allSettled([
-    Promise.all(queries.map((q) => searchBestBuy(q, budget).then((p) => p.slice(0, 2).map((item) => ({ ...item, source: "Best Buy", searchQuery: q }))))),
+    Promise.all(queries.map((q) => searchBestBuy(q, budget, excludeToys).then((p) => p.slice(0, 2).map((item) => ({ ...item, source: "Best Buy", searchQuery: q }))))),
     Promise.all(queries.slice(0, 3).map((q) => searchEtsy(q, budget).then((p) => p.slice(0, 1).map((item) => ({ ...item, source: "Etsy", searchQuery: q }))))),
     Promise.all(queries.slice(0, 2).map((q) => searchEbayListings(q, budget).then((p) => p.slice(0, 1).map((item) => ({ ...item, source: "eBay", searchQuery: q }))))),
   ]);

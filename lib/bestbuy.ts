@@ -9,9 +9,13 @@ export interface BestBuyProduct {
   categoryPath: string;
 }
 
+// Categories to exclude when searching for adult gifts
+const ADULT_EXCLUDED_CATEGORIES = ["toys", "lego", "action figure", "doll", "children", "kids", "infant", "baby", "learning & development"];
+
 export async function searchBestBuy(
   query: string,
-  budget?: number
+  budget?: number,
+  excludeToys = false
 ): Promise<BestBuyProduct[]> {
   const apiKey = process.env.BESTBUY_API_KEY;
   if (!apiKey) return [];
@@ -36,6 +40,12 @@ export async function searchBestBuy(
     .filter((p: Record<string, unknown>) => {
       const name = (p.name as string || "").toLowerCase();
       return !JUNK_KEYWORDS.some((kw) => name.includes(kw));
+    })
+    .filter((p: Record<string, unknown>) => {
+      if (!excludeToys) return true;
+      const category = (p.categoryPath as string || "").toLowerCase();
+      const name = (p.name as string || "").toLowerCase();
+      return !ADULT_EXCLUDED_CATEGORIES.some((kw) => category.includes(kw) || name.includes(kw));
     })
     .map((p: Record<string, unknown>) => ({
       sku: p.sku,
