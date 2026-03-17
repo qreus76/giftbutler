@@ -27,9 +27,15 @@ export async function searchBestBuy(
   const data = await res.json();
   const products = data.products || [];
 
+  const JUNK_KEYWORDS = ["applecare", "care+", "service fee", "service plan", "protection plan", "warranty", "monthly plan", "geek squad"];
+
   return products
     .filter((p: Record<string, unknown>) => p.salePrice && (p.salePrice as number) > 0)
     .filter((p: Record<string, unknown>) => !budget || (p.salePrice as number) <= budget)
+    .filter((p: Record<string, unknown>) => {
+      const name = (p.name as string || "").toLowerCase();
+      return !JUNK_KEYWORDS.some((kw) => name.includes(kw));
+    })
     .map((p: Record<string, unknown>) => ({
       sku: p.sku,
       name: p.name,
