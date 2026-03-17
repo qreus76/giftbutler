@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGiftQueries, type Recipient, type Interest } from "@/lib/giftQueries";
 import { searchBestBuy } from "@/lib/bestbuy";
+import { searchEtsy } from "@/lib/etsy";
+import { searchEbayListings } from "@/lib/ebay";
 import { amazonSearchUrl } from "@/lib/amazon";
+import { walmartSearchUrl } from "@/lib/walmart";
 
 export async function GET(req: NextRequest) {
   const recipient = req.nextUrl.searchParams.get("for") as Recipient;
@@ -16,30 +19,94 @@ export async function GET(req: NextRequest) {
   const budget = budgetParam ? parseFloat(budgetParam) : undefined;
   const queries = getGiftQueries(recipient, interests, budget);
 
-  // Run all queries in parallel
-  const results = await Promise.all(
-    queries.map(async (query) => {
-      const products = await searchBestBuy(query, budget);
-      return { query, products: products.slice(0, 2) };
-    })
-  );
+  // Run all providers across all queries in parallel
+  const [bestBuyResults, etsyResults, ebayResults] = await Promise.allSettled([
+    Promise.all(queries.map((q) => searchBestBuy(q, budget).then((p) => p.slice(0, 2).map((item) => ({ ...item, source: "Best Buy", searchQuery: q }))))),
+    Promise.all(queries.slice(0, 3).map((q) => searchEtsy(q, budget).then((p) => p.slice(0, 1).map((item) => ({ ...item, source: "Etsy", searchQuery: q }))))),
+    Promise.all(queries.slice(0, 2).map((q) => searchEbayListings(q, budget).then((p) => p.slice(0, 1).map((item) => ({ ...item, source: "eBay", searchQuery: q }))))),
+  ]);
 
-  // Flatten and dedupe by name similarity, keep best results
-  const allProducts = results
-    .flatMap(({ query, products }) =>
-      products.map((p) => ({ ...p, searchQuery: query }))
-    )
-    .filter((p, index, self) =>
-      index === self.findIndex((t) => t.sku === p.sku)
-    )
-    .slice(0, 12);
+  const bestBuyProducts = bestBuyResults.status === "fulfilled"
+    ? bestBuyResults.value.flat()
+    : [];
+
+  const etsyProducts = etsyResults.status === "fulfilled"
+    ? etsyResults.value.flat()
+    : [];
+
+  const ebayProducts = ebayResults.status === "fulfilled"
+    ? ebayResults.value.flat()
+    : [];
+
+  // Normalize all products to a common shape
+  type GiftProduct = {
+    id: string;
+    name: string;
+    price: number;
+    originalPrice?: number;
+    image: string;
+    url: string;
+    source: string;
+    searchQuery: string;
+    onSale?: boolean;
+    condition?: string;
+  };
+
+  const allProducts: GiftProduct[] = [
+    ...bestBuyProducts.map((p) => ({
+      id: `bb-${p.sku}`,
+      name: p.name,
+      price: p.salePrice,
+      originalPrice: p.regularPrice > p.salePrice ? p.regularPrice : undefined,
+      image: p.image,
+      url: p.url,
+      source: "Best Buy",
+      searchQuery: p.searchQuery,
+      onSale: p.onSale,
+    })),
+    ...etsyProducts.map((p) => ({
+      id: `etsy-${p.listing_id}`,
+      name: p.title,
+      price: p.price,
+      image: p.imageUrl,
+      url: p.url,
+      source: "Etsy",
+      searchQuery: p.searchQuery,
+    })),
+    ...ebayProducts.map((p) => ({
+      id: `ebay-${p.itemId}`,
+      name: p.title,
+      price: p.price,
+      image: p.imageUrl,
+      url: p.itemUrl,
+      source: "eBay",
+      searchQuery: p.searchQuery,
+      condition: p.condition,
+    })),
+  ];
+
+  // Dedupe by id and cap at 12
+  const seen = new Set<string>();
+  const unique = allProducts.filter((p) => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  }).slice(0, 12);
+
+  const recipientStr = `${recipient} gift ${interests[0] || ""}`.trim();
 
   return NextResponse.json({
     recipient,
     interests,
     budget,
-    queries,
-    products: allProducts,
-    amazonUrl: amazonSearchUrl(`${recipient} gift ${interests[0] || ""}`),
+    products: unique,
+    totalFound: unique.length,
+    amazonUrl: amazonSearchUrl(recipientStr),
+    walmartUrl: walmartSearchUrl(recipientStr),
+    sources: {
+      bestbuy: !!process.env.BESTBUY_API_KEY,
+      etsy: !!process.env.ETSY_API_KEY,
+      ebay: !!process.env.EBAY_APP_ID,
+    },
   });
 }

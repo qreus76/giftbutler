@@ -1,4 +1,4 @@
-const AFFILIATE_TAG = "giftbutler09-20";
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || "giftbutler09-20";
 
 export function amazonSearchUrl(query: string): string {
   const encoded = encodeURIComponent(query);

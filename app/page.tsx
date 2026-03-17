@@ -101,7 +101,10 @@ export default function Home() {
           {step === 2 && (
             <div>
               <h2 className="text-xl font-bold text-stone-900 text-center mb-2">What are they into?</h2>
-              <p className="text-stone-400 text-sm text-center mb-6">Pick up to 3 interests.</p>
+              <p className="text-stone-400 text-sm text-center mb-6">
+                Pick up to 3 interests.{" "}
+                {interests.length > 0 && <span className="text-amber-600 font-semibold">{interests.length}/3 selected</span>}
+              </p>
               <div className="grid grid-cols-5 gap-2 mb-8">
                 {INTERESTS.map((i) => (
                   <button

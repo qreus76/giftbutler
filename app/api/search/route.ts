@@ -10,18 +10,25 @@ export async function GET(req: NextRequest) {
   const budgetParam = req.nextUrl.searchParams.get("budget");
   const budget = budgetParam ? parseFloat(budgetParam) : undefined;
 
-  if (!query) {
+  if (!query.trim()) {
     return NextResponse.json({ error: "Missing query" }, { status: 400 });
   }
 
-  const [ebayListings, soldSummary, bestBuyProducts, etsyListings, walmartProducts] =
-    await Promise.all([
+  // Use allSettled so one failing provider never breaks the whole request
+  const [ebayListingsResult, soldSummaryResult, bestBuyResult, etsyResult, walmartResult] =
+    await Promise.allSettled([
       searchEbayListings(query, budget),
       getEbaySoldSummary(query),
       searchBestBuy(query, budget),
       searchEtsy(query, budget),
       searchWalmart(query, budget),
     ]);
+
+  const ebayListings = ebayListingsResult.status === "fulfilled" ? ebayListingsResult.value : [];
+  const soldSummary = soldSummaryResult.status === "fulfilled" ? soldSummaryResult.value : null;
+  const bestBuyProducts = bestBuyResult.status === "fulfilled" ? bestBuyResult.value : [];
+  const etsyListings = etsyResult.status === "fulfilled" ? etsyResult.value : [];
+  const walmartProducts = walmartResult.status === "fulfilled" ? walmartResult.value : [];
 
   return NextResponse.json({
     query,
