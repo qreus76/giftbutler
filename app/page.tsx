@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Search, TrendingDown, Tag } from "lucide-react";
 
 const CATEGORIES = [
   { label: "For Dad", emoji: "👨", q: "gift for dad" },
@@ -15,9 +16,9 @@ const CATEGORIES = [
 ];
 
 const HOW_IT_WORKS = [
-  { icon: "🔍", title: "Search anything", desc: "Type what you're looking for or pick a category." },
-  { icon: "📊", title: "See real prices", desc: "We pull live listings and what items actually sold for — not just asking prices." },
-  { icon: "🏷️", title: "Spot the deal", desc: "We flag items priced below market value so you never overpay." },
+  { Icon: Search, title: "Search anything", desc: "Type what you're looking for or pick a category." },
+  { Icon: TrendingDown, title: "See real prices", desc: "We pull live listings and what items actually sold for — not just asking prices." },
+  { Icon: Tag, title: "Spot the deal", desc: "We flag items priced below market value so you never overpay." },
 ];
 
 export default function Home() {
@@ -105,7 +106,9 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {HOW_IT_WORKS.map((step) => (
             <div key={step.title} className="text-center px-4">
-              <div className="text-3xl mb-3">{step.icon}</div>
+              <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <step.Icon size={22} className="text-amber-600" />
+              </div>
               <p className="font-semibold text-stone-900 mb-1">{step.title}</p>
               <p className="text-sm text-stone-500 leading-relaxed">{step.desc}</p>
             </div>
