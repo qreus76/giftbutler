@@ -35,7 +35,7 @@ export async function searchBestBuy(
       name: p.name,
       salePrice: p.salePrice,
       regularPrice: p.regularPrice || p.salePrice,
-      url: `https://www.bestbuy.com${p.url}`,
+      url: p.url as string,
       image: p.image || "",
       onSale: p.onSale || false,
       categoryPath: p.categoryPath || "",
