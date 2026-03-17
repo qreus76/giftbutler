@@ -16,10 +16,11 @@ export async function searchBestBuy(
   const apiKey = process.env.BESTBUY_API_KEY;
   if (!apiKey) return [];
 
-  const priceFilter = budget ? `&salePrice<=600` : "";
+  const budgetFilter = budget ? `&salePrice<=${budget}` : "";
   const encoded = encodeURIComponent(query);
 
-  const url = `https://api.bestbuy.com/v1/products((search=${encoded})${priceFilter})?apiKey=${apiKey}&show=sku,name,salePrice,regularPrice,url,image,onSale,categoryPath&pageSize=6&format=json`;
+  // type=HardGood filters out service plans, warranties, subscriptions
+  const url = `https://api.bestbuy.com/v1/products((search=${encoded})&(type=HardGood)${budgetFilter})?apiKey=${apiKey}&show=sku,name,salePrice,regularPrice,url,image,onSale,categoryPath&pageSize=6&format=json`;
 
   const res = await fetch(url, { next: { revalidate: 300 } });
   if (!res.ok) return [];
