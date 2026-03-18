@@ -53,6 +53,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [profile] = useState<Profile>(initialProfile);
   const [hints] = useState<Hint[]>(initialHints);
 
+  const STORAGE_KEY = `gb_recs_${username}`;
+
   const [showFinder, setShowFinder] = useState(false);
   const [relationship, setRelationship] = useState("");
   const [budget, setBudget] = useState("");
@@ -67,6 +69,23 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   useEffect(() => {
     fetch(`/api/profile/${username}`);
   }, [username]);
+
+  // Restore recommendations from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const { recommendations: recs, myClaims: claims, relationship: rel, budget: bud, occasion: occ } = JSON.parse(saved);
+        if (recs?.length) {
+          setRecommendations(recs);
+          setMyClaims(claims || []);
+          setRelationship(rel || "");
+          setBudget(bud || "");
+          setOccasion(occ || "");
+        }
+      }
+    } catch { /* sessionStorage unavailable */ }
+  }, [STORAGE_KEY]);
 
   async function generateGifts() {
     if (!relationship || !budget) return;
@@ -83,6 +102,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       if (!res.ok) throw new Error(data.error || "Failed to generate");
       if (!data.recommendations?.length) throw new Error("No recommendations returned");
       setRecommendations(data.recommendations);
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ recommendations: data.recommendations, myClaims, relationship, budget, occasion }));
+      } catch { /* sessionStorage unavailable */ }
     } catch (e: unknown) {
       setGenerateError(e instanceof Error ? e.message : "Something went wrong — please try again");
     } finally {
@@ -283,7 +305,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               })}
             </div>
             <button
-              onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); }}
+              onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } }}
               className="w-full mt-3 py-2.5 border border-stone-200 text-stone-500 text-sm font-semibold rounded-xl hover:bg-stone-50 transition-colors"
             >
               Generate different ideas
