@@ -68,11 +68,14 @@ export default async function ProfilePage({ params }: Props) {
       .order("created_at", { ascending: false }),
     supabase
       .from("claims")
-      .select("gift_description")
+      .select("gift_description, occasion")
       .eq("recipient_user_id", profile.id),
   ]);
 
-  const claims = (claimsRes.data || []).map(c => c.gift_description.toLowerCase());
+  const claims = (claimsRes.data || []).map(c => ({
+    description: c.gift_description.toLowerCase(),
+    occasion: c.occasion ?? null,
+  }));
 
   return (
     <ProfileClient

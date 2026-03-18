@@ -11,6 +11,11 @@ interface GiftRecommendation {
   searchUrl: string;
 }
 
+interface ClaimRecord {
+  description: string;
+  occasion: string | null;
+}
+
 const CATEGORIES = {
   general: { label: "Into lately", color: "bg-amber-100 text-amber-700" },
   want: { label: "Want", color: "bg-blue-100 text-blue-600" },
@@ -20,20 +25,25 @@ const CATEGORIES = {
 };
 
 function getDaysUntilBirthday(birthday: string): number | null {
-  if (!birthday) return null;
+  // Parse YYYY-MM-DD safely without timezone issues
+  const parts = birthday.split("-");
+  if (parts.length !== 3) return null;
+  const month = parseInt(parts[1]) - 1;
+  const day = parseInt(parts[2]);
   const today = new Date();
-  const bday = new Date(birthday);
-  const next = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
-  if (next < today) next.setFullYear(today.getFullYear() + 1);
-  const diff = Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  return diff;
+  today.setHours(0, 0, 0, 0);
+  let next = new Date(today.getFullYear(), month, day);
+  if (next.getTime() <= today.getTime()) {
+    next = new Date(today.getFullYear() + 1, month, day);
+  }
+  return Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface Props {
   username: string;
   initialProfile: Profile;
   initialHints: Hint[];
-  initialClaims: string[];
+  initialClaims: ClaimRecord[];
   avatarUrl: string | null;
 }
 
@@ -43,17 +53,17 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [profile] = useState<Profile>(initialProfile);
   const [hints] = useState<Hint[]>(initialHints);
 
-  // Gift finder state
   const [showFinder, setShowFinder] = useState(false);
   const [relationship, setRelationship] = useState("");
   const [budget, setBudget] = useState("");
   const [occasion, setOccasion] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
   const [recommendations, setRecommendations] = useState<GiftRecommendation[]>([]);
   const [myClaims, setMyClaims] = useState<string[]>([]);
-  const [existingClaims, setExistingClaims] = useState<string[]>(initialClaims);
+  const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
 
-  // Record the visit client-side so we don't block SSR
+  // Record visit client-side (SSR page doesn't block on this)
   useEffect(() => {
     fetch(`/api/profile/${username}`);
   }, [username]);
@@ -61,20 +71,28 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   async function generateGifts() {
     if (!relationship || !budget) return;
     setGenerating(true);
+    setGenerateError("");
     setRecommendations([]);
-    const res = await fetch("/api/recommend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, relationship, budget, occasion }),
-    });
-    const data = await res.json();
-    setRecommendations(data.recommendations || []);
-    setGenerating(false);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, relationship, budget, occasion }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
+      if (!data.recommendations?.length) throw new Error("No recommendations returned");
+      setRecommendations(data.recommendations);
+    } catch (e: unknown) {
+      setGenerateError(e instanceof Error ? e.message : "Something went wrong — please try again");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function claimGift(title: string) {
     setMyClaims([...myClaims, title]);
-    setExistingClaims([...existingClaims, title.toLowerCase()]);
+    setExistingClaims([...existingClaims, { description: title.toLowerCase(), occasion: occasion || null }]);
     fetch("/api/claims", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -82,8 +100,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     });
   }
 
+  // A gift is "already claimed" if same title AND (no occasion specified OR occasions match)
   function isAlreadyClaimed(title: string): boolean {
-    return existingClaims.includes(title.toLowerCase());
+    return existingClaims.some(c =>
+      c.description === title.toLowerCase() &&
+      (!c.occasion || !occasion || c.occasion === occasion)
+    );
   }
 
   const hintsToShow = hints.filter(h => h.category !== "avoid");
@@ -114,7 +136,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Profile header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full mx-auto mb-3 overflow-hidden flex-shrink-0">
+          <div className="w-16 h-16 rounded-full mx-auto mb-3 overflow-hidden">
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
             ) : (
@@ -194,12 +216,20 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </select>
               </div>
             </div>
+            {generateError && (
+              <p className="text-red-500 text-sm mb-3 text-center">{generateError}</p>
+            )}
             <button
               onClick={generateGifts}
               disabled={!relationship || !budget || generating}
               className="w-full py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl transition-colors"
             >
-              {generating ? "Finding the perfect gift..." : "Generate gift ideas →"}
+              {generating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-stone-400 border-t-stone-900 rounded-full animate-spin inline-block" />
+                  Finding the perfect gift...
+                </span>
+              ) : generateError ? "Try again →" : "Generate gift ideas →"}
             </button>
           </div>
         )}
@@ -246,7 +276,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               })}
             </div>
             <button
-              onClick={() => { setRecommendations([]); setShowFinder(true); }}
+              onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); }}
               className="w-full mt-3 py-2.5 border border-stone-200 text-stone-500 text-sm font-semibold rounded-xl hover:bg-stone-50 transition-colors"
             >
               Generate different ideas
@@ -297,7 +327,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </a>
         </div>
 
-        {/* Back link */}
         <div className="mt-6 text-center">
           <button onClick={() => router.push("/")} className="text-xs text-stone-400 hover:text-stone-600">
             ← giftbutler.io

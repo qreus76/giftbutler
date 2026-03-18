@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 
+const RESERVED_USERNAMES = new Set([
+  "api", "dashboard", "explore", "onboarding", "for", "sign-in", "sign-up",
+  "signin", "signup", "admin", "help", "support", "about", "terms", "privacy",
+  "blog", "login", "logout", "account", "settings", "profile", "user", "users",
+  "giftbutler", "butler", "gift", "gifts", "not-found", "404", "500",
+]);
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -10,6 +17,10 @@ export async function POST(req: NextRequest) {
 
   if (!username || username.length < 2) {
     return NextResponse.json({ error: "Username must be at least 2 characters" }, { status: 400 });
+  }
+
+  if (RESERVED_USERNAMES.has(username.toLowerCase())) {
+    return NextResponse.json({ error: "That username is reserved — try another" }, { status: 400 });
   }
 
   // Check username availability

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   const { data: claims } = await supabase
     .from("claims")
-    .select("gift_description, created_at")
+    .select("gift_description, occasion, created_at")
     .eq("recipient_user_id", profile.id)
     .order("created_at", { ascending: false });
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-  const session = req.headers.get("x-forwarded-for") || "anonymous";
+  const session = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "anonymous";
 
   await supabaseAdmin.from("claims").insert({
     recipient_user_id: profile.id,
@@ -77,9 +77,6 @@ export async function POST(req: NextRequest) {
                   <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 4px;">The gift they&apos;re planning:</p>
                   <p style="color: #1c1917; font-size: 15px; font-weight: 700; margin: 0;">${gift_description}</p>
                 </div>
-                <p style="color: #78716c; font-size: 14px; margin: 0 0 24px; line-height: 1.6;">
-                  Keep adding hints to help others find the perfect gifts too.
-                </p>
                 <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
                   Add more hints →
                 </a>

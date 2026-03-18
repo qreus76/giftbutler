@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+const MAX_HINT_LENGTH = 280;
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -9,9 +11,16 @@ export async function POST(req: NextRequest) {
   const { content, category } = await req.json();
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 
+  if (content.trim().length > MAX_HINT_LENGTH) {
+    return NextResponse.json({ error: `Hints must be ${MAX_HINT_LENGTH} characters or less` }, { status: 400 });
+  }
+
+  const VALID_CATEGORIES = ["general", "want", "need", "dream", "avoid"];
+  const safeCategory = VALID_CATEGORIES.includes(category) ? category : "general";
+
   const { data, error } = await supabaseAdmin
     .from("hints")
-    .insert({ user_id: userId, content: content.trim(), category: category || "general" })
+    .insert({ user_id: userId, content: content.trim(), category: safeCategory })
     .select()
     .single();
 

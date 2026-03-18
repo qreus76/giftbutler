@@ -5,8 +5,31 @@ import { supabase } from "@/lib/supabase";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || "giftbutler09-20";
 
+// Simple in-memory rate limiter: 10 requests per IP per hour
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + 3_600_000 });
+    return false;
+  }
+  if (entry.count >= 10) return true;
+  entry.count++;
+  return false;
+}
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: "Too many requests — try again later" }, { status: 429 });
+  }
+
   const { username, relationship, budget, occasion } = await req.json();
+  if (!username || !relationship || !budget) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
 
   // Get profile and hints
   const { data: profile } = await supabase
@@ -32,10 +55,12 @@ export async function POST(req: NextRequest) {
 
   let birthdayContext = "";
   if (profile.birthday) {
-    const bday = new Date(profile.birthday);
+    const parts = profile.birthday.split("-");
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
     const today = new Date();
-    const next = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
-    if (next < today) next.setFullYear(today.getFullYear() + 1);
+    let next = new Date(today.getFullYear(), month, day);
+    if (next <= today) next = new Date(today.getFullYear() + 1, month, day);
     const daysUntil = Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (daysUntil <= 60) {
       birthdayContext = `\nBIRTHDAY: ${daysUntil === 0 ? "Today!" : `In ${daysUntil} days`} — factor urgency/relevance into recommendations.`;

@@ -38,10 +38,14 @@ export default async function ExplorePage() {
     .slice(0, 24);
 
   function getDaysUntilBirthday(birthday: string): number | null {
+    const parts = birthday.split("-");
+    if (parts.length !== 3) return null;
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
     const today = new Date();
-    const bday = new Date(birthday);
-    const next = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
-    if (next < today) next.setFullYear(today.getFullYear() + 1);
+    today.setHours(0, 0, 0, 0);
+    let next = new Date(today.getFullYear(), month, day);
+    if (next.getTime() <= today.getTime()) next = new Date(today.getFullYear() + 1, month, day);
     return Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 

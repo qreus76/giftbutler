@@ -84,6 +84,7 @@ export default function DashboardPage() {
   }
 
   async function deleteHint(id: string) {
+    if (!confirm("Delete this hint?")) return;
     await fetch(`/api/hints/${id}`, { method: "DELETE" });
     setHints(hints.filter((h) => h.id !== id));
   }
@@ -310,6 +311,7 @@ export default function DashboardPage() {
             <input
               value={newHint}
               onChange={(e) => setNewHint(e.target.value)}
+              maxLength={280}
               placeholder={CATEGORIES.find(c => c.id === category)?.placeholder || "Add a hint..."}
               className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
@@ -348,7 +350,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => deleteHint(hint.id)}
-                  className="text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 text-lg leading-none mt-0.5"
+                  className="text-stone-300 hover:text-red-400 active:text-red-400 transition-colors flex-shrink-0 text-lg leading-none mt-0.5 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   ×
                 </button>

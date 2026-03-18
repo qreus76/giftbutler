@@ -11,9 +11,12 @@ export default function EditProfilePage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [birthday, setBirthday] = useState("");
+  const [username, setUsername] = useState("");
+  const [currentUsername, setCurrentUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/me").then(r => r.json()).then(data => {
@@ -21,6 +24,8 @@ export default function EditProfilePage() {
         setName(data.profile.name || "");
         setBio(data.profile.bio || "");
         setBirthday(data.profile.birthday || "");
+        setUsername(data.profile.username || "");
+        setCurrentUsername(data.profile.username || "");
       }
       setLoading(false);
     });
@@ -29,12 +34,33 @@ export default function EditProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await fetch("/api/profile/update", {
+    setError("");
+
+    const res = await fetch("/api/profile/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), bio: bio.trim(), birthday: birthday || null }),
+      body: JSON.stringify({
+        name: name.trim(),
+        bio: bio.trim(),
+        birthday: birthday || null,
+        username: username.trim() !== currentUsername ? username.trim() : undefined,
+      }),
     });
+
+    const data = await res.json();
     setSaving(false);
+
+    if (!res.ok) {
+      setError(data.error || "Failed to save — try again");
+      return;
+    }
+
+    // If username changed, update local state
+    if (data.username) {
+      setCurrentUsername(data.username);
+      setUsername(data.username);
+    }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -68,6 +94,22 @@ export default function EditProfilePage() {
           </div>
 
           <div className="bg-white border border-stone-200 rounded-2xl p-4">
+            <label className="text-xs font-semibold text-stone-500 mb-2 block">Username</label>
+            <div className="flex items-center gap-1">
+              <span className="text-stone-400 text-sm">giftbutler.io/for/</span>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                className="flex-1 text-stone-900 text-sm focus:outline-none font-medium"
+              />
+            </div>
+            {username !== currentUsername && (
+              <p className="text-xs text-amber-600 mt-2">⚠ Your old link will stop working — share your new link after saving.</p>
+            )}
+          </div>
+
+          <div className="bg-white border border-stone-200 rounded-2xl p-4">
             <label className="text-xs font-semibold text-stone-500 mb-2 block">Bio <span className="text-stone-300 font-normal">(optional)</span></label>
             <textarea
               value={bio}
@@ -83,10 +125,15 @@ export default function EditProfilePage() {
             <input
               type="date"
               value={birthday}
+              max={new Date().toISOString().split("T")[0]}
               onChange={e => setBirthday(e.target.value)}
               className="w-full text-stone-900 text-sm focus:outline-none"
             />
           </div>
+
+          {error && (
+            <p className="text-red-500 text-sm px-1">{error}</p>
+          )}
 
           <button
             type="submit"
