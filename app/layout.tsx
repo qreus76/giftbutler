@@ -12,7 +12,31 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#fbbf24",        // amber-400
+          colorText: "#1c1917",           // stone-900
+          colorTextSecondary: "#78716c",  // stone-500
+          colorBackground: "#fafaf9",     // stone-50
+          colorInputBackground: "#ffffff",
+          colorInputText: "#1c1917",
+          borderRadius: "0.75rem",        // rounded-xl
+          fontFamily: "var(--font-geist-sans), sans-serif",
+        },
+        elements: {
+          card: "shadow-sm border border-stone-200",
+          headerTitle: "text-stone-900 font-bold",
+          headerSubtitle: "text-stone-500",
+          socialButtonsBlockButton: "border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold rounded-xl",
+          formButtonPrimary: "bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-xl shadow-none",
+          formFieldInput: "border-stone-200 rounded-xl focus:ring-amber-400",
+          footerActionLink: "text-amber-600 hover:text-amber-700 font-semibold",
+          identityPreviewEditButton: "text-amber-600",
+          formResendCodeLink: "text-amber-600",
+        },
+      }}
+    >
       <html lang="en">
         <body className={geist.className}>{children}</body>
       </html>
