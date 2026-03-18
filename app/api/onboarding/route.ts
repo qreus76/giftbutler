@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Username already taken — try another" }, { status: 400 });
   }
 
-  // Create profile
-  const { error: profileError } = await supabase.from("profiles").insert({
+  // Create profile (admin client bypasses RLS)
+  const { error: profileError } = await supabaseAdmin.from("profiles").insert({
     id: userId,
     username,
     name: null,
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       content,
       category: "general",
     }));
-    await supabase.from("hints").insert(hints);
+    await supabaseAdmin.from("hints").insert(hints);
   }
 
   return NextResponse.json({ success: true, username });
