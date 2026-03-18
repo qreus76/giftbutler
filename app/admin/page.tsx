@@ -68,6 +68,7 @@ export default async function AdminOverviewPage({
     activeUsersResult,
     signupsSeriesResult,
     visitsSeriesResult,
+    claimsSeriesResult,
     recentSignupsResult,
     recentClaimsResult,
   ] = await Promise.all([
@@ -76,6 +77,7 @@ export default async function AdminOverviewPage({
     supabaseAdmin.rpc("admin_active_users", { days_back: days }),
     supabaseAdmin.rpc("admin_signups_timeseries", { days_back: days }),
     supabaseAdmin.rpc("admin_visits_timeseries", { days_back: days }),
+    supabaseAdmin.rpc("admin_claims_timeseries", { days_back: days }),
     supabaseAdmin.rpc("admin_recent_signups", { limit_count: 8 }),
     supabaseAdmin.rpc("admin_recent_claims", { limit_count: 8 }),
   ]);
@@ -94,6 +96,9 @@ export default async function AdminOverviewPage({
     (d: { date: string; count: number }) => ({ date: d.date, count: Number(d.count) })
   );
   const visitsSeries: { date: string; count: number }[] = (visitsSeriesResult.data ?? []).map(
+    (d: { date: string; count: number }) => ({ date: d.date, count: Number(d.count) })
+  );
+  const claimsSeries: { date: string; count: number }[] = (claimsSeriesResult.data ?? []).map(
     (d: { date: string; count: number }) => ({ date: d.date, count: Number(d.count) })
   );
   const recentSignups: { username: string; name: string; created_at: string }[] = recentSignupsResult.data ?? [];
@@ -161,7 +166,7 @@ export default async function AdminOverviewPage({
       </div>
 
       {/* Time series charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
           <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
             New Signups — {periodLabel}
@@ -173,6 +178,12 @@ export default async function AdminOverviewPage({
             Profile Views — {periodLabel}
           </p>
           <LineChart data={visitsSeries} color="#60a5fa" gradientId="visits-grad" />
+        </div>
+        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
+          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
+            Gifts Claimed — {periodLabel}
+          </p>
+          <LineChart data={claimsSeries} color="#34d399" gradientId="claims-grad" />
         </div>
       </div>
 

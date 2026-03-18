@@ -7,9 +7,10 @@ interface Props {
   data: DataPoint[];
   color?: string;
   gradientId: string; // unique per chart to avoid SVG gradient ID conflicts
+  formatY?: (val: number) => string;
 }
 
-export default function LineChart({ data, color = "#fbbf24", gradientId }: Props) {
+export default function LineChart({ data, color = "#fbbf24", gradientId, formatY }: Props) {
   if (data.length === 0) {
     return (
       <div className="h-28 flex items-center justify-center text-stone-600 text-xs">
@@ -80,9 +81,11 @@ export default function LineChart({ data, color = "#fbbf24", gradientId }: Props
 
       {/* Y axis: max value */}
       <text x={pad.left - 4} y={pad.top + 4} textAnchor="end" fontSize="8" fill="#57534e">
-        {maxVal.toLocaleString()}
+        {formatY ? formatY(maxVal) : maxVal.toLocaleString()}
       </text>
-      <text x={pad.left - 4} y={pad.top + cH + 2} textAnchor="end" fontSize="8" fill="#57534e">0</text>
+      <text x={pad.left - 4} y={pad.top + cH + 2} textAnchor="end" fontSize="8" fill="#57534e">
+        {formatY ? formatY(0) : "0"}
+      </text>
     </svg>
   );
 }

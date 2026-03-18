@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { Suspense } from "react";
 import DateRangePicker from "../components/DateRangePicker";
+import LineChart from "../components/LineChart";
 
 const VALID_DAYS = [7, 30, 90, 365];
 
@@ -53,6 +54,7 @@ export default async function AdminAnalyticsPage({
 
   const [
     funnelResult,
+    conversionSeriesResult,
     topVisitedResult,
     topClaimedResult,
     occasionsResult,
@@ -61,6 +63,7 @@ export default async function AdminAnalyticsPage({
     recentRecsResult,
   ] = await Promise.all([
     supabaseAdmin.rpc("admin_funnel_stats", { days_back: days }),
+    supabaseAdmin.rpc("admin_conversion_timeseries", { days_back: days }),
     supabaseAdmin.rpc("admin_top_visited_profiles", { days_back: days }),
     supabaseAdmin.rpc("admin_top_claimed_profiles"),
     supabaseAdmin.rpc("admin_occasion_breakdown"),
@@ -73,6 +76,17 @@ export default async function AdminAnalyticsPage({
   ]);
 
   const funnel: { visits: number; recs: number; claims: number } = funnelResult.data ?? { visits: 0, recs: 0, claims: 0 };
+  const conversionRawSeries: { date: string; visit_count: number; claim_count: number }[] =
+    (conversionSeriesResult.data ?? []).map((d: { date: string; visit_count: number; claim_count: number }) => ({
+      date: d.date,
+      visit_count: Number(d.visit_count),
+      claim_count: Number(d.claim_count),
+    }));
+  // Convert to rate (%) for the line chart
+  const conversionSeries = conversionRawSeries.map((d) => ({
+    date: d.date,
+    count: d.visit_count > 0 ? parseFloat(((d.claim_count / d.visit_count) * 100).toFixed(2)) : 0,
+  }));
   const topVisited: { username: string; name: string; visit_count: number }[] = topVisitedResult.data ?? [];
   const topClaimed: { username: string; name: string; claim_count: number }[] = topClaimedResult.data ?? [];
   const occasions: { occasion: string; count: number }[] = occasionsResult.data ?? [];
@@ -150,6 +164,20 @@ export default async function AdminAnalyticsPage({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Conversion rate over time */}
+      <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 mb-6">
+        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
+          Claim Rate (%) — {periodLabel.charAt(0).toUpperCase() + periodLabel.slice(1)}
+        </p>
+        <p className="text-xs text-stone-600 mb-3">Percentage of profile visits that resulted in a gift claim</p>
+        <LineChart
+          data={conversionSeries}
+          color="#a78bfa"
+          gradientId="conversion-grad"
+          formatY={(v) => `${v}%`}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
