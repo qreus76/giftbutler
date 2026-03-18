@@ -137,7 +137,18 @@ export default function DashboardPage() {
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-stone-900">GiftButler</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
+                  {profile?.name?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
+            </div>
+            <h1 className="text-xl font-bold text-stone-900">GiftButler</h1>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/dashboard/edit")}
@@ -155,6 +166,7 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
 
         {/* Profile completion nudge */}
         {completionPct < 100 && nextStep && (

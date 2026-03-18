@@ -34,9 +34,10 @@ interface Props {
   initialProfile: Profile;
   initialHints: Hint[];
   initialClaims: string[];
+  avatarUrl: string | null;
 }
 
-export default function ProfileClient({ username, initialProfile, initialHints, initialClaims }: Props) {
+export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, avatarUrl }: Props) {
   const router = useRouter();
 
   const [profile] = useState<Profile>(initialProfile);
@@ -113,8 +114,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Profile header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-amber-400 rounded-full flex items-center justify-center text-2xl font-bold text-stone-900 mx-auto mb-3">
-            {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
+          <div className="w-16 h-16 rounded-full mx-auto mb-3 overflow-hidden flex-shrink-0">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-amber-400 flex items-center justify-center text-2xl font-bold text-stone-900">
+                {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
+              </div>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
           <p className="text-stone-400 text-sm">@{username}</p>

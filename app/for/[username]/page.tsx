@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { clerkClient } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
 import ProfileClient from "./ProfileClient";
 
@@ -51,6 +52,14 @@ export default async function ProfilePage({ params }: Props) {
 
   if (!profile) notFound();
 
+  // Get Clerk profile photo if available
+  let avatarUrl: string | null = null;
+  try {
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(profile.id);
+    avatarUrl = clerkUser.imageUrl || null;
+  } catch { /* no photo available */ }
+
   const [hintsRes, claimsRes] = await Promise.all([
     supabase
       .from("hints")
@@ -71,6 +80,7 @@ export default async function ProfilePage({ params }: Props) {
       initialProfile={profile}
       initialHints={hintsRes.data || []}
       initialClaims={claims}
+      avatarUrl={avatarUrl}
     />
   );
 }
