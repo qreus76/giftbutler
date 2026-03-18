@@ -1,4 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { Suspense } from "react";
+import DateRangePicker from "../components/DateRangePicker";
+
+const VALID_DAYS = [7, 30, 90, 365];
 
 function parseReferrer(ref: string | null): string {
   if (!ref) return "Direct / Unknown";
@@ -38,7 +42,15 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export default async function AdminAnalyticsPage() {
+export default async function AdminAnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ days?: string }>;
+}) {
+  const { days: daysParam } = await searchParams;
+  const days = VALID_DAYS.includes(Number(daysParam)) ? Number(daysParam) : 30;
+  const periodLabel = days === 365 ? "this year" : days === 7 ? "this week" : `last ${days}d`;
+
   const [
     funnelResult,
     topVisitedResult,
@@ -48,12 +60,12 @@ export default async function AdminAnalyticsPage() {
     referrersResult,
     recentRecsResult,
   ] = await Promise.all([
-    supabaseAdmin.rpc("admin_funnel_stats", { days_back: 30 }),
-    supabaseAdmin.rpc("admin_top_visited_profiles", { days_back: 30 }),
+    supabaseAdmin.rpc("admin_funnel_stats", { days_back: days }),
+    supabaseAdmin.rpc("admin_top_visited_profiles", { days_back: days }),
     supabaseAdmin.rpc("admin_top_claimed_profiles"),
     supabaseAdmin.rpc("admin_occasion_breakdown"),
     supabaseAdmin.rpc("admin_budget_breakdown"),
-    supabaseAdmin.rpc("admin_referrer_breakdown", { days_back: 30 }),
+    supabaseAdmin.rpc("admin_referrer_breakdown", { days_back: days }),
     supabaseAdmin.from("recommend_logs")
       .select("profile_username, relationship, budget, occasion, created_at")
       .order("created_at", { ascending: false })
@@ -89,14 +101,21 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Analytics</h1>
-        <p className="text-stone-500 text-sm mt-1">Last 30 days unless noted</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Analytics</h1>
+          <p className="text-stone-500 text-sm mt-1">Funnel and traffic data for {periodLabel}</p>
+        </div>
+        <Suspense>
+          <DateRangePicker days={days} />
+        </Suspense>
       </div>
 
       {/* Funnel */}
       <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 mb-6">
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-5">Conversion Funnel — Last 30 Days</p>
+        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-5">
+          Conversion Funnel — {periodLabel.charAt(0).toUpperCase() + periodLabel.slice(1)}
+        </p>
         <div className="grid grid-cols-3 gap-4 mb-5">
           <div>
             <p className="text-3xl font-bold text-white">{visits.toLocaleString()}</p>
@@ -134,7 +153,7 @@ export default async function AdminAnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Section title="Top Profiles by Views (30d)">
+        <Section title={`Top Profiles by Views (${periodLabel})`}>
           {topVisited.length === 0 ? <p className="text-stone-600 text-sm">No data yet.</p> : (
             <div className="flex flex-col gap-3">
               {topVisited.map((p) => (
@@ -150,7 +169,7 @@ export default async function AdminAnalyticsPage() {
           )}
         </Section>
 
-        <Section title="Top Profiles by Claims">
+        <Section title="Top Profiles by Claims (all time)">
           {topClaimed.length === 0 ? <p className="text-stone-600 text-sm">No data yet.</p> : (
             <div className="flex flex-col gap-3">
               {topClaimed.map((p) => (
@@ -166,7 +185,7 @@ export default async function AdminAnalyticsPage() {
           )}
         </Section>
 
-        <Section title="Traffic Sources (30d)">
+        <Section title={`Traffic Sources (${periodLabel})`}>
           {referrers.length === 0 ? <p className="text-stone-600 text-sm">No data yet — fills in as visitors arrive.</p> : (
             <div className="flex flex-col gap-3">
               {referrers.map(([source, count]) => (
@@ -182,7 +201,7 @@ export default async function AdminAnalyticsPage() {
           )}
         </Section>
 
-        <Section title="Gift Occasions">
+        <Section title="Gift Occasions (all time)">
           {occasions.length === 0 ? <p className="text-stone-600 text-sm">No claims yet.</p> : (
             <div className="flex flex-col gap-3">
               {occasions.map((o) => (
@@ -198,7 +217,7 @@ export default async function AdminAnalyticsPage() {
           )}
         </Section>
 
-        <Section title="Budget Ranges Searched">
+        <Section title="Budget Ranges Searched (all time)">
           {budgets.length === 0 ? <p className="text-stone-600 text-sm">No searches yet.</p> : (
             <div className="flex flex-col gap-3">
               {budgets.map((b) => (

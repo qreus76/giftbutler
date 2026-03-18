@@ -48,15 +48,23 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             {searchTerm && ` matching "${searchTerm}"`}
           </p>
         </div>
-        <form method="GET">
-          {page > 0 && <input type="hidden" name="page" value="0" />}
-          <input
-            name="search"
-            defaultValue={searchTerm}
-            placeholder="Search username or name..."
-            className="px-4 py-2 bg-stone-800 border border-stone-700 rounded-xl text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 w-64"
-          />
-        </form>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/export/users"
+            className="px-3 py-2 bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-400 hover:text-white text-xs font-semibold rounded-xl transition-colors"
+          >
+            Export CSV
+          </a>
+          <form method="GET">
+            {page > 0 && <input type="hidden" name="page" value="0" />}
+            <input
+              name="search"
+              defaultValue={searchTerm}
+              placeholder="Search username or name..."
+              className="px-4 py-2 bg-stone-800 border border-stone-700 rounded-xl text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 w-64"
+            />
+          </form>
+        </div>
       </div>
 
       {/* Table */}
