@@ -66,6 +66,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         const profileUrl = `${baseUrl}/for/${escapeHtml(username)}`;
         const dashboardUrl = `${baseUrl}/dashboard`;
 
+        const textBody = `Hi ${profile.name || username},\n\nA visitor just checked out your GiftButler profile at ${profileUrl}.\n\nMake sure your hints are up to date so they find the perfect gift for you.\n\nUpdate your hints: ${dashboardUrl}\n\n---\nGiftButler · To stop these notifications, email privacy@giftbutler.io`;
+
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -75,16 +77,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
           body: JSON.stringify({
             from: "GiftButler <notifications@giftbutler.io>",
             to: [email],
-            subject: `👀 Someone just visited your gift profile`,
+            subject: `Someone just visited your gift profile`,
+            text: textBody,
             html: `
               <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
-                <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">Someone just looked at your profile 👀</h1>
+                <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">Someone just looked at your profile</h1>
                 <p style="color: #78716c; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
                   A visitor just checked out <a href="${profileUrl}" style="color: #d97706; text-decoration: none;">giftbutler.io/for/${username}</a>.
                   Make sure your hints are up to date so they find the perfect gift for you, ${displayName}.
                 </p>
                 <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
-                  Update my hints →
+                  Update my hints
                 </a>
                 <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0;">
                   GiftButler · Free forever · <a href="${dashboardUrl}" style="color: #a8a29e;">Manage my profile</a><br/>
@@ -92,6 +95,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
                 </p>
               </div>
             `,
+            headers: {
+              "List-Unsubscribe": `<mailto:privacy@giftbutler.io?subject=Unsubscribe>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
           }),
         });
       } catch (err) { console.error("[profile visit email] Failed to send notification:", err); }

@@ -35,16 +35,20 @@ async function checkAnthropic(): Promise<{ ok: boolean; latency: number; message
 async function checkResend(): Promise<{ ok: boolean; latency: number; message: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, latency: 0, message: "RESEND_API_KEY not set" };
+  // Sending-only keys can't read account endpoints — verify by attempting a send
+  // to a known-invalid address and treating any non-network-error as "key is valid"
   const start = Date.now();
   try {
-    const res = await fetch("https://api.resend.com/domains", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${key}` },
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: "test@test.com", to: ["test@test.com"], subject: "ping", text: "ping" }),
     });
     const latency = Date.now() - start;
-    if (res.status === 200) return { ok: true, latency, message: "Connected" };
-    if (res.status === 401 || res.status === 403) return { ok: false, latency, message: "Invalid API key" };
-    return { ok: false, latency, message: `HTTP ${res.status}` };
+    // 401 = truly invalid key. Any other response (400, 422, 403) means key is valid
+    // but the request itself was rejected (expected — we're not sending a real email)
+    if (res.status === 401) return { ok: false, latency, message: "Invalid API key" };
+    return { ok: true, latency, message: "Connected" };
   } catch (e) {
     return { ok: false, latency: Date.now() - start, message: String(e) };
   }

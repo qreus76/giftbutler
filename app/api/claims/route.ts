@@ -90,6 +90,9 @@ export async function POST(req: NextRequest) {
         const occasionText = occasion ? ` for your ${escapeHtml(occasion)}` : "";
         const dashboardUrl = `${baseUrl}/dashboard`;
 
+        const subject = `Someone is planning a gift for you${occasionText}`;
+        const textBody = `Hi ${profile.name || profile.username},\n\nGreat news — someone just claimed a gift from your GiftButler profile${occasionText}. We won't spoil the surprise, but your hints are working!\n\nUpdate your hints at: ${dashboardUrl}\n\n---\nGiftButler · To stop these notifications, email privacy@giftbutler.io`;
+
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -99,10 +102,11 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             from: "GiftButler <notifications@giftbutler.io>",
             to: [email],
-            subject: `🎁 Someone is planning a gift for you${occasionText}`,
+            subject,
+            text: textBody,
             html: `
               <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
-                <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">Someone is getting you a gift 🎁</h1>
+                <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">Someone is getting you a gift</h1>
                 <p style="color: #78716c; font-size: 15px; margin: 0 0 16px; line-height: 1.6;">
                   Great news, ${displayName} — someone just claimed a gift from your GiftButler profile${occasionText}.
                   We won&apos;t spoil the surprise, but your hints are working!
@@ -112,7 +116,7 @@ export async function POST(req: NextRequest) {
                   <p style="color: #1c1917; font-size: 15px; font-weight: 700; margin: 0;">${escapeHtml(gift_description)}</p>
                 </div>
                 <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
-                  Add more hints →
+                  Add more hints
                 </a>
                 <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0;">
                   GiftButler · Free forever · <a href="${dashboardUrl}" style="color: #a8a29e;">Manage my profile</a><br/>
@@ -120,6 +124,10 @@ export async function POST(req: NextRequest) {
                 </p>
               </div>
             `,
+            headers: {
+              "List-Unsubscribe": `<mailto:privacy@giftbutler.io?subject=Unsubscribe>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
           }),
         });
       } catch (err) { console.error("[claims email] Failed to send notification:", err); }
