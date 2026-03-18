@@ -174,7 +174,12 @@ export default function DashboardPage() {
               onClick={copyLink}
               className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4" /> : (
+                <>
+                  <Share2 className="w-4 h-4 md:hidden" />
+                  <Copy className="w-4 h-4 hidden md:block" />
+                </>
+              )}
               {copied ? "Copied!" : "Share link"}
             </button>
           </div>
@@ -270,7 +275,7 @@ export default function DashboardPage() {
               <p className="text-stone-900 font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>
             </div>
             <button onClick={copyLink} className="text-xs text-amber-600 font-semibold hover:text-amber-700 flex-shrink-0 ml-2">
-              {copied ? "Copied!" : "Copy"}
+              {copied ? "Copied!" : <><span className="md:hidden">Share</span><span className="hidden md:inline">Copy</span></>}
             </button>
           </div>
         )}
