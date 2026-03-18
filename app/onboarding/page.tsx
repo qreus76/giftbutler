@@ -55,7 +55,7 @@ export default function OnboardingPage() {
   const [customAnswer, setCustomAnswer] = useState("");
   const [showCustom, setShowCustom] = useState(false);
 
-  const profileUrl = `https://giftbutler.io/for/${username}`;
+  const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"}/for/${username}`;
 
   function handleAnswer(value: string) {
     const newAnswers = [...answers, value];
