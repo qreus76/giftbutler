@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const today = new Date();
     let next = new Date(today.getFullYear(), month, day);
     if (next <= today) next = new Date(today.getFullYear() + 1, month, day);
-    const daysUntil = Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntil = Math.ceil((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (daysUntil <= 60) {
       birthdayContext = `\nBIRTHDAY: ${daysUntil === 0 ? "Today!" : `In ${daysUntil} days`} — factor urgency/relevance into recommendations.`;
     }

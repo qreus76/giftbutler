@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showShareKit, setShowShareKit] = useState(false);
   const [showVisitors, setShowVisitors] = useState(false);
 
@@ -69,7 +70,7 @@ export default function DashboardPage() {
       setClaimCount(data.claimCount || 0);
       setRecentVisits(data.recentVisits || []);
     } catch {
-      // silent fail — user sees empty state
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -164,6 +165,19 @@ export default function DashboardPage() {
     return (
       <main className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="text-center px-4">
+          <p className="text-stone-600 font-medium mb-2">Something went wrong loading your dashboard.</p>
+          <button onClick={() => { setLoadError(false); setLoading(true); loadProfile(); }} className="text-amber-600 font-semibold text-sm hover:text-amber-700">
+            Try again →
+          </button>
+        </div>
       </main>
     );
   }

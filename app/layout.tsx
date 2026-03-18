@@ -6,6 +6,7 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"),
   title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
   description: "Drop hints about your life. Share your link. Get gifts you actually want.",
   icons: {
