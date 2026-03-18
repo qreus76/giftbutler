@@ -48,15 +48,24 @@ export default function OnboardingPage() {
 
   const isQuiz = step < QUIZ_STEPS.length;
   const currentQuiz = QUIZ_STEPS[step];
+  const [customAnswer, setCustomAnswer] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
 
   function handleAnswer(value: string) {
     const newAnswers = [...answers, value];
     setAnswers(newAnswers);
+    setShowCustom(false);
+    setCustomAnswer("");
     if (step < QUIZ_STEPS.length - 1) {
       setStep(step + 1);
     } else {
-      setStep(QUIZ_STEPS.length); // move to username step
+      setStep(QUIZ_STEPS.length);
     }
+  }
+
+  function handleCustomSubmit() {
+    if (!customAnswer.trim()) return;
+    handleAnswer(customAnswer.trim());
   }
 
   async function handleFinish() {
@@ -102,6 +111,42 @@ export default function OnboardingPage() {
                   {opt.label}
                 </button>
               ))}
+
+              {!showCustom ? (
+                <button
+                  onClick={() => setShowCustom(true)}
+                  className="w-full text-left px-5 py-4 bg-white border-2 border-dashed border-stone-200 hover:border-amber-400 rounded-2xl text-stone-400 font-medium transition-all"
+                >
+                  Something else — type your own
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={customAnswer}
+                    onChange={(e) => setCustomAnswer(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCustomSubmit()}
+                    placeholder="Type your answer..."
+                    className="w-full px-5 py-4 bg-white border-2 border-amber-400 rounded-2xl text-stone-700 font-medium focus:outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCustomSubmit}
+                      disabled={!customAnswer.trim()}
+                      className="flex-1 py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-semibold rounded-xl transition-colors"
+                    >
+                      Continue →
+                    </button>
+                    <button
+                      onClick={() => { setShowCustom(false); setCustomAnswer(""); }}
+                      className="px-4 py-3 border border-stone-200 text-stone-400 font-semibold rounded-xl hover:bg-stone-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
