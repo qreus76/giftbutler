@@ -21,40 +21,32 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export default async function AdminOverviewPage() {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+interface OverviewStats {
+  total_users: number;
+  signups_today: number;
+  signups_week: number;
+  signups_month: number;
+  total_hints: number;
+  total_claims: number;
+  visits_month: number;
+}
 
-  const [
-    { count: totalUsers },
-    { count: signupsToday },
-    { count: signupsWeek },
-    { count: signupsMonth },
-    { count: totalHints },
-    { count: totalClaims },
-    { count: visitsMonth },
-    { data: recentSignups },
-    { data: recentClaims },
-  ] = await Promise.all([
-    supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }),
-    supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", startOfToday),
-    supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
-    supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", thirtyDaysAgo),
-    supabaseAdmin.from("hints").select("*", { count: "exact", head: true }),
-    supabaseAdmin.from("claims").select("*", { count: "exact", head: true }),
-    supabaseAdmin.from("profile_visits").select("*", { count: "exact", head: true }).gte("created_at", thirtyDaysAgo),
-    supabaseAdmin.from("profiles").select("username, name, created_at").order("created_at", { ascending: false }).limit(8),
-    supabaseAdmin.from("claims").select("gift_description, occasion, created_at, recipient_user_id").order("created_at", { ascending: false }).limit(8),
+export default async function AdminOverviewPage() {
+  const [statsResult, signupsResult, claimsResult] = await Promise.all([
+    supabaseAdmin.rpc("admin_overview_stats"),
+    supabaseAdmin.rpc("admin_recent_signups", { limit_count: 8 }),
+    supabaseAdmin.rpc("admin_recent_claims", { limit_count: 8 }),
   ]);
 
-  // Enrich recent claims with recipient usernames
-  const recipientIds = [...new Set((recentClaims || []).map(c => c.recipient_user_id))];
-  const { data: claimProfiles } = recipientIds.length > 0
-    ? await supabaseAdmin.from("profiles").select("id, username").in("id", recipientIds)
-    : { data: [] };
-  const profileMap = Object.fromEntries((claimProfiles || []).map(p => [p.id, p.username]));
+  const stats: OverviewStats = statsResult.data ?? {
+    total_users: 0, signups_today: 0, signups_week: 0, signups_month: 0,
+    total_hints: 0, total_claims: 0, visits_month: 0,
+  };
+
+  const recentSignups: { username: string; name: string; created_at: string }[] = signupsResult.data ?? [];
+  const recentClaims: { gift_description: string; occasion: string | null; created_at: string; recipient_username: string }[] = claimsResult.data ?? [];
+
+  const avgHints = stats.total_users > 0 ? (stats.total_hints / stats.total_users).toFixed(1) : "—";
 
   return (
     <div>
@@ -63,27 +55,25 @@ export default async function AdminOverviewPage() {
         <p className="text-stone-500 text-sm mt-1">All time unless noted</p>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Users" value={totalUsers ?? 0} />
-        <StatCard label="Signups Today" value={signupsToday ?? 0} />
-        <StatCard label="Signups This Week" value={signupsWeek ?? 0} />
-        <StatCard label="Signups This Month" value={signupsMonth ?? 0} />
-        <StatCard label="Total Hints" value={totalHints ?? 0} sub={totalUsers ? `${((totalHints ?? 0) / totalUsers).toFixed(1)} per user` : undefined} />
-        <StatCard label="Total Claims" value={totalClaims ?? 0} />
-        <StatCard label="Profile Views" value={visitsMonth ?? 0} sub="last 30 days" />
-        <StatCard label="Avg Hints/User" value={totalUsers ? ((totalHints ?? 0) / totalUsers).toFixed(1) : "—"} />
+        <StatCard label="Total Users" value={stats.total_users.toLocaleString()} />
+        <StatCard label="Signups Today" value={stats.signups_today.toLocaleString()} />
+        <StatCard label="Signups This Week" value={stats.signups_week.toLocaleString()} />
+        <StatCard label="Signups This Month" value={stats.signups_month.toLocaleString()} />
+        <StatCard label="Total Hints" value={stats.total_hints.toLocaleString()} sub={`${avgHints} per user`} />
+        <StatCard label="Total Claims" value={stats.total_claims.toLocaleString()} />
+        <StatCard label="Profile Views" value={stats.visits_month.toLocaleString()} sub="last 30 days" />
+        <StatCard label="Avg Hints / User" value={avgHints} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent signups */}
         <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
           <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">Recent Signups</p>
-          {(recentSignups || []).length === 0 ? (
+          {recentSignups.length === 0 ? (
             <p className="text-stone-600 text-sm">No signups yet.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {(recentSignups || []).map((u) => (
+              {recentSignups.map((u) => (
                 <div key={u.username} className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-white">{u.name || u.username}</p>
@@ -96,19 +86,18 @@ export default async function AdminOverviewPage() {
           )}
         </div>
 
-        {/* Recent claims */}
         <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
           <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">Recent Claims</p>
-          {(recentClaims || []).length === 0 ? (
+          {recentClaims.length === 0 ? (
             <p className="text-stone-600 text-sm">No claims yet.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {(recentClaims || []).map((c, i) => (
+              {recentClaims.map((c, i) => (
                 <div key={i} className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm text-white truncate">{c.gift_description}</p>
                     <p className="text-xs text-stone-500">
-                      for @{profileMap[c.recipient_user_id] || "unknown"}{c.occasion ? ` · ${c.occasion}` : ""}
+                      for @{c.recipient_username}{c.occasion ? ` · ${c.occasion}` : ""}
                     </p>
                   </div>
                   <p className="text-xs text-stone-600 flex-shrink-0">{timeAgo(c.created_at)}</p>
