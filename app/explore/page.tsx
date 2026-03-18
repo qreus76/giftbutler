@@ -66,10 +66,12 @@ export default async function ExplorePage() {
           <div className="text-center py-20 text-stone-400">
             <p className="text-4xl mb-4">🎁</p>
             <p className="font-medium text-stone-600 mb-2">No profiles yet</p>
-            <p className="text-sm mb-6">Be the first to create yours.</p>
-            <Link href="/sign-up" className="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-2xl text-sm transition-colors">
-              Create my free profile →
-            </Link>
+            <p className="text-sm mb-6">{isSignedIn ? "Share your profile link to get things started." : "Be the first to create yours."}</p>
+            {!isSignedIn && (
+              <Link href="/sign-up" className="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-2xl text-sm transition-colors">
+                Create my free profile →
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -116,14 +118,16 @@ export default async function ExplorePage() {
           </div>
         )}
 
-        {/* CTA */}
-        <div className="mt-12 bg-amber-50 border border-amber-200 rounded-3xl p-8 text-center">
-          <h2 className="text-xl font-bold text-stone-900 mb-2">Create your own gift profile</h2>
-          <p className="text-stone-500 text-sm mb-6">Drop hints. Share your link. Get gifts you actually want.</p>
-          <Link href="/sign-up" className="inline-block px-8 py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl transition-colors">
-            Get started free →
-          </Link>
-        </div>
+        {/* CTA — signed-out visitors only */}
+        {!isSignedIn && (
+          <div className="mt-12 bg-amber-50 border border-amber-200 rounded-3xl p-8 text-center">
+            <h2 className="text-xl font-bold text-stone-900 mb-2">Create your own gift profile</h2>
+            <p className="text-stone-500 text-sm mb-6">Drop hints. Share your link. Get gifts you actually want.</p>
+            <Link href="/sign-up" className="inline-block px-8 py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl transition-colors">
+              Get started free →
+            </Link>
+          </div>
+        )}
       </div>
     </main>
   );

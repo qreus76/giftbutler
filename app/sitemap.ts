@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = "https://giftbutler.io";
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
 
   // Static pages
   const static_pages: MetadataRoute.Sitemap = [
@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("profiles")
     .select("username, created_at")
     .order("created_at", { ascending: false })
-    .limit(1000);
+    .limit(50000);
 
   const profile_pages: MetadataRoute.Sitemap = (profiles || []).map(p => ({
     url: `${base}/for/${p.username}`,

@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, bio")
+    .select("name, bio, id")
     .eq("username", username)
     .single();
 
@@ -24,6 +24,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `${name} has shared hints about what they love. Find the perfect gift — personalized by AI.`
     : `Find the perfect gift for ${name}. They've left hints about their interests and wishes.`;
 
+  let avatarUrl: string | undefined;
+  try {
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(profile.id);
+    if (clerkUser.imageUrl) avatarUrl = clerkUser.imageUrl;
+  } catch { /* no avatar */ }
+
   return {
     title: `Gift ideas for ${name} — GiftButler`,
     description,
@@ -31,12 +38,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `What to get ${name} — GiftButler`,
       description,
       siteName: "GiftButler",
-      type: "website",
+      type: "profile",
+      ...(avatarUrl ? { images: [{ url: avatarUrl, width: 400, height: 400, alt: name }] } : {}),
     },
     twitter: {
-      card: "summary",
+      card: avatarUrl ? "summary" : "summary",
       title: `What to get ${name}`,
       description,
+      ...(avatarUrl ? { images: [avatarUrl] } : {}),
     },
   };
 }

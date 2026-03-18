@@ -146,7 +146,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
-          {isLoaded && (isOwner ? (
+          {isLoaded && (isOwner || user ? (
             <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
               My dashboard →
             </a>
