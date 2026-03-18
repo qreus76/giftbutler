@@ -142,17 +142,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   return (
     <main className="min-h-screen bg-stone-50">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-white">
-        <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
-        {isOwner ? (
-          <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
-            My dashboard →
-          </a>
-        ) : (
-          <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
-            Create yours free →
-          </a>
-        )}
+      <nav className="border-b border-stone-100 bg-white">
+        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
+          {isOwner ? (
+            <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+              My dashboard →
+            </a>
+          ) : (
+            <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+              Create yours free →
+            </a>
+          )}
+        </div>
       </nav>
 
       <div className="max-w-xl mx-auto px-4 py-8">
