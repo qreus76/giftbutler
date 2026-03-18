@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Hints must be ${MAX_HINT_LENGTH} characters or less` }, { status: 400 });
   }
 
-  const VALID_CATEGORIES = ["general", "want", "need", "dream", "avoid"];
+  const VALID_CATEGORIES = ["general", "want", "need", "dream", "love", "avoid"];
   const safeCategory = VALID_CATEGORIES.includes(category) ? category : "general";
 
   const { data, error } = await supabaseAdmin

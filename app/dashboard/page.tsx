@@ -8,6 +8,7 @@ import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
   { id: "general", label: "Into lately", placeholder: "I've been really into sourdough baking..." },
+  { id: "love", label: "I love", placeholder: "I love fresh flowers, especially tulips..." },
   { id: "want", label: "Want", placeholder: "I've been wanting to try a standing desk..." },
   { id: "need", label: "Need", placeholder: "My headphones are finally dying..." },
   { id: "dream", label: "Dream", placeholder: "Someday I'd love to go to Japan..." },
@@ -356,6 +357,7 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 inline-block ${
                     hint.category === "avoid" ? "bg-red-100 text-red-600" :
+                    hint.category === "love" ? "bg-pink-100 text-pink-600" :
                     hint.category === "want" ? "bg-blue-100 text-blue-600" :
                     hint.category === "need" ? "bg-green-100 text-green-600" :
                     hint.category === "dream" ? "bg-purple-100 text-purple-600" :
