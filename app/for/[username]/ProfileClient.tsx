@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
+import { getDaysUntilBirthday } from "@/lib/utils";
 
 interface GiftRecommendation {
   title: string;
@@ -26,20 +27,6 @@ const CATEGORIES = {
   avoid: { label: "Please no", color: "bg-red-100 text-red-600" },
 };
 
-function getDaysUntilBirthday(birthday: string): number | null {
-  // Parse YYYY-MM-DD safely without timezone issues
-  const parts = birthday.split("-");
-  if (parts.length !== 3) return null;
-  const month = parseInt(parts[1]) - 1;
-  const day = parseInt(parts[2]);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  let next = new Date(today.getFullYear(), month, day);
-  if (next.getTime() <= today.getTime()) {
-    next = new Date(today.getFullYear() + 1, month, day);
-  }
-  return Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 interface Props {
   username: string;

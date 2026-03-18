@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
 
@@ -54,9 +58,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         const email = user.emailAddresses[0]?.emailAddress;
         if (!email) return;
 
-        const displayName = profile.name || username;
-        const profileUrl = `https://giftbutler.io/for/${username}`;
-        const dashboardUrl = `https://giftbutler.io/dashboard`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
+        const displayName = escapeHtml(profile.name || username);
+        const profileUrl = `${baseUrl}/for/${escapeHtml(username)}`;
+        const dashboardUrl = `${baseUrl}/dashboard`;
 
         await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -86,7 +91,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
             `,
           }),
         });
-      } catch { /* silent fail */ }
+      } catch (err) { console.error("[profile visit email] Failed to send notification:", err); }
     });
   }
 

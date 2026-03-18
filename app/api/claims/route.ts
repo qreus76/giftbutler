@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 
+// Simple in-memory rate limiter: 5 claims per IP per hour
+const claimsRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isClaimsRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = claimsRateLimitMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    claimsRateLimitMap.set(ip, { count: 1, resetAt: now + 3_600_000 });
+    return false;
+  }
+  if (entry.count >= 5) return true;
+  entry.count++;
+  return false;
+}
+
 export async function GET(req: NextRequest) {
   const username = new URL(req.url).searchParams.get("username");
   if (!username) return NextResponse.json({ claims: [] });
@@ -28,6 +43,11 @@ function escapeHtml(str: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  if (isClaimsRateLimited(ip)) {
+    return NextResponse.json({ error: "Too many requests — try again later" }, { status: 429 });
+  }
+
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
   const { recipient_username, gift_description, occasion } = body;
@@ -65,9 +85,10 @@ export async function POST(req: NextRequest) {
         const email = user.emailAddresses[0]?.emailAddress;
         if (!email) return;
 
-        const displayName = profile.name || profile.username;
-        const occasionText = occasion ? ` for your ${occasion}` : "";
-        const dashboardUrl = `https://giftbutler.io/dashboard`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
+        const displayName = escapeHtml(profile.name || profile.username);
+        const occasionText = occasion ? ` for your ${escapeHtml(occasion)}` : "";
+        const dashboardUrl = `${baseUrl}/dashboard`;
 
         await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -101,7 +122,7 @@ export async function POST(req: NextRequest) {
             `,
           }),
         });
-      } catch { /* silent fail */ }
+      } catch (err) { console.error("[claims email] Failed to send notification:", err); }
     })();
   }
 

@@ -122,14 +122,18 @@ export default function DashboardPage() {
         });
       } catch { /* user cancelled */ }
     } else {
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(url).catch(() => {
+        alert("Unable to copy — please copy manually.");
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   }
 
   function copyMessage(msg: string) {
-    navigator.clipboard.writeText(msg);
+    navigator.clipboard.writeText(msg).catch(() => {
+      alert("Unable to copy — please copy manually.");
+    });
     setCopiedMsg(msg);
     setTimeout(() => setCopiedMsg(null), 2000);
   }
@@ -401,6 +405,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => deleteHint(hint.id)}
+                  aria-label="Delete hint"
                   className="text-stone-300 hover:text-red-400 active:text-red-400 transition-colors flex-shrink-0 text-lg leading-none mt-0.5 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   ×

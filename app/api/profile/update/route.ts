@@ -24,6 +24,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bio must be 160 characters or less" }, { status: 400 });
   }
 
+  if (birthday?.trim()) {
+    const parsed = new Date(birthday.trim());
+    if (isNaN(parsed.getTime()) || parsed > new Date()) {
+      return NextResponse.json({ error: "Birthday must be a valid past date" }, { status: 400 });
+    }
+  }
+
   const updates: Record<string, string | null> = {
     name: name || null,
     bio: bio || null,

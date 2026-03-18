@@ -104,7 +104,9 @@ export default function OnboardingPage() {
         });
       } catch { /* user cancelled */ }
     } else {
-      navigator.clipboard.writeText(profileUrl);
+      navigator.clipboard.writeText(profileUrl).catch(() => {
+        alert("Unable to copy — please copy manually.");
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -140,7 +142,7 @@ export default function OnboardingPage() {
             {shareMessages.map((msg, i) => (
               <button
                 key={i}
-                onClick={() => { navigator.clipboard.writeText(msg); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
+                onClick={() => { navigator.clipboard.writeText(msg).catch(() => { alert("Unable to copy — please copy manually."); }); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
                 className="text-left bg-white border border-stone-200 rounded-xl px-4 py-3 hover:border-amber-300 transition-colors group"
               >
                 <p className="text-stone-600 text-xs leading-relaxed">{msg}</p>

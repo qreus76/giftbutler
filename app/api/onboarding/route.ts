@@ -55,14 +55,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
   }
 
-  // Insert quiz answers as initial hints
+  // Insert quiz answers as initial hints (validate and sanitize)
   if (answers && answers.length > 0) {
-    const hints = answers.map((content: string) => ({
-      user_id: userId,
-      content,
-      category: "general",
-    }));
-    await supabaseAdmin.from("hints").insert(hints);
+    const MAX_HINT_LENGTH = 280;
+    const hints = answers
+      .filter((content: unknown) => typeof content === "string" && content.trim().length > 0)
+      .map((content: string) => ({
+        user_id: userId,
+        content: content.trim().slice(0, MAX_HINT_LENGTH),
+        category: "general",
+      }));
+    if (hints.length > 0) await supabaseAdmin.from("hints").insert(hints);
   }
 
   return NextResponse.json({ success: true, username });
