@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Eye, Copy, Check } from "lucide-react";
+import { Settings, Eye, Copy, Check, Clock, Share2, ChevronDown, ChevronUp } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -14,17 +14,42 @@ const CATEGORIES = [
   { id: "avoid", label: "Please no", placeholder: "No more candles or gift cards please..." },
 ];
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 60) return mins <= 1 ? "just now" : `${mins} minutes ago`;
+  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
+}
+
+function getCompletionItems(profile: Profile, hints: Hint[]) {
+  return [
+    { done: !!profile.name, label: "Add your display name", action: "/dashboard/edit" },
+    { done: !!profile.bio, label: "Write a short bio", action: "/dashboard/edit" },
+    { done: !!profile.birthday, label: "Add your birthday (so people know when to shop!)", action: "/dashboard/edit" },
+    { done: hints.filter(h => h.category !== "avoid").length >= 3, label: "Add at least 3 hints", action: null },
+    { done: hints.filter(h => h.category !== "avoid").length >= 8, label: "Add 8+ hints for the best recommendations", action: null },
+  ];
+}
+
 export default function DashboardPage() {
   const { user } = useUser();
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [hints, setHints] = useState<Hint[]>([]);
   const [visitCount, setVisitCount] = useState(0);
+  const [recentVisits, setRecentVisits] = useState<{ created_at: string }[]>([]);
   const [newHint, setNewHint] = useState("");
   const [category, setCategory] = useState("general");
   const [adding, setAdding] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedMsg, setCopiedMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showShareKit, setShowShareKit] = useState(false);
+  const [showVisitors, setShowVisitors] = useState(false);
 
   useEffect(() => {
     if (user) loadProfile();
@@ -37,6 +62,7 @@ export default function DashboardPage() {
     setProfile(data.profile);
     setHints(data.hints);
     setVisitCount(data.visitCount || 0);
+    setRecentVisits(data.recentVisits || []);
     setLoading(false);
   }
 
@@ -66,6 +92,34 @@ export default function DashboardPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  function copyMessage(msg: string) {
+    navigator.clipboard.writeText(msg);
+    setCopiedMsg(msg);
+    setTimeout(() => setCopiedMsg(null), 2000);
+  }
+
+  const profileUrl = profile ? `${typeof window !== "undefined" ? window.location.origin : "https://giftbutler.io"}/for/${profile.username}` : "";
+
+  const shareMessages = profile ? [
+    {
+      label: "🎂 Birthday",
+      msg: `My birthday is coming up! Here's what I actually want (I finally stopped saying 'anything is fine'): ${profileUrl}`,
+    },
+    {
+      label: "🎄 Holidays",
+      msg: `Holiday shopping for me just got easier — I made a gift profile with things I'll actually love: ${profileUrl}`,
+    },
+    {
+      label: "💬 Anytime",
+      msg: `Tired of getting asked 'what do you want?' — here's my actual answer: ${profileUrl}`,
+    },
+  ] : [];
+
+  const completionItems = profile ? getCompletionItems(profile, hints) : [];
+  const completionDone = completionItems.filter(i => i.done).length;
+  const completionPct = Math.round((completionDone / completionItems.length) * 100);
+  const nextStep = completionItems.find(i => !i.done);
 
   if (loading) {
     return (
@@ -100,16 +154,44 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Profile completion nudge */}
+        {completionPct < 100 && nextStep && (
+          <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${completionPct}%` }} />
+                </div>
+                <span className="text-xs font-semibold text-stone-400 flex-shrink-0">{completionPct}%</span>
+              </div>
+              <p className="text-sm text-stone-600 truncate">
+                Next: <span className="font-medium text-stone-800">{nextStep.label}</span>
+              </p>
+            </div>
+            {nextStep.action && (
+              <button
+                onClick={() => router.push(nextStep.action!)}
+                className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex-shrink-0"
+              >
+                Add →
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <button
+            onClick={() => setShowVisitors(!showVisitors)}
+            className="bg-white border border-stone-200 rounded-2xl p-4 text-left hover:border-stone-300 transition-colors"
+          >
             <div className="flex items-center gap-2 mb-1">
               <Eye className="w-4 h-4 text-stone-400" />
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Profile views</span>
             </div>
             <p className="text-2xl font-bold text-stone-900">{visitCount}</p>
-            <p className="text-xs text-stone-400">last 30 days</p>
-          </div>
+            <p className="text-xs text-stone-400">last 30 days · tap to see</p>
+          </button>
           <div className="bg-white border border-stone-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Hints</span>
@@ -119,9 +201,36 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Recent visitors */}
+        {showVisitors && (
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Recent visitors</p>
+            {recentVisits.length === 0 ? (
+              <p className="text-stone-400 text-sm">No visits yet — share your link to get started.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {recentVisits.map((v, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Eye className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">A visitor</p>
+                      <p className="text-xs text-stone-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {timeAgo(v.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Profile link */}
         {profile && (
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6 flex items-center justify-between">
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-xs text-stone-400 mb-0.5">Your gift profile</p>
               <p className="text-stone-900 font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>
@@ -131,6 +240,36 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+
+        {/* Share kit */}
+        <div className="bg-white border border-stone-200 rounded-2xl mb-6 overflow-hidden">
+          <button
+            onClick={() => setShowShareKit(!showShareKit)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Share2 className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-stone-800">Share kit — ready-to-send messages</span>
+            </div>
+            {showShareKit ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+          </button>
+          {showShareKit && (
+            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-stone-100 pt-3">
+              {shareMessages.map((item) => (
+                <div key={item.label} className="bg-stone-50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-stone-500 mb-1.5">{item.label}</p>
+                  <p className="text-sm text-stone-700 leading-relaxed mb-2">{item.msg}</p>
+                  <button
+                    onClick={() => copyMessage(item.msg)}
+                    className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1"
+                  >
+                    {copiedMsg === item.msg ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy message</>}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Add hint form */}
         <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">

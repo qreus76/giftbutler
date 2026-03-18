@@ -45,16 +45,21 @@ export default function ProfileClient() {
   const [occasion, setOccasion] = useState("");
   const [generating, setGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState<GiftRecommendation[]>([]);
-  const [claims, setClaims] = useState<string[]>([]);
+  const [myClaims, setMyClaims] = useState<string[]>([]);
+  const [existingClaims, setExistingClaims] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/profile/${username}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) { setNotFound(true); }
-        else { setProfile(data.profile); setHints(data.hints); }
-        setLoading(false);
-      });
+    Promise.all([
+      fetch(`/api/profile/${username}`).then(r => r.json()),
+      fetch(`/api/claims?username=${username}`).then(r => r.json()),
+    ]).then(([profileData, claimsData]) => {
+      if (profileData.error) { setNotFound(true); }
+      else { setProfile(profileData.profile); setHints(profileData.hints); }
+      if (claimsData.claims) {
+        setExistingClaims(claimsData.claims.map((c: { gift_description: string }) => c.gift_description.toLowerCase()));
+      }
+      setLoading(false);
+    });
   }, [username]);
 
   async function generateGifts() {
@@ -72,12 +77,17 @@ export default function ProfileClient() {
   }
 
   function claimGift(title: string) {
-    setClaims([...claims, title]);
+    setMyClaims([...myClaims, title]);
+    setExistingClaims([...existingClaims, title.toLowerCase()]);
     fetch("/api/claims", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }),
     });
+  }
+
+  function isAlreadyClaimed(title: string): boolean {
+    return existingClaims.includes(title.toLowerCase());
   }
 
   if (loading) return (
@@ -216,32 +226,41 @@ export default function ProfileClient() {
           <div className="mb-6">
             <h2 className="font-bold text-stone-900 mb-3">Gift ideas for {displayName}</h2>
             <div className="flex flex-col gap-3">
-              {recommendations.map((rec, i) => (
-                <div key={i} className="bg-white border border-stone-200 rounded-2xl p-4">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h3 className="font-semibold text-stone-900 text-sm">{rec.title}</h3>
-                    <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{rec.priceRange}</span>
+              {recommendations.map((rec, i) => {
+                const alreadyClaimed = isAlreadyClaimed(rec.title);
+                const iMineThis = myClaims.includes(rec.title);
+                return (
+                  <div key={i} className={`bg-white border rounded-2xl p-4 ${alreadyClaimed && !iMineThis ? "border-green-200 bg-green-50/30" : "border-stone-200"}`}>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h3 className="font-semibold text-stone-900 text-sm">{rec.title}</h3>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {alreadyClaimed && !iMineThis && (
+                          <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Someone&apos;s on it</span>
+                        )}
+                        <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">{rec.priceRange}</span>
+                      </div>
+                    </div>
+                    <p className="text-stone-500 text-xs leading-relaxed mb-3">{rec.why}</p>
+                    <div className="flex gap-2">
+                      <a
+                        href={rec.searchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors"
+                      >
+                        Find this gift →
+                      </a>
+                      <button
+                        onClick={() => claimGift(rec.title)}
+                        disabled={iMineThis || alreadyClaimed}
+                        className="px-3 py-2 border border-stone-200 text-stone-500 text-xs font-semibold rounded-xl hover:bg-stone-50 disabled:bg-green-50 disabled:text-green-600 disabled:border-green-200 transition-colors whitespace-nowrap"
+                      >
+                        {iMineThis ? "✓ You&apos;re getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-stone-500 text-xs leading-relaxed mb-3">{rec.why}</p>
-                  <div className="flex gap-2">
-                    <a
-                      href={rec.searchUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors"
-                    >
-                      Find this gift →
-                    </a>
-                    <button
-                      onClick={() => claimGift(rec.title)}
-                      disabled={claims.includes(rec.title)}
-                      className="px-3 py-2 border border-stone-200 text-stone-500 text-xs font-semibold rounded-xl hover:bg-stone-50 disabled:bg-green-50 disabled:text-green-600 disabled:border-green-200 transition-colors whitespace-nowrap"
-                    >
-                      {claims.includes(rec.title) ? "✓ Claimed" : "I'm getting this"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <button
               onClick={() => { setRecommendations([]); setShowFinder(true); }}

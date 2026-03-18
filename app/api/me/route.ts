@@ -32,5 +32,13 @@ export async function GET() {
     .eq("profile_user_id", userId)
     .gte("created_at", thirtyDaysAgo.toISOString());
 
-  return NextResponse.json({ profile, hints: hints || [], visitCount: visitCount || 0 });
+  // Recent visits for the feed (last 10)
+  const { data: recentVisits } = await supabaseAdmin
+    .from("profile_visits")
+    .select("created_at")
+    .eq("profile_user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  return NextResponse.json({ profile, hints: hints || [], visitCount: visitCount || 0, recentVisits: recentVisits || [] });
 }
