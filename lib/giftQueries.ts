@@ -147,3 +147,15 @@ export const BUDGETS = [
   { label: "$100 – $200", max: 200 },
   { label: "$200+", max: 500 },
 ];
+
+export type Occasion = "birthday" | "mothers-day" | "fathers-day" | "christmas" | "easter" | "anniversary" | "just-because";
+
+export const OCCASIONS: { id: Occasion; label: string; emoji: string }[] = [
+  { id: "birthday", label: "Birthday", emoji: "🎂" },
+  { id: "mothers-day", label: "Mother's Day", emoji: "💐" },
+  { id: "fathers-day", label: "Father's Day", emoji: "👔" },
+  { id: "anniversary", label: "Anniversary", emoji: "💍" },
+  { id: "christmas", label: "Christmas", emoji: "🎄" },
+  { id: "easter", label: "Easter", emoji: "🐣" },
+  { id: "just-because", label: "Just Because", emoji: "💝" },
+];

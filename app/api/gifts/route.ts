@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const recipient = req.nextUrl.searchParams.get("for") as Recipient;
   const interestsParam = req.nextUrl.searchParams.get("interests") || "";
   const budgetParam = req.nextUrl.searchParams.get("budget");
+  const occasion = req.nextUrl.searchParams.get("occasion") || "";
 
   if (!recipient) {
     return NextResponse.json({ error: "Missing recipient" }, { status: 400 });
@@ -97,7 +98,8 @@ export async function GET(req: NextRequest) {
     return true;
   }).slice(0, 12);
 
-  const recipientStr = `${recipient} gift ${interests[0] || ""}`.trim();
+  const occasionStr = occasion ? ` ${occasion.replace(/-/g, " ")}` : "";
+  const recipientStr = `${recipient}${occasionStr} gift ${interests[0] || ""}`.trim();
 
   return NextResponse.json({
     recipient,

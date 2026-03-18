@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { RECIPIENTS, INTERESTS } from "@/lib/giftQueries";
+import { RECIPIENTS, INTERESTS, OCCASIONS } from "@/lib/giftQueries";
 
 interface GiftProduct {
   id: string;
@@ -29,10 +29,13 @@ interface GiftResult {
 
 function Skeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-pulse">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="h-64 bg-stone-100 rounded-2xl" />
-      ))}
+    <div className="flex flex-col gap-4 animate-pulse">
+      <div className="h-36 bg-amber-50 border-2 border-amber-100 rounded-2xl" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-64 bg-stone-100 rounded-2xl" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -47,6 +50,68 @@ function SourceBadge({ source }: { source: string }) {
     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[source] || "bg-stone-100 text-stone-600"}`}>
       {source}
     </span>
+  );
+}
+
+function BestPickCard({ product, onCheckPrice }: { product: GiftProduct; onCheckPrice: (name: string) => void }) {
+  const [imgError, setImgError] = useState(false);
+  const savings = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
+
+  return (
+    <div className="bg-white border-2 border-amber-400 rounded-2xl overflow-hidden shadow-sm mb-5">
+      <div className="bg-amber-50 px-4 py-2 flex items-center gap-2 border-b border-amber-200">
+        <span className="text-amber-700 font-bold text-xs uppercase tracking-wide">⭐ Best Pick</span>
+        <SourceBadge source={product.source} />
+        {product.onSale && (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">On Sale</span>
+        )}
+      </div>
+      <div className="p-4 flex gap-4">
+        <div className="w-24 h-24 bg-stone-50 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden">
+          {product.image && !imgError ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="max-h-20 max-w-full object-contain"
+              onError={() => setImgError(true)}
+              loading="eager"
+            />
+          ) : (
+            <span className="text-4xl">🎁</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-stone-900 font-semibold text-sm leading-snug mb-2 line-clamp-2">{product.name}</p>
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="text-xl font-bold text-stone-900">${product.price.toFixed(2)}</span>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="text-sm text-stone-400 line-through">${product.originalPrice.toFixed(2)}</span>
+            )}
+            {savings && savings > 0 && (
+              <span className="text-sm font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">-{savings}% off</span>
+            )}
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href={product.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+            >
+              Shop Now →
+            </a>
+            <button
+              onClick={() => onCheckPrice(product.name)}
+              className="px-4 py-2 border border-stone-200 text-stone-600 text-sm font-semibold rounded-xl hover:bg-stone-50 transition-colors"
+            >
+              Compare prices
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -108,6 +173,60 @@ function GiftCard({ product, onCheckPrice }: { product: GiftProduct; onCheckPric
   );
 }
 
+function EmailCapture() {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.includes("@")) return;
+    setLoading(true);
+    try {
+      await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } finally {
+      setSubmitted(true);
+      setLoading(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center my-5">
+        <p className="text-amber-700 font-semibold text-sm">✓ You&apos;re in! We&apos;ll send the best deals to your inbox.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 my-5">
+      <p className="text-stone-900 font-semibold text-sm mb-0.5">💌 Get weekly gift deals</p>
+      <p className="text-stone-400 text-xs mb-3">Price drops and top picks — delivered free.</p>
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          required
+          className="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 text-stone-900 font-semibold rounded-xl text-sm transition-colors whitespace-nowrap"
+        >
+          {loading ? "..." : "Subscribe →"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function FindContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -115,13 +234,16 @@ function FindContent() {
   const recipient = searchParams.get("for") || "";
   const interestsParam = searchParams.get("interests") || "";
   const budgetParam = searchParams.get("budget") || "";
+  const occasion = searchParams.get("occasion") || "";
 
   const [result, setResult] = useState<GiftResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const recipientLabel = RECIPIENTS.find((r) => r.id === recipient);
   const interestLabels = interestsParam.split(",").map((id) => INTERESTS.find((i) => i.id === id)).filter(Boolean);
+  const occasionLabel = occasion ? OCCASIONS.find((o) => o.id === occasion) : null;
 
   useEffect(() => {
     if (!recipient) { router.push("/"); return; }
@@ -130,28 +252,54 @@ function FindContent() {
     const params = new URLSearchParams({ for: recipient });
     if (interestsParam) params.set("interests", interestsParam);
     if (budgetParam) params.set("budget", budgetParam);
+    if (occasion) params.set("occasion", occasion);
     fetch(`/api/gifts?${params}`)
       .then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); })
       .then((data) => { setResult(data); setLoading(false); })
       .catch(() => { setError(true); setLoading(false); });
-  }, [recipient, interestsParam, budgetParam, router]);
+  }, [recipient, interestsParam, budgetParam, occasion, router]);
+
+  async function handleShare() {
+    const url = window.location.href;
+    const title = `${occasionLabel ? occasionLabel.emoji + " " : ""}Gifts for ${recipientLabel?.label}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title, text: "Found some great gift ideas on GiftButler!", url });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   function handleCheckPrice(productName: string) {
     router.push(`/results?q=${encodeURIComponent(productName)}`);
   }
+
+  // Best Pick: product with highest discount %, fallback to first product
+  const bestPick = result?.products.length
+    ? [...result.products].sort((a, b) => {
+        const savA = a.originalPrice && a.originalPrice > a.price ? (a.originalPrice - a.price) / a.originalPrice : 0;
+        const savB = b.originalPrice && b.originalPrice > b.price ? (b.originalPrice - b.price) / b.originalPrice : 0;
+        return savB - savA;
+      })[0]
+    : null;
+
+  const otherProducts = result?.products.filter((p) => p.id !== bestPick?.id) ?? [];
 
   return (
     <main className="min-h-screen px-4 py-6 max-w-2xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/")} className="text-2xl hover:scale-110 transition-transform" aria-label="Home">
+        <button onClick={() => router.push("/")} className="text-2xl hover:scale-110 transition-transform flex-shrink-0" aria-label="Home">
           🎁
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {recipientLabel && (
-            <h1 className="text-base font-bold text-stone-900">
-              {recipientLabel.emoji} Gifts for {recipientLabel.label}
+            <h1 className="text-base font-bold text-stone-900 truncate">
+              {occasionLabel ? `${occasionLabel.emoji} ` : ""}{recipientLabel.emoji} Gifts for {recipientLabel.label}
               {budgetParam ? ` · Under $${budgetParam}` : ""}
             </h1>
           )}
@@ -159,7 +307,13 @@ function FindContent() {
             <p className="text-xs text-stone-400">{interestLabels.map((i) => i?.label).join(" · ")}</p>
           )}
         </div>
-        <button onClick={() => router.push("/")} className="text-xs text-stone-400 hover:text-stone-600 underline whitespace-nowrap">
+        <button
+          onClick={handleShare}
+          className="text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-lg px-3 py-1.5 hover:bg-stone-50 transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          {copied ? "✓ Copied!" : "Share"}
+        </button>
+        <button onClick={() => router.push("/")} className="text-xs text-stone-400 hover:text-stone-600 underline whitespace-nowrap flex-shrink-0">
           Start over
         </button>
       </div>
@@ -177,7 +331,7 @@ function FindContent() {
         <div className="text-center py-16">
           <div className="text-4xl mb-4">😕</div>
           <p className="font-semibold text-stone-700 mb-2">Something went wrong</p>
-          <p className="text-sm text-stone-400 mb-6">We couldn't load gift ideas right now. Try again.</p>
+          <p className="text-sm text-stone-400 mb-6">We couldn&apos;t load gift ideas right now. Try again.</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => { setLoading(true); setError(false); window.location.reload(); }}
@@ -201,14 +355,23 @@ function FindContent() {
                 <span className="text-stone-700 font-medium">{result.products.length} gift ideas</span> found across {[...new Set(result.products.map(p => p.source))].join(", ")}.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {result.products.map((product) => (
-                  <GiftCard key={product.id} product={product} onCheckPrice={handleCheckPrice} />
-                ))}
-              </div>
+              {/* Best Pick */}
+              {bestPick && <BestPickCard product={bestPick} onCheckPrice={handleCheckPrice} />}
+
+              {/* Remaining products */}
+              {otherProducts.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {otherProducts.map((product) => (
+                    <GiftCard key={product.id} product={product} onCheckPrice={handleCheckPrice} />
+                  ))}
+                </div>
+              )}
+
+              {/* Email capture */}
+              <EmailCapture />
 
               {/* Browse more on Amazon / Walmart */}
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <a
                   href={result.amazonUrl}
                   target="_blank"
@@ -269,8 +432,11 @@ export default function FindPage() {
           <div className="text-2xl">🎁</div>
           <div className="h-5 w-48 bg-stone-100 rounded-full animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-pulse">
-          {[...Array(6)].map((_, i) => <div key={i} className="h-64 bg-stone-100 rounded-2xl" />)}
+        <div className="flex flex-col gap-4 animate-pulse">
+          <div className="h-36 bg-amber-50 rounded-2xl border-2 border-amber-100" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-64 bg-stone-100 rounded-2xl" />)}
+          </div>
         </div>
       </main>
     }>

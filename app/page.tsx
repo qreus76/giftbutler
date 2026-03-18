@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RECIPIENTS, INTERESTS, BUDGETS, type Recipient, type Interest } from "@/lib/giftQueries";
+import { RECIPIENTS, INTERESTS, BUDGETS, OCCASIONS, type Recipient, type Interest, type Occasion } from "@/lib/giftQueries";
 
 type Mode = "gift" | "search";
 
@@ -14,6 +14,7 @@ export default function Home() {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [budget, setBudget] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [occasion, setOccasion] = useState<Occasion | null>(null);
 
   function toggleInterest(id: Interest) {
     setInterests((prev) =>
@@ -26,6 +27,7 @@ export default function Home() {
     const params = new URLSearchParams({ for: recipient });
     if (interests.length) params.set("interests", interests.join(","));
     if (budget) params.set("budget", String(budget));
+    if (occasion) params.set("occasion", occasion);
     router.push(`/find?${params.toString()}`);
   }
 
@@ -132,9 +134,22 @@ export default function Home() {
             </div>
           )}
 
-          {/* Step 3 — Budget */}
+          {/* Step 3 — Occasion + Budget */}
           {step === 3 && (
             <div>
+              <h2 className="text-xl font-bold text-stone-900 text-center mb-2">What&apos;s the occasion?</h2>
+              <p className="text-stone-400 text-sm text-center mb-4">Optional — helps us find more relevant gifts.</p>
+              <div className="flex flex-wrap justify-center gap-2 mb-8">
+                {OCCASIONS.map((o) => (
+                  <button
+                    key={o.id}
+                    onClick={() => setOccasion(occasion === o.id ? null : o.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold border-2 transition-all ${occasion === o.id ? "border-amber-400 bg-amber-50 text-stone-900" : "border-stone-200 bg-white text-stone-600 hover:border-amber-300"}`}
+                  >
+                    {o.emoji} {o.label}
+                  </button>
+                ))}
+              </div>
               <h2 className="text-xl font-bold text-stone-900 text-center mb-2">What&apos;s your budget?</h2>
               <p className="text-stone-400 text-sm text-center mb-6">We&apos;ll find the best deals in your range.</p>
               <div className="flex flex-col gap-3 mb-8">
