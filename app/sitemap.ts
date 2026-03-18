@@ -8,6 +8,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const static_pages: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: "weekly", priority: 1.0 },
     { url: `${base}/explore`, changeFrequency: "hourly", priority: 0.8 },
+    { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   // All public profiles

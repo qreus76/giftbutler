@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 
 interface GiftRecommendation {
@@ -50,6 +51,8 @@ interface Props {
 
 export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, avatarUrl }: Props) {
   const router = useRouter();
+  const { user } = useUser();
+  const isOwner = !!user && user.id === initialProfile.id;
 
   const [profile] = useState<Profile>(initialProfile);
   const [hints] = useState<Hint[]>(initialHints);
@@ -66,10 +69,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [myClaims, setMyClaims] = useState<string[]>([]);
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
 
-  // Record visit client-side (SSR page doesn't block on this)
+  // Record visit client-side — skip if the profile owner is viewing
   useEffect(() => {
-    fetch(`/api/profile/${username}`);
-  }, [username]);
+    if (!isOwner) fetch(`/api/profile/${username}`);
+  }, [username, isOwner]);
 
   // Restore recommendations from sessionStorage on mount
   useEffect(() => {
@@ -141,9 +144,15 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* Nav */}
       <nav className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-white">
         <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
-        <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
-          Create yours free →
-        </a>
+        {isOwner ? (
+          <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+            My dashboard →
+          </a>
+        ) : (
+          <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+            Create yours free →
+          </a>
+        )}
       </nav>
 
       <div className="max-w-xl mx-auto px-4 py-8">

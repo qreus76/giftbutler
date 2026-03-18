@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
                   Add more hints →
                 </a>
                 <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0;">
-                  GiftButler · Free forever · <a href="${dashboardUrl}" style="color: #a8a29e;">Manage my profile</a>
+                  GiftButler · Free forever · <a href="${dashboardUrl}" style="color: #a8a29e;">Manage my profile</a><br/>
+                  To stop these notifications, email <a href="mailto:privacy@giftbutler.io" style="color: #a8a29e;">privacy@giftbutler.io</a>
                 </p>
               </div>
             `,

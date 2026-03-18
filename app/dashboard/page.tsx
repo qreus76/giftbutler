@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const [newHint, setNewHint] = useState("");
   const [category, setCategory] = useState("general");
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState("");
   const [copied, setCopied] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,15 +74,22 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!newHint.trim()) return;
     setAdding(true);
-    const res = await fetch("/api/hints", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newHint.trim(), category }),
-    });
-    const hint = await res.json();
-    setHints([hint, ...hints]);
-    setNewHint("");
-    setAdding(false);
+    setAddError("");
+    try {
+      const res = await fetch("/api/hints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newHint.trim(), category }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add hint");
+      setHints([data, ...hints]);
+      setNewHint("");
+    } catch (e: unknown) {
+      setAddError(e instanceof Error ? e.message : "Failed to add — try again");
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function deleteHint(id: string) {
@@ -325,21 +333,34 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          <form onSubmit={addHint} className="flex gap-2">
-            <input
-              value={newHint}
-              onChange={(e) => setNewHint(e.target.value)}
-              maxLength={280}
-              placeholder={CATEGORIES.find(c => c.id === category)?.placeholder || "Add a hint..."}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            <button
-              type="submit"
-              disabled={!newHint.trim() || adding}
-              className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 text-stone-900 font-semibold rounded-xl text-sm transition-colors whitespace-nowrap"
-            >
-              {adding ? "..." : "Add"}
-            </button>
+          <form onSubmit={addHint} className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                value={newHint}
+                onChange={(e) => setNewHint(e.target.value)}
+                maxLength={280}
+                placeholder={CATEGORIES.find(c => c.id === category)?.placeholder || "Add a hint..."}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <button
+                type="submit"
+                disabled={!newHint.trim() || adding}
+                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 text-stone-900 font-semibold rounded-xl text-sm transition-colors whitespace-nowrap"
+              >
+                {adding ? "..." : "Add"}
+              </button>
+            </div>
+            <div className="flex items-center justify-between px-1">
+              {addError
+                ? <p className="text-red-500 text-xs">{addError}</p>
+                : <span />
+              }
+              {newHint.length > 0 && (
+                <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
+                  {280 - newHint.length} left
+                </p>
+              )}
+            </div>
           </form>
         </div>
 
