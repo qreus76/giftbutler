@@ -21,14 +21,13 @@ export default async function Home() {
       <nav className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
         <span className="text-xl font-bold text-stone-900">GiftButler</span>
         <div className="flex items-center gap-3">
-          <Link href="/explore" className="text-sm text-stone-500 hover:text-stone-900 transition-colors hidden sm:block">Explore</Link>
           {!isSignedIn ? (
             <>
-              <Link href="/sign-in" className="text-sm text-stone-500 hover:text-stone-900 transition-colors">Sign in</Link>
-              <Link href="/sign-up" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">Get started free</Link>
+              <Link href="/sign-in" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">Sign in</Link>
+              <Link href="/sign-up" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">Get started free →</Link>
             </>
           ) : (
-            <Link href="/dashboard" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">My profile</Link>
+            <Link href="/dashboard" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">My profile →</Link>
           )}
         </div>
       </nav>
@@ -40,16 +39,17 @@ export default async function Home() {
             {profileCount.toLocaleString()} gift profiles created · Free forever
           </div>
         )}
-        <h1 className="text-5xl font-bold text-stone-900 leading-tight mb-6">
+        <h1 className="text-5xl font-bold text-stone-900 leading-tight mb-4">
           Stop answering<br />&ldquo;what do you want?&rdquo;
         </h1>
-        <p className="text-xl text-stone-500 mb-10 leading-relaxed">
-          Drop hints about your life. Share your link.<br />
-          The people who love you will always know exactly what to get.
+        <p className="text-xl text-stone-500 mb-3 leading-relaxed">
+          Create a free gift profile. Drop hints about what you love.<br />
+          Share your link — and the people who love you will always know exactly what to get.
         </p>
+        <p className="text-sm text-amber-600 font-semibold mb-8">It takes 2 minutes. Free forever.</p>
         {!isSignedIn ? (
           <Link href="/sign-up" className="inline-block px-8 py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-lg transition-colors shadow-sm">
-            Create your free profile →
+            Create my free profile →
           </Link>
         ) : (
           <Link href="/dashboard" className="inline-block px-8 py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-lg transition-colors shadow-sm">
