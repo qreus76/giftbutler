@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
   if (!username || username.length < 2) {
     return NextResponse.json({ error: "Username must be at least 2 characters" }, { status: 400 });
   }
+  if (username.length > 30) {
+    return NextResponse.json({ error: "Username must be 30 characters or less" }, { status: 400 });
+  }
+  if (!/^[a-z0-9_]+$/.test(username.toLowerCase())) {
+    return NextResponse.json({ error: "Username can only contain letters, numbers, and underscores" }, { status: 400 });
+  }
 
   if (RESERVED_USERNAMES.has(username.toLowerCase())) {
     return NextResponse.json({ error: "That username is reserved — try another" }, { status: 400 });

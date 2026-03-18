@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const metadata: Metadata = {
@@ -10,6 +11,9 @@ export const metadata: Metadata = {
 export const revalidate = 60; // refresh every 60 seconds
 
 export default async function ExplorePage() {
+  const { userId } = await auth();
+  const isSignedIn = !!userId;
+
   // Get profiles with at least 1 hint, ordered by hint count
   const { data: profiles } = await supabaseAdmin
     .from("profiles")
@@ -54,9 +58,15 @@ export default async function ExplorePage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto border-b border-stone-100">
         <Link href="/" className="text-xl font-bold text-stone-900">GiftButler</Link>
-        <Link href="/sign-up" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
-          Create my profile →
-        </Link>
+        {isSignedIn ? (
+          <Link href="/dashboard" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
+            My profile →
+          </Link>
+        ) : (
+          <Link href="/sign-up" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
+            Create my profile →
+          </Link>
+        )}
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-10">

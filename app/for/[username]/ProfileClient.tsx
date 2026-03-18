@@ -117,13 +117,23 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   }
 
   function claimGift(title: string) {
-    setMyClaims([...myClaims, title]);
+    const newClaims = [...myClaims, title];
+    setMyClaims(newClaims);
     setExistingClaims([...existingClaims, { description: title.toLowerCase(), occasion: occasion || null }]);
+    // Persist updated claims to sessionStorage
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, myClaims: newClaims }));
+      }
+    } catch { /* sessionStorage unavailable */ }
+    // Fire and forget with silent error handling
     fetch("/api/claims", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }),
-    });
+    }).catch(() => { /* silent fail — optimistic UI already updated */ });
   }
 
   // A gift is "already claimed" if same title AND (no occasion specified OR occasions match)
@@ -193,7 +203,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         </div>
 
         {/* Find a gift button */}
-        {!showFinder && (
+        {!showFinder && recommendations.length === 0 && (
           <div className="mb-6">
             <button
               onClick={() => setShowFinder(true)}

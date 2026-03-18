@@ -26,6 +26,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { recipient_username, gift_description, occasion } = await req.json();
 
+  if (!recipient_username || !gift_description?.trim()) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+  if (gift_description.trim().length > 300) {
+    return NextResponse.json({ error: "Gift description too long" }, { status: 400 });
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, name, username")
