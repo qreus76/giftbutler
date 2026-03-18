@@ -8,6 +8,9 @@ const geist = Geist({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
   description: "Drop hints about your life. Share your link. Get gifts you actually want.",
+  icons: {
+    icon: { url: "/favicon.svg", type: "image/svg+xml" },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
