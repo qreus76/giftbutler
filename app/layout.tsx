@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
   description: "Drop hints about your life. Share your link. Get gifts you actually want.",
   icons: {
-    apple: "/logo.png",
+    icon: { url: "/logo.png", type: "image/png" },
+    apple: { url: "/logo.png", type: "image/png" },
   },
 };
 
