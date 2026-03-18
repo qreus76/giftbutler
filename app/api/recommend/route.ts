@@ -30,11 +30,23 @@ export async function POST(req: NextRequest) {
   const name = profile.name || username;
   const occasionText = occasion ? ` for their ${occasion}` : "";
 
+  let birthdayContext = "";
+  if (profile.birthday) {
+    const bday = new Date(profile.birthday);
+    const today = new Date();
+    const next = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+    if (next < today) next.setFullYear(today.getFullYear() + 1);
+    const daysUntil = Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntil <= 60) {
+      birthdayContext = `\nBIRTHDAY: ${daysUntil === 0 ? "Today!" : `In ${daysUntil} days`} — factor urgency/relevance into recommendations.`;
+    }
+  }
+
   const prompt = `You are GiftButler, an expert gift recommendation AI. You need to find the perfect gift${occasionText}.
 
 RECIPIENT: ${name}
 RELATIONSHIP TO BUYER: ${relationship}
-BUDGET: ${budget}
+BUDGET: ${budget}${birthdayContext}
 
 THEIR HINTS (things they've shared about their life, interests, and wishes):
 ${hintsText}

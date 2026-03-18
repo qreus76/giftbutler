@@ -8,6 +8,7 @@ export default function EditProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -17,6 +18,7 @@ export default function EditProfilePage() {
       if (data.profile) {
         setName(data.profile.name || "");
         setBio(data.profile.bio || "");
+        setBirthday(data.profile.birthday || "");
       }
       setLoading(false);
     });
@@ -28,7 +30,7 @@ export default function EditProfilePage() {
     await fetch("/api/profile/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), bio: bio.trim() }),
+      body: JSON.stringify({ name: name.trim(), bio: bio.trim(), birthday: birthday || null }),
     });
     setSaving(false);
     setSaved(true);
@@ -71,6 +73,16 @@ export default function EditProfilePage() {
               placeholder="A little about you..."
               rows={3}
               className="w-full text-stone-900 text-sm focus:outline-none resize-none placeholder-stone-400"
+            />
+          </div>
+
+          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+            <label className="text-xs font-semibold text-stone-500 mb-2 block">Birthday <span className="text-stone-300 font-normal">(optional — helps people know when to shop)</span></label>
+            <input
+              type="date"
+              value={birthday}
+              onChange={e => setBirthday(e.target.value)}
+              className="w-full text-stone-900 text-sm focus:outline-none"
             />
           </div>
 
