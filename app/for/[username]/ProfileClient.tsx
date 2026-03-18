@@ -51,7 +51,7 @@ interface Props {
 
 export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, avatarUrl }: Props) {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const isOwner = !!user && user.id === initialProfile.id;
 
   const [profile] = useState<Profile>(initialProfile);
@@ -69,10 +69,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [myClaims, setMyClaims] = useState<string[]>([]);
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
 
-  // Record visit client-side — skip if the profile owner is viewing
+  // Record visit client-side — wait until auth is known, skip if owner
   useEffect(() => {
+    if (!isLoaded) return;
     if (!isOwner) fetch(`/api/profile/${username}`);
-  }, [username, isOwner]);
+  }, [username, isOwner, isLoaded]);
 
   // Restore recommendations from sessionStorage on mount
   useEffect(() => {

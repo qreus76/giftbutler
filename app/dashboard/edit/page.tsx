@@ -89,6 +89,7 @@ export default function EditProfilePage() {
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Your name"
+              maxLength={60}
               className="w-full text-stone-900 text-sm focus:outline-none placeholder-stone-400"
             />
           </div>
@@ -116,6 +117,7 @@ export default function EditProfilePage() {
               onChange={e => setBio(e.target.value)}
               placeholder="A little about you..."
               rows={3}
+              maxLength={160}
               className="w-full text-stone-900 text-sm focus:outline-none resize-none placeholder-stone-400"
             />
           </div>

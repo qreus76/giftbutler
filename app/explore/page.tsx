@@ -8,8 +8,6 @@ export const metadata: Metadata = {
   description: "Browse GiftButler profiles and find the perfect gift for someone you love.",
 };
 
-export const revalidate = 60; // refresh every 60 seconds
-
 export default async function ExplorePage() {
   const { userId } = await auth();
   const isSignedIn = !!userId;

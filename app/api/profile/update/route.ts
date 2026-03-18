@@ -15,6 +15,13 @@ export async function POST(req: NextRequest) {
 
   const { name, bio, birthday, username } = await req.json();
 
+  if (name && name.trim().length > 60) {
+    return NextResponse.json({ error: "Name must be 60 characters or less" }, { status: 400 });
+  }
+  if (bio && bio.trim().length > 160) {
+    return NextResponse.json({ error: "Bio must be 160 characters or less" }, { status: 400 });
+  }
+
   const updates: Record<string, string | null> = {
     name: name || null,
     bio: bio || null,
