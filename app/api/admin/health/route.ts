@@ -37,15 +37,14 @@ async function checkResend(): Promise<{ ok: boolean; latency: number; message: s
   if (!key) return { ok: false, latency: 0, message: "RESEND_API_KEY not set" };
   const start = Date.now();
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/domains", {
       method: "GET",
       headers: { Authorization: `Bearer ${key}` },
     });
     const latency = Date.now() - start;
-    // 405 Method Not Allowed = key is valid but GET isn't supported — that's fine
-    if (res.status === 200 || res.status === 405) return { ok: true, latency, message: "Connected" };
-    if (res.status === 401) return { ok: false, latency, message: "Invalid API key" };
-    return { ok: true, latency, message: `HTTP ${res.status}` };
+    if (res.status === 200) return { ok: true, latency, message: "Connected" };
+    if (res.status === 401 || res.status === 403) return { ok: false, latency, message: "Invalid API key" };
+    return { ok: false, latency, message: `HTTP ${res.status}` };
   } catch (e) {
     return { ok: false, latency: Date.now() - start, message: String(e) };
   }
