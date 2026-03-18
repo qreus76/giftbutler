@@ -89,11 +89,22 @@ export default function DashboardPage() {
     setHints(hints.filter((h) => h.id !== id));
   }
 
-  function copyLink() {
+  async function copyLink() {
     if (!profile) return;
-    navigator.clipboard.writeText(`${window.location.origin}/for/${profile.username}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const url = `${window.location.origin}/for/${profile.username}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${profile.name || profile.username}'s gift profile`,
+          text: "Here's what I actually want — no more guessing!",
+          url,
+        });
+      } catch { /* user cancelled */ }
+    } else {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   function copyMessage(msg: string) {

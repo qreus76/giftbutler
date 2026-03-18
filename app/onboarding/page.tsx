@@ -92,10 +92,20 @@ export default function OnboardingPage() {
     }
   }
 
-  function copyLink() {
-    navigator.clipboard.writeText(profileUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copyLink() {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "My GiftButler profile",
+          text: "Here's what I actually want — no more guessing!",
+          url: profileUrl,
+        });
+      } catch { /* user cancelled */ }
+    } else {
+      navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   // Profile live! share screen
