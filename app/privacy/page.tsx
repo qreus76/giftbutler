@@ -71,8 +71,9 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      <footer className="border-t border-stone-100 py-6 text-center text-stone-400 text-sm mt-8">
+      <footer className="border-t border-stone-100 py-6 text-center text-stone-400 text-sm mt-8 space-x-4">
         <Link href="/" className="hover:text-stone-600">← Back to GiftButler</Link>
+        <Link href="/terms" className="hover:text-stone-600 underline">Terms of Service</Link>
       </footer>
     </main>
   );

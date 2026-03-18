@@ -152,12 +152,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Find a gift button */}
         {!showFinder && (
-          <button
-            onClick={() => setShowFinder(true)}
-            className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-base transition-colors mb-6 shadow-sm"
-          >
-            Find the perfect gift for {displayName} →
-          </button>
+          <div className="mb-6">
+            <button
+              onClick={() => setShowFinder(true)}
+              className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-base transition-colors shadow-sm"
+            >
+              Find the perfect gift for {displayName} →
+            </button>
+            {hintsToShow.length === 0 && (
+              <p className="text-center text-xs text-stone-400 mt-2">
+                {displayName} hasn&apos;t added hints yet — we&apos;ll suggest based on your relationship and budget.
+              </p>
+            )}
+          </div>
         )}
 
         {/* Gift finder */}
@@ -334,6 +341,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           <p className="text-xs text-stone-300">
             As an Amazon Associate, GiftButler earns from qualifying purchases.{" "}
             <a href="/privacy" className="hover:text-stone-400 underline">Privacy</a>
+            {" "}·{" "}
+            <a href="/terms" className="hover:text-stone-400 underline">Terms</a>
           </p>
         </div>
       </div>

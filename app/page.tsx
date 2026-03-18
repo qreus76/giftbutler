@@ -198,6 +198,8 @@ export default async function Home() {
         <p className="text-xs text-stone-300">
           As an Amazon Associate, GiftButler earns from qualifying purchases. ·{" "}
           <Link href="/privacy" className="hover:text-stone-400 underline">Privacy Policy</Link>
+          {" "}·{" "}
+          <Link href="/terms" className="hover:text-stone-400 underline">Terms</Link>
         </p>
       </footer>
     </main>
