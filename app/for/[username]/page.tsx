@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ProfileClient from "./ProfileClient";
 
@@ -15,8 +16,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq("username", username)
     .single();
 
-  const name = profile?.name || username;
-  const description = profile?.bio
+  if (!profile) return { title: "Profile not found — GiftButler" };
+
+  const name = profile.name || username;
+  const description = profile.bio
     ? `${name} has shared hints about what they love. Find the perfect gift — personalized by AI.`
     : `Find the perfect gift for ${name}. They've left hints about their interests and wishes.`;
 
@@ -37,6 +40,37 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ProfilePage() {
-  return <ProfileClient />;
+export default async function ProfilePage({ params }: Props) {
+  const { username } = await params;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (!profile) notFound();
+
+  const [hintsRes, claimsRes] = await Promise.all([
+    supabase
+      .from("hints")
+      .select("*")
+      .eq("user_id", profile.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("claims")
+      .select("gift_description")
+      .eq("recipient_user_id", profile.id),
+  ]);
+
+  const claims = (claimsRes.data || []).map(c => c.gift_description.toLowerCase());
+
+  return (
+    <ProfileClient
+      username={username}
+      initialProfile={profile}
+      initialHints={hintsRes.data || []}
+      initialClaims={claims}
+    />
+  );
 }

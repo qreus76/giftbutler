@@ -21,6 +21,7 @@ export default async function Home() {
       <nav className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
         <span className="text-xl font-bold text-stone-900">GiftButler</span>
         <div className="flex items-center gap-3">
+          <Link href="/explore" className="text-sm text-stone-500 hover:text-stone-900 transition-colors hidden sm:block">Explore</Link>
           {!isSignedIn ? (
             <>
               <Link href="/sign-in" className="text-sm text-stone-500 hover:text-stone-900 transition-colors">Sign in</Link>

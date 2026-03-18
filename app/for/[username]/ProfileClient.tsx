@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Profile, Hint } from "@/lib/supabase";
 
@@ -29,14 +29,18 @@ function getDaysUntilBirthday(birthday: string): number | null {
   return diff;
 }
 
-export default function ProfileClient() {
-  const { username } = useParams<{ username: string }>();
+interface Props {
+  username: string;
+  initialProfile: Profile;
+  initialHints: Hint[];
+  initialClaims: string[];
+}
+
+export default function ProfileClient({ username, initialProfile, initialHints, initialClaims }: Props) {
   const router = useRouter();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [hints, setHints] = useState<Hint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [profile] = useState<Profile>(initialProfile);
+  const [hints] = useState<Hint[]>(initialHints);
 
   // Gift finder state
   const [showFinder, setShowFinder] = useState(false);
@@ -46,20 +50,11 @@ export default function ProfileClient() {
   const [generating, setGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState<GiftRecommendation[]>([]);
   const [myClaims, setMyClaims] = useState<string[]>([]);
-  const [existingClaims, setExistingClaims] = useState<string[]>([]);
+  const [existingClaims, setExistingClaims] = useState<string[]>(initialClaims);
 
+  // Record the visit client-side so we don't block SSR
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/profile/${username}`).then(r => r.json()),
-      fetch(`/api/claims?username=${username}`).then(r => r.json()),
-    ]).then(([profileData, claimsData]) => {
-      if (profileData.error) { setNotFound(true); }
-      else { setProfile(profileData.profile); setHints(profileData.hints); }
-      if (claimsData.claims) {
-        setExistingClaims(claimsData.claims.map((c: { gift_description: string }) => c.gift_description.toLowerCase()));
-      }
-      setLoading(false);
-    });
+    fetch(`/api/profile/${username}`);
   }, [username]);
 
   async function generateGifts() {
@@ -90,29 +85,10 @@ export default function ProfileClient() {
     return existingClaims.includes(title.toLowerCase());
   }
 
-  if (loading) return (
-    <main className="min-h-screen bg-stone-50 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-    </main>
-  );
-
-  if (notFound) return (
-    <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-      <div className="text-center">
-        <p className="text-4xl mb-4">🤷</p>
-        <h1 className="text-xl font-bold text-stone-900 mb-2">Profile not found</h1>
-        <p className="text-stone-400 text-sm mb-6">This GiftButler profile doesn&apos;t exist yet.</p>
-        <button onClick={() => router.push("/")} className="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-2xl text-sm transition-colors">
-          Create your own profile →
-        </button>
-      </div>
-    </main>
-  );
-
   const hintsToShow = hints.filter(h => h.category !== "avoid");
   const avoidHints = hints.filter(h => h.category === "avoid");
-  const daysUntilBirthday = profile?.birthday ? getDaysUntilBirthday(profile.birthday) : null;
-  const displayName = profile?.name || username;
+  const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
+  const displayName = profile.name || username;
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -138,11 +114,11 @@ export default function ProfileClient() {
         {/* Profile header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-amber-400 rounded-full flex items-center justify-center text-2xl font-bold text-stone-900 mx-auto mb-3">
-            {profile?.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
+            {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
           </div>
           <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
           <p className="text-stone-400 text-sm">@{username}</p>
-          {profile?.bio && <p className="text-stone-600 text-sm mt-2">{profile.bio}</p>}
+          {profile.bio && <p className="text-stone-600 text-sm mt-2">{profile.bio}</p>}
         </div>
 
         {/* Find a gift button */}
@@ -255,7 +231,7 @@ export default function ProfileClient() {
                         disabled={iMineThis || alreadyClaimed}
                         className="px-3 py-2 border border-stone-200 text-stone-500 text-xs font-semibold rounded-xl hover:bg-stone-50 disabled:bg-green-50 disabled:text-green-600 disabled:border-green-200 transition-colors whitespace-nowrap"
                       >
-                        {iMineThis ? "✓ You&apos;re getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
+                        {iMineThis ? "✓ You're getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
                       </button>
                     </div>
                   </div>
@@ -314,6 +290,12 @@ export default function ProfileClient() {
           </a>
         </div>
 
+        {/* Back link */}
+        <div className="mt-6 text-center">
+          <button onClick={() => router.push("/")} className="text-xs text-stone-400 hover:text-stone-600">
+            ← giftbutler.io
+          </button>
+        </div>
       </div>
     </main>
   );

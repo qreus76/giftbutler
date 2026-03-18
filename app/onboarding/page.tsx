@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { Copy, Check } from "lucide-react";
 
 const QUIZ_STEPS = [
   {
@@ -45,11 +46,15 @@ export default function OnboardingPage() {
   const [username, setUsername] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const isQuiz = step < QUIZ_STEPS.length;
   const currentQuiz = QUIZ_STEPS[step];
   const [customAnswer, setCustomAnswer] = useState("");
   const [showCustom, setShowCustom] = useState(false);
+
+  const profileUrl = `https://giftbutler.io/for/${username}`;
 
   function handleAnswer(value: string) {
     const newAnswers = [...answers, value];
@@ -80,11 +85,73 @@ export default function OnboardingPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      router.push("/dashboard");
+      setDone(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setSaving(false);
     }
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(profileUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  // Profile live! share screen
+  if (done) {
+    const shareMessages = [
+      `My birthday is coming up — here's what I actually want: ${profileUrl}`,
+      `Tired of getting asked "what do you want?" — here's my answer: ${profileUrl}`,
+    ];
+
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-stone-900 mb-2">Your profile is live!</h2>
+          <p className="text-stone-400 text-sm mb-8">Share your link — that&apos;s when the magic happens.</p>
+
+          {/* Link copy box */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
+            <p className="text-stone-700 font-medium text-sm truncate">giftbutler.io/for/{username}</p>
+            <button
+              onClick={copyLink}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors flex-shrink-0"
+            >
+              {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy link</>}
+            </button>
+          </div>
+
+          {/* Pre-written messages */}
+          <div className="flex flex-col gap-2 mb-6">
+            {shareMessages.map((msg, i) => (
+              <button
+                key={i}
+                onClick={() => { navigator.clipboard.writeText(msg); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                className="text-left bg-white border border-stone-200 rounded-xl px-4 py-3 hover:border-amber-300 transition-colors group"
+              >
+                <p className="text-stone-600 text-xs leading-relaxed">{msg}</p>
+                <p className="text-amber-600 text-xs font-semibold mt-1.5 group-hover:text-amber-700">Copy this message →</p>
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors mb-3"
+          >
+            Go to my dashboard →
+          </button>
+          <button
+            onClick={() => window.open(`/for/${username}`, "_blank")}
+            className="text-xs text-stone-400 hover:text-stone-600 underline"
+          >
+            Preview my public profile
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
