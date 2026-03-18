@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || "giftbutler09-20";
@@ -122,6 +122,16 @@ Rules:
   } catch {
     return NextResponse.json({ error: "Failed to parse recommendations" }, { status: 500 });
   }
+
+  // Log this recommendation request (fire and forget)
+  supabaseAdmin.from("recommend_logs").insert({
+    profile_username: username,
+    relationship,
+    budget,
+    occasion: occasion || null,
+  }).then(({ error }) => {
+    if (error) console.error("[recommend_logs] Failed to log:", error.message);
+  });
 
   return NextResponse.json({ recommendations });
 }

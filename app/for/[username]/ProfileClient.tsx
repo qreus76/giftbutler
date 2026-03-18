@@ -59,7 +59,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   // Record visit client-side — wait until auth is known, skip if owner
   useEffect(() => {
     if (!isLoaded) return;
-    if (!isOwner) fetch(`/api/profile/${username}`);
+    if (!isOwner) {
+      const ref = encodeURIComponent(document.referrer || "");
+      fetch(`/api/profile/${username}?ref=${ref}`);
+    }
   }, [username, isOwner, isLoaded]);
 
   // Restore recommendations from sessionStorage on mount

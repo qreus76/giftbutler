@@ -6,6 +6,7 @@ const ADMIN_IDS = (process.env.ADMIN_USER_IDS || "").split(",").map(id => id.tri
 
 const NAV = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/health", label: "Health" },
 ];

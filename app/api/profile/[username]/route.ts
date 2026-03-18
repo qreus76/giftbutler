@@ -28,6 +28,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     || req.headers.get("x-real-ip")
     || "anonymous";
 
+  const referrer = req.nextUrl.searchParams.get("ref") || null;
+
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const { count: recentVisit } = await supabaseAdmin
     .from("profile_visits")
@@ -40,6 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     supabaseAdmin.from("profile_visits").insert({
       profile_user_id: profile.id,
       visitor_session: visitorSession,
+      referrer,
     }).then(async () => {
       // Send email notification (at most once per hour per profile)
       if (!process.env.RESEND_API_KEY) return;
