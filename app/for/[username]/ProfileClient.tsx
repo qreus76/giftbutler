@@ -156,7 +156,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
-          {isOwner ? (
+          {isLoaded && (isOwner ? (
             <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
               My dashboard →
             </a>
@@ -164,7 +164,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
               Create yours free →
             </a>
-          )}
+          ))}
         </div>
       </nav>
 
@@ -378,19 +378,18 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         )}
 
-        {/* CTA for visitors */}
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-          <p className="text-stone-700 font-semibold text-sm mb-1">Want your own GiftButler profile?</p>
-          <p className="text-stone-400 text-xs mb-3">Free forever. Share your link. Get gifts you actually want.</p>
-          <a href="/" className="inline-block px-5 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
-            Create my profile →
-          </a>
-        </div>
+        {/* CTA for signed-out visitors only */}
+        {isLoaded && !user && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+            <p className="text-stone-700 font-semibold text-sm mb-1">Want your own GiftButler profile?</p>
+            <p className="text-stone-400 text-xs mb-3">Free forever. Share your link. Get gifts you actually want.</p>
+            <a href="/sign-up" className="inline-block px-5 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
+              Create my profile →
+            </a>
+          </div>
+        )}
 
         <div className="mt-6 text-center space-y-2">
-          <button onClick={() => router.push("/")} className="text-xs text-stone-400 hover:text-stone-600">
-            ← giftbutler.io
-          </button>
           <p className="text-xs text-stone-300">
             As an Amazon Associate, GiftButler earns from qualifying purchases.{" "}
             <a href="/privacy" className="hover:text-stone-400 underline">Privacy</a>

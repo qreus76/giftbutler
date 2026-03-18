@@ -19,16 +19,19 @@ export default function EditProfilePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/me").then(r => r.json()).then(data => {
-      if (data.profile) {
-        setName(data.profile.name || "");
-        setBio(data.profile.bio || "");
-        setBirthday(data.profile.birthday || "");
-        setUsername(data.profile.username || "");
-        setCurrentUsername(data.profile.username || "");
-      }
-      setLoading(false);
-    });
+    fetch("/api/me")
+      .then(r => r.json())
+      .then(data => {
+        if (data.profile) {
+          setName(data.profile.name || "");
+          setBio(data.profile.bio || "");
+          setBirthday(data.profile.birthday || "");
+          setUsername(data.profile.username || "");
+          setCurrentUsername(data.profile.username || "");
+        }
+      })
+      .catch(() => { /* silent fail — fields stay empty */ })
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleSave(e: React.FormEvent) {

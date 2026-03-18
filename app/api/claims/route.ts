@@ -23,8 +23,14 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ claims: claims || [] });
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export async function POST(req: NextRequest) {
-  const { recipient_username, gift_description, occasion } = await req.json();
+  let body;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
+  const { recipient_username, gift_description, occasion } = body;
 
   if (!recipient_username || !gift_description?.trim()) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -82,7 +88,7 @@ export async function POST(req: NextRequest) {
                 </p>
                 <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
                   <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 4px;">The gift they&apos;re planning:</p>
-                  <p style="color: #1c1917; font-size: 15px; font-weight: 700; margin: 0;">${gift_description}</p>
+                  <p style="color: #1c1917; font-size: 15px; font-weight: 700; margin: 0;">${escapeHtml(gift_description)}</p>
                 </div>
                 <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
                   Add more hints →

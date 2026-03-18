@@ -59,15 +59,20 @@ export default function DashboardPage() {
   }, [user]);
 
   async function loadProfile() {
-    const res = await fetch("/api/me");
-    const data = await res.json();
-    if (data.redirect) { router.push("/onboarding"); return; }
-    setProfile(data.profile);
-    setHints(data.hints);
-    setVisitCount(data.visitCount || 0);
-    setClaimCount(data.claimCount || 0);
-    setRecentVisits(data.recentVisits || []);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if (data.redirect) { router.push("/onboarding"); return; }
+      setProfile(data.profile);
+      setHints(data.hints);
+      setVisitCount(data.visitCount || 0);
+      setClaimCount(data.claimCount || 0);
+      setRecentVisits(data.recentVisits || []);
+    } catch {
+      // silent fail — user sees empty state
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function addHint(e: React.FormEvent) {
@@ -94,8 +99,14 @@ export default function DashboardPage() {
 
   async function deleteHint(id: string) {
     if (!confirm("Delete this hint?")) return;
-    await fetch(`/api/hints/${id}`, { method: "DELETE" });
+    const prev = hints;
     setHints(hints.filter((h) => h.id !== id));
+    try {
+      const res = await fetch(`/api/hints/${id}`, { method: "DELETE" });
+      if (!res.ok) setHints(prev);
+    } catch {
+      setHints(prev);
+    }
   }
 
   async function copyLink() {

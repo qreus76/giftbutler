@@ -13,7 +13,9 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { username, answers } = await req.json();
+  let body;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
+  const { username, answers } = body;
 
   if (!username || username.length < 2) {
     return NextResponse.json({ error: "Username must be at least 2 characters" }, { status: 400 });

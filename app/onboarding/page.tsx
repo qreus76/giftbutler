@@ -48,6 +48,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
 
   const isQuiz = step < QUIZ_STEPS.length;
   const currentQuiz = QUIZ_STEPS[step];
@@ -139,11 +140,11 @@ export default function OnboardingPage() {
             {shareMessages.map((msg, i) => (
               <button
                 key={i}
-                onClick={() => { navigator.clipboard.writeText(msg); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                onClick={() => { navigator.clipboard.writeText(msg); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
                 className="text-left bg-white border border-stone-200 rounded-xl px-4 py-3 hover:border-amber-300 transition-colors group"
               >
                 <p className="text-stone-600 text-xs leading-relaxed">{msg}</p>
-                <p className="text-amber-600 text-xs font-semibold mt-1.5 group-hover:text-amber-700">Copy this message →</p>
+                <p className="text-amber-600 text-xs font-semibold mt-1.5 group-hover:text-amber-700">{copiedMsgIndex === i ? "✓ Copied!" : "Copy this message →"}</p>
               </button>
             ))}
           </div>

@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests — try again later" }, { status: 429 });
   }
 
-  const { username, relationship, budget, occasion } = await req.json();
+  let body;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
+  const { username, relationship, budget, occasion } = body;
   if (!username || !relationship || !budget) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }

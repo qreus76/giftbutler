@@ -8,7 +8,9 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { content, category } = await req.json();
+  let body;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
+  const { content, category } = body;
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 
   if (content.trim().length > MAX_HINT_LENGTH) {
