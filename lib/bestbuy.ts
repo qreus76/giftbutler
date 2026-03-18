@@ -43,9 +43,11 @@ export async function searchBestBuy(
     })
     .filter((p: Record<string, unknown>) => {
       if (!excludeToys) return true;
-      const category = (p.categoryPath as string || "").toLowerCase();
+      const categoryArr = Array.isArray(p.categoryPath)
+        ? (p.categoryPath as Array<{ name: string }>).map((c) => c.name).join(" ").toLowerCase()
+        : String(p.categoryPath || "").toLowerCase();
       const name = (p.name as string || "").toLowerCase();
-      return !ADULT_EXCLUDED_CATEGORIES.some((kw) => category.includes(kw) || name.includes(kw));
+      return !ADULT_EXCLUDED_CATEGORIES.some((kw) => categoryArr.includes(kw) || name.includes(kw));
     })
     .map((p: Record<string, unknown>) => ({
       sku: p.sku,
@@ -55,6 +57,8 @@ export async function searchBestBuy(
       url: p.url as string,
       image: p.image || "",
       onSale: p.onSale || false,
-      categoryPath: p.categoryPath || "",
+      categoryPath: Array.isArray(p.categoryPath)
+        ? (p.categoryPath as Array<{ name: string }>).map((c) => c.name).join(" > ")
+        : String(p.categoryPath || ""),
     }));
 }
