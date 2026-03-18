@@ -15,7 +15,6 @@ export default function OgImage() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#ffffff",
-          padding: "80px",
         }}
       >
         {/* Amber accent bar */}
@@ -27,45 +26,62 @@ export default function OgImage() {
             right: 0,
             height: "8px",
             backgroundColor: "#fbbf24",
+            display: "flex",
           }}
         />
 
+        {/* Center content */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
+            padding: "0 80px",
           }}
         >
           <div
             style={{
               fontSize: "20px",
-              fontWeight: "700",
+              fontWeight: 700,
               color: "#78716c",
               letterSpacing: "0.15em",
               textTransform: "uppercase",
               marginBottom: "24px",
+              display: "flex",
             }}
           >
             GiftButler
           </div>
           <div
             style={{
-              fontSize: "72px",
-              fontWeight: "800",
+              fontSize: "68px",
+              fontWeight: 800,
+              color: "#1c1917",
+              lineHeight: 1.1,
+              marginBottom: "12px",
+              display: "flex",
+            }}
+          >
+            Stop answering
+          </div>
+          <div
+            style={{
+              fontSize: "68px",
+              fontWeight: 800,
               color: "#1c1917",
               lineHeight: 1.1,
               marginBottom: "32px",
+              display: "flex",
             }}
           >
-            Stop answering<br />&ldquo;what do you want?&rdquo;
+            &ldquo;what do you want?&rdquo;
           </div>
           <div
             style={{
               fontSize: "28px",
               color: "#78716c",
-              lineHeight: 1.5,
+              display: "flex",
             }}
           >
             Drop hints. Share your link. Get gifts you actually want.
@@ -79,13 +95,12 @@ export default function OgImage() {
             bottom: "48px",
             display: "flex",
             alignItems: "center",
-            gap: "12px",
             backgroundColor: "#fef3c7",
             borderRadius: "9999px",
-            padding: "10px 24px",
+            padding: "10px 28px",
           }}
         >
-          <span style={{ fontSize: "18px", fontWeight: "700", color: "#92400e" }}>
+          <span style={{ fontSize: "18px", fontWeight: 700, color: "#92400e" }}>
             Free forever · AI-powered · giftbutler.io
           </span>
         </div>

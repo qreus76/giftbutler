@@ -18,7 +18,7 @@ export default async function OgImage({ params }: Props) {
     .single();
 
   const name = profile?.name || username;
-  const bio = profile?.bio || null;
+  const bio = profile?.bio ? (profile.bio.length > 100 ? profile.bio.slice(0, 100) + "…" : profile.bio) : null;
   const initial = name[0]?.toUpperCase() || "?";
 
   return new ImageResponse(
@@ -32,7 +32,6 @@ export default async function OgImage({ params }: Props) {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#ffffff",
-          padding: "80px",
         }}
       >
         {/* Amber accent bar */}
@@ -44,6 +43,7 @@ export default async function OgImage({ params }: Props) {
             right: 0,
             height: "8px",
             backgroundColor: "#fbbf24",
+            display: "flex",
           }}
         />
 
@@ -58,9 +58,9 @@ export default async function OgImage({ params }: Props) {
             alignItems: "center",
             justifyContent: "center",
             fontSize: "56px",
-            fontWeight: "800",
+            fontWeight: 800,
             color: "#1c1917",
-            marginBottom: "32px",
+            marginBottom: "28px",
           }}
         >
           {initial}
@@ -70,10 +70,10 @@ export default async function OgImage({ params }: Props) {
         <div
           style={{
             fontSize: "64px",
-            fontWeight: "800",
+            fontWeight: 800,
             color: "#1c1917",
             marginBottom: "8px",
-            textAlign: "center",
+            display: "flex",
           }}
         >
           {name}
@@ -84,7 +84,8 @@ export default async function OgImage({ params }: Props) {
           style={{
             fontSize: "24px",
             color: "#a8a29e",
-            marginBottom: bio ? "24px" : "0",
+            marginBottom: bio ? "20px" : "0",
+            display: "flex",
           }}
         >
           @{username}
@@ -94,14 +95,14 @@ export default async function OgImage({ params }: Props) {
         {bio && (
           <div
             style={{
-              fontSize: "24px",
+              fontSize: "22px",
               color: "#57534e",
               textAlign: "center",
               maxWidth: "800px",
-              lineHeight: 1.5,
+              display: "flex",
             }}
           >
-            {bio.length > 100 ? bio.slice(0, 100) + "…" : bio}
+            {bio}
           </div>
         )}
 
@@ -117,7 +118,7 @@ export default async function OgImage({ params }: Props) {
             padding: "10px 28px",
           }}
         >
-          <span style={{ fontSize: "20px", fontWeight: "700", color: "#92400e" }}>
+          <span style={{ fontSize: "20px", fontWeight: 700, color: "#92400e" }}>
             Find the perfect gift · GiftButler
           </span>
         </div>
