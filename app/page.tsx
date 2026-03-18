@@ -193,8 +193,12 @@ export default async function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-stone-100 py-6 text-center text-stone-400 text-sm">
-        GiftButler — Free for everyone, always.
+      <footer className="border-t border-stone-100 py-6 text-center text-stone-400 text-sm space-y-1">
+        <p>GiftButler — Free for everyone, always.</p>
+        <p className="text-xs text-stone-300">
+          As an Amazon Associate, GiftButler earns from qualifying purchases. ·{" "}
+          <Link href="/privacy" className="hover:text-stone-400 underline">Privacy Policy</Link>
+        </p>
       </footer>
     </main>
   );

@@ -327,10 +327,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </a>
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <button onClick={() => router.push("/")} className="text-xs text-stone-400 hover:text-stone-600">
             ← giftbutler.io
           </button>
+          <p className="text-xs text-stone-300">
+            As an Amazon Associate, GiftButler earns from qualifying purchases.{" "}
+            <a href="/privacy" className="hover:text-stone-400 underline">Privacy</a>
+          </p>
         </div>
       </div>
     </main>
