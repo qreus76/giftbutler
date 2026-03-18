@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
+import { ArrowLeft, LogOut } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { signOut } = useClerk();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -94,6 +96,14 @@ export default function EditProfilePage() {
             {saved ? "✓ Saved!" : saving ? "Saving..." : "Save changes"}
           </button>
         </form>
+
+        <button
+          onClick={() => signOut(() => router.push("/"))}
+          className="mt-6 w-full flex items-center justify-center gap-2 py-3 border border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200 font-semibold rounded-2xl text-sm transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign out
+        </button>
       </div>
     </main>
   );
