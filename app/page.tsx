@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { MessageCircle, Link2, Gift } from "lucide-react";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -48,17 +49,23 @@ export default async function Home() {
       <section className="max-w-4xl mx-auto px-6 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-stone-50 rounded-2xl p-6">
-            <div className="text-3xl mb-3">💬</div>
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+              <MessageCircle className="w-5 h-5 text-amber-600" />
+            </div>
             <h3 className="font-bold text-stone-900 mb-2">Drop hints</h3>
             <p className="text-stone-500 text-sm leading-relaxed">Tell GiftButler what you&apos;re into, dreaming about, or need. As casual as texting a friend.</p>
           </div>
           <div className="bg-stone-50 rounded-2xl p-6">
-            <div className="text-3xl mb-3">🔗</div>
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+              <Link2 className="w-5 h-5 text-amber-600" />
+            </div>
             <h3 className="font-bold text-stone-900 mb-2">Share your link</h3>
             <p className="text-stone-500 text-sm leading-relaxed">When someone asks &ldquo;what do you want?&rdquo; — send them your GiftButler link. Done.</p>
           </div>
           <div className="bg-stone-50 rounded-2xl p-6">
-            <div className="text-3xl mb-3">🎁</div>
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+              <Gift className="w-5 h-5 text-amber-600" />
+            </div>
             <h3 className="font-bold text-stone-900 mb-2">Get perfect gifts</h3>
             <p className="text-stone-500 text-sm leading-relaxed">The AI reads your hints and gives buyers specific, thoughtful ideas. No more generic gifts.</p>
           </div>
