@@ -40,5 +40,11 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  return NextResponse.json({ profile, hints: hints || [], visitCount: visitCount || 0, recentVisits: recentVisits || [] });
+  // Gift claims count
+  const { count: claimCount } = await supabaseAdmin
+    .from("claims")
+    .select("*", { count: "exact", head: true })
+    .eq("recipient_user_id", userId);
+
+  return NextResponse.json({ profile, hints: hints || [], visitCount: visitCount || 0, recentVisits: recentVisits || [], claimCount: claimCount || 0 });
 }

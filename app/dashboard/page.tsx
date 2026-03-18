@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [hints, setHints] = useState<Hint[]>([]);
   const [visitCount, setVisitCount] = useState(0);
+  const [claimCount, setClaimCount] = useState(0);
   const [recentVisits, setRecentVisits] = useState<{ created_at: string }[]>([]);
   const [newHint, setNewHint] = useState("");
   const [category, setCategory] = useState("general");
@@ -62,6 +63,7 @@ export default function DashboardPage() {
     setProfile(data.profile);
     setHints(data.hints);
     setVisitCount(data.visitCount || 0);
+    setClaimCount(data.claimCount || 0);
     setRecentVisits(data.recentVisits || []);
     setLoading(false);
   }
@@ -180,24 +182,31 @@ export default function DashboardPage() {
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-3 mb-4">
           <button
             onClick={() => setShowVisitors(!showVisitors)}
             className="bg-white border border-stone-200 rounded-2xl p-4 text-left hover:border-stone-300 transition-colors"
           >
-            <div className="flex items-center gap-2 mb-1">
-              <Eye className="w-4 h-4 text-stone-400" />
-              <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Profile views</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Eye className="w-3.5 h-3.5 text-stone-400" />
+              <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Views</span>
             </div>
             <p className="text-2xl font-bold text-stone-900">{visitCount}</p>
-            <p className="text-xs text-stone-400">last 30 days · tap to see</p>
+            <p className="text-xs text-stone-400">30 days</p>
           </button>
           <div className="bg-white border border-stone-200 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 mb-1">
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Hints</span>
             </div>
             <p className="text-2xl font-bold text-stone-900">{hints.length}</p>
-            <p className="text-xs text-stone-400">on your profile</p>
+            <p className="text-xs text-stone-400">on profile</p>
+          </div>
+          <div className={`rounded-2xl p-4 border ${claimCount > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-stone-200"}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Gifts</span>
+            </div>
+            <p className={`text-2xl font-bold ${claimCount > 0 ? "text-amber-600" : "text-stone-900"}`}>{claimCount}</p>
+            <p className="text-xs text-stone-400">claimed</p>
           </div>
         </div>
 

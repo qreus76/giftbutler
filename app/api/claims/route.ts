@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, name, username")
     .eq("username", recipient_username)
     .single();
 
@@ -41,6 +42,57 @@ export async function POST(req: NextRequest) {
     claimer_session: session,
     occasion: occasion || null,
   });
+
+  // Send gift claim notification email (fire and forget)
+  if (process.env.RESEND_API_KEY) {
+    (async () => {
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(profile.id);
+        const email = user.emailAddresses[0]?.emailAddress;
+        if (!email) return;
+
+        const displayName = profile.name || profile.username;
+        const occasionText = occasion ? ` for your ${occasion}` : "";
+        const dashboardUrl = `https://giftbutler.io/dashboard`;
+
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: "GiftButler <notifications@giftbutler.io>",
+            to: [email],
+            subject: `🎁 Someone is planning a gift for you${occasionText}`,
+            html: `
+              <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
+                <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">Someone is getting you a gift 🎁</h1>
+                <p style="color: #78716c; font-size: 15px; margin: 0 0 16px; line-height: 1.6;">
+                  Great news, ${displayName} — someone just claimed a gift from your GiftButler profile${occasionText}.
+                  We won&apos;t spoil the surprise, but your hints are working!
+                </p>
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
+                  <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 4px;">The gift they&apos;re planning:</p>
+                  <p style="color: #1c1917; font-size: 15px; font-weight: 700; margin: 0;">${gift_description}</p>
+                </div>
+                <p style="color: #78716c; font-size: 14px; margin: 0 0 24px; line-height: 1.6;">
+                  Keep adding hints to help others find the perfect gifts too.
+                </p>
+                <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
+                  Add more hints →
+                </a>
+                <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0;">
+                  GiftButler · Free forever · <a href="${dashboardUrl}" style="color: #a8a29e;">Manage my profile</a>
+                </p>
+              </div>
+            `,
+          }),
+        });
+      } catch { /* silent fail */ }
+    })();
+  }
 
   return NextResponse.json({ success: true });
 }
