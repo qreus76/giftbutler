@@ -6,6 +6,15 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function parseDeviceType(ua: string | null): string {
+  if (!ua) return "unknown";
+  if (/iPad|Android(?!.*Mobile)/i.test(ua)) return "tablet";
+  if (/iPhone|iPod/i.test(ua)) return "ios";
+  if (/Android.*Mobile/i.test(ua)) return "android";
+  if (/Mobi/i.test(ua)) return "mobile";
+  return "desktop";
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
 
@@ -29,6 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     || "anonymous";
 
   const referrer = req.nextUrl.searchParams.get("ref") || null;
+  const deviceType = parseDeviceType(req.headers.get("user-agent"));
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const { count: recentVisit } = await supabaseAdmin
@@ -43,6 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       profile_user_id: profile.id,
       visitor_session: visitorSession,
       referrer,
+      device_type: deviceType,
     }).then(async () => {
       // Send email notification (at most once per hour per profile)
       if (!process.env.RESEND_API_KEY) return;

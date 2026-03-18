@@ -60,6 +60,7 @@ export default async function AdminAnalyticsPage({
     occasionsResult,
     budgetsResult,
     referrersResult,
+    devicesResult,
     recentRecsResult,
   ] = await Promise.all([
     supabaseAdmin.rpc("admin_funnel_stats", { days_back: days }),
@@ -69,6 +70,7 @@ export default async function AdminAnalyticsPage({
     supabaseAdmin.rpc("admin_occasion_breakdown"),
     supabaseAdmin.rpc("admin_budget_breakdown"),
     supabaseAdmin.rpc("admin_referrer_breakdown", { days_back: days }),
+    supabaseAdmin.rpc("admin_device_breakdown", { days_back: days }),
     supabaseAdmin.from("recommend_logs")
       .select("profile_username, relationship, budget, occasion, created_at")
       .order("created_at", { ascending: false })
@@ -92,6 +94,9 @@ export default async function AdminAnalyticsPage({
   const occasions: { occasion: string; count: number }[] = occasionsResult.data ?? [];
   const budgets: { budget: string; count: number }[] = budgetsResult.data ?? [];
   const referrersRaw: { referrer: string; count: number }[] = referrersResult.data ?? [];
+  const devices: { device_type: string; count: number }[] = (devicesResult.data ?? []).map(
+    (d: { device_type: string; count: number }) => ({ device_type: d.device_type, count: Number(d.count) })
+  );
   const recentRecs = recentRecsResult.data ?? [];
 
   // Parse referrer hostnames
@@ -112,6 +117,16 @@ export default async function AdminAnalyticsPage({
   const maxOccasion = occasions[0]?.count || 1;
   const maxBudget = budgets[0]?.count || 1;
   const maxReferrer = referrers[0]?.[1] || 1;
+  const maxDevice = devices[0]?.count || 1;
+
+  const deviceLabels: Record<string, string> = {
+    ios: "iOS",
+    android: "Android",
+    tablet: "Tablet",
+    mobile: "Mobile (other)",
+    desktop: "Desktop",
+    unknown: "Unknown",
+  };
 
   return (
     <div>
@@ -223,6 +238,22 @@ export default async function AdminAnalyticsPage({
                   </div>
                   <Bar pct={(count / maxReferrer) * 100} color="bg-blue-400" />
                   <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{count.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        <Section title={`Device Types (${periodLabel})`}>
+          {devices.length === 0 ? <p className="text-stone-600 text-sm">No data yet — fills in as visitors arrive.</p> : (
+            <div className="flex flex-col gap-3">
+              {devices.map((d) => (
+                <div key={d.device_type} className="flex items-center gap-3">
+                  <div className="w-32 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-white">{deviceLabels[d.device_type] ?? d.device_type}</p>
+                  </div>
+                  <Bar pct={(d.count / maxDevice) * 100} color="bg-orange-400" />
+                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{d.count.toLocaleString()}</span>
                 </div>
               ))}
             </div>
