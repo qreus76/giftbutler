@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function GET() {
   const { userId } = await auth();
@@ -22,5 +22,15 @@ export async function GET() {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  return NextResponse.json({ profile, hints: hints || [] });
+  // Get visit count from last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { count: visitCount } = await supabaseAdmin
+    .from("profile_visits")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_user_id", userId)
+    .gte("created_at", thirtyDaysAgo.toISOString());
+
+  return NextResponse.json({ profile, hints: hints || [], visitCount: visitCount || 0 });
 }

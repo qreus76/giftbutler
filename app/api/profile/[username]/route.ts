@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ username: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
 
   const { data: profile } = await supabase
@@ -17,6 +17,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
     .select("*")
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false });
+
+  // Record visit (fire and forget)
+  const visitorSession = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "anonymous";
+  supabaseAdmin.from("profile_visits").insert({
+    profile_user_id: profile.id,
+    visitor_session: visitorSession,
+  }).then(() => {});
 
   return NextResponse.json({ profile, hints: hints || [] });
 }

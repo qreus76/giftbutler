@@ -3,6 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Settings, Eye, Copy, Check } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [hints, setHints] = useState<Hint[]>([]);
+  const [visitCount, setVisitCount] = useState(0);
   const [newHint, setNewHint] = useState("");
   const [category, setCategory] = useState("general");
   const [adding, setAdding] = useState(false);
@@ -34,6 +36,7 @@ export default function DashboardPage() {
     if (data.redirect) { router.push("/onboarding"); return; }
     setProfile(data.profile);
     setHints(data.hints);
+    setVisitCount(data.visitCount || 0);
     setLoading(false);
   }
 
@@ -72,42 +75,66 @@ export default function DashboardPage() {
     );
   }
 
-  const profileUrl = profile ? `giftbutler.io/for/${profile.username}` : "";
-
   return (
     <main className="min-h-screen bg-stone-50">
       <div className="max-w-xl mx-auto px-4 py-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-stone-900">GiftButler</h1>
-          <button
-            onClick={copyLink}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors"
-          >
-            {copied ? "✓ Copied!" : `Share my link`}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push("/dashboard/edit")}
+              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
+              aria-label="Edit profile"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            <button
+              onClick={copyLink}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? "Copied!" : "Share link"}
+            </button>
+          </div>
         </div>
 
-        {/* Profile link banner */}
-        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-stone-400 mb-0.5">Your gift profile</p>
-            <p className="text-stone-900 font-medium text-sm">{profileUrl}</p>
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Eye className="w-4 h-4 text-stone-400" />
+              <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Profile views</span>
+            </div>
+            <p className="text-2xl font-bold text-stone-900">{visitCount}</p>
+            <p className="text-xs text-stone-400">last 30 days</p>
           </div>
-          <button
-            onClick={copyLink}
-            className="text-xs text-amber-600 font-semibold hover:text-amber-700"
-          >
-            {copied ? "Copied!" : "Copy"}
-          </button>
+          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Hints</span>
+            </div>
+            <p className="text-2xl font-bold text-stone-900">{hints.length}</p>
+            <p className="text-xs text-stone-400">on your profile</p>
+          </div>
         </div>
+
+        {/* Profile link */}
+        {profile && (
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6 flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-xs text-stone-400 mb-0.5">Your gift profile</p>
+              <p className="text-stone-900 font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>
+            </div>
+            <button onClick={copyLink} className="text-xs text-amber-600 font-semibold hover:text-amber-700 flex-shrink-0 ml-2">
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        )}
 
         {/* Add hint form */}
         <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">
           <p className="text-sm font-semibold text-stone-700 mb-3">Drop a hint</p>
-
-          {/* Category pills */}
           <div className="flex gap-2 flex-wrap mb-3">
             {CATEGORIES.map((c) => (
               <button
@@ -119,7 +146,6 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-
           <form onSubmit={addHint} className="flex gap-2">
             <input
               value={newHint}
@@ -148,7 +174,7 @@ export default function DashboardPage() {
           ) : (
             hints.map((hint) => (
               <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3 flex items-start justify-between gap-3 group">
-                <div>
+                <div className="min-w-0">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 inline-block ${
                     hint.category === "avoid" ? "bg-red-100 text-red-600" :
                     hint.category === "want" ? "bg-blue-100 text-blue-600" :
@@ -169,6 +195,16 @@ export default function DashboardPage() {
               </div>
             ))
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
+            className="text-xs text-stone-400 hover:text-stone-600 underline"
+          >
+            Preview my public profile
+          </button>
         </div>
       </div>
     </main>
