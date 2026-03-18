@@ -92,7 +92,8 @@ export default function DashboardPage() {
   async function copyLink() {
     if (!profile) return;
     const url = `${window.location.origin}/for/${profile.username}`;
-    if (navigator.share) {
+    const isMobile = window.innerWidth < 768;
+    if (navigator.share && isMobile) {
       try {
         await navigator.share({
           title: `${profile.name || profile.username}'s gift profile`,

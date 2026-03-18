@@ -93,7 +93,8 @@ export default function OnboardingPage() {
   }
 
   async function copyLink() {
-    if (navigator.share) {
+    const isMobile = window.innerWidth < 768;
+    if (navigator.share && isMobile) {
       try {
         await navigator.share({
           title: "My GiftButler profile",
