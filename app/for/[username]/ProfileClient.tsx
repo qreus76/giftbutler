@@ -64,7 +64,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     const shareText = isOwner
       ? `Check out my gift profile on GiftButler!`
       : `Check out ${displayName}'s gift profile on GiftButler!`;
-    if (navigator.share) {
+    if (navigator.share && navigator.maxTouchPoints > 0) {
       try { await navigator.share({ title: `${displayName}'s Gift Profile`, text: shareText, url }); } catch { /* user cancelled */ }
     } else {
       await navigator.clipboard.writeText(url);
