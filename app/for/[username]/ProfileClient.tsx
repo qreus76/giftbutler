@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share, Users, Cake, LayoutDashboard, Pencil } from "lucide-react";
+import { Copy, Share, Users, Cake, LayoutDashboard, Pencil, MessageSquare } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -38,6 +38,15 @@ const CATEGORIES = {
   avoid: { label: "Please no", color: "bg-red-100 text-red-600" },
 };
 
+const HINT_CATEGORIES = [
+  { id: "general", label: "Into lately", placeholder: "I've been really into sourdough baking..." },
+  { id: "love", label: "Love", placeholder: "Fresh flowers, especially tulips..." },
+  { id: "like", label: "Like", placeholder: "I enjoy a good audiobook..." },
+  { id: "want", label: "Want", placeholder: "I've been wanting to try a standing desk..." },
+  { id: "need", label: "Need", placeholder: "My headphones are finally dying..." },
+  { id: "dream", label: "Dream", placeholder: "Someday I'd love to go to Japan..." },
+  { id: "avoid", label: "Please no", placeholder: "No more candles or gift cards please..." },
+];
 
 interface Props {
   username: string;
@@ -53,7 +62,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const isOwner = !!user && user.id === initialProfile.id;
 
   const [profile] = useState<Profile>(initialProfile);
-  const [hints] = useState<Hint[]>(initialHints);
+  const [hints, setHints] = useState<Hint[]>(initialHints);
 
   const STORAGE_KEY = `gb_recs_${username}`;
 
@@ -75,6 +84,17 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [notifyPromptTitle, setNotifyPromptTitle] = useState<string | null>(null);
   const [notifySent, setNotifySent] = useState<Set<string>>(new Set());
   const [myUsername, setMyUsername] = useState("");
+
+  // Hint management (owner only)
+  const [newHint, setNewHint] = useState("");
+  const [hintCategory, setHintCategory] = useState("general");
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [editingHintId, setEditingHintId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editCategory, setEditCategory] = useState("general");
+  const [hintSaving, setHintSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Follow state
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -211,6 +231,72 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, occasion }),
     });
+  }
+
+  async function addHint(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newHint.trim()) return;
+    setAdding(true);
+    setAddError("");
+    try {
+      const res = await fetch("/api/hints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newHint.trim(), category: hintCategory }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add hint");
+      setHints([data, ...hints]);
+      setNewHint("");
+    } catch (e: unknown) {
+      setAddError(e instanceof Error ? e.message : "Failed to add — try again");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  function startEditHint(hint: Hint) {
+    setEditingHintId(hint.id);
+    setEditContent(hint.content);
+    setEditCategory(hint.category);
+  }
+
+  function cancelEditHint() {
+    setEditingHintId(null);
+    setEditContent("");
+    setEditCategory("general");
+  }
+
+  async function saveHint(id: string) {
+    if (!editContent.trim()) return;
+    setHintSaving(true);
+    const prev = hints;
+    setHints(hints.map(h => h.id === id ? { ...h, content: editContent.trim(), category: editCategory } : h));
+    setEditingHintId(null);
+    try {
+      const res = await fetch(`/api/hints/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editContent.trim(), category: editCategory }),
+      });
+      if (!res.ok) setHints(prev);
+    } catch {
+      setHints(prev);
+    } finally {
+      setHintSaving(false);
+    }
+  }
+
+  async function deleteHint(id: string) {
+    const prev = hints;
+    setHints(hints.filter((h) => h.id !== id));
+    setConfirmDeleteId(null);
+    try {
+      const res = await fetch(`/api/hints/${id}`, { method: "DELETE" });
+      if (!res.ok) setHints(prev);
+    } catch {
+      setHints(prev);
+    }
   }
 
   // A gift is "already claimed" if same title AND (no occasion specified OR occasions match)
@@ -615,25 +701,165 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         )}
 
+        {/* Drop a hint — owner only */}
+        {isOwner && (
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+            <p className="text-sm font-semibold text-stone-700 mb-3">Drop a hint</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
+              {HINT_CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setHintCategory(c.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex-shrink-0 ${hintCategory === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={addHint} className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  value={newHint}
+                  onChange={(e) => setNewHint(e.target.value)}
+                  maxLength={280}
+                  placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+                <button
+                  type="submit"
+                  disabled={!newHint.trim() || adding}
+                  className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 text-stone-900 font-semibold rounded-xl text-sm transition-colors whitespace-nowrap"
+                >
+                  {adding ? "..." : "Add"}
+                </button>
+              </div>
+              <div className="flex items-center justify-between px-1">
+                {addError
+                  ? <p className="text-red-500 text-xs">{addError}</p>
+                  : <span />
+                }
+                {newHint.length > 0 && (
+                  <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
+                    {280 - newHint.length} left
+                  </p>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
+
         {/* Hints feed */}
-        {hintsToShow.length > 0 && (
+        {(isOwner || hintsToShow.length > 0) && (
           <div className="mb-6">
             <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-3">
-              {displayName}&apos;s hints
+              {isOwner ? "My Hints" : `${displayName}\u2019s hints`}
             </h2>
-            <div className="flex flex-col gap-2">
-              {hintsToShow.map((hint) => {
-                const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
-                return (
-                  <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block mb-1 ${cat.color}`}>
-                      {cat.label}
-                    </span>
-                    <p className="text-stone-800 text-sm">{hint.content}</p>
-                  </div>
-                );
-              })}
-            </div>
+            {isOwner && hints.length === 0 ? (
+              <div className="text-center py-10 text-stone-400">
+                <MessageSquare className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+                <p className="font-medium text-stone-600 mb-1">No hints yet</p>
+                <p className="text-sm">Add your first hint above — what have you been into lately?</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {hintsToShow.map((hint) => {
+                  const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
+                  return (
+                    <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3 group">
+                      {isOwner && editingHintId === hint.id ? (
+                        <div>
+                          <div className="flex gap-1.5 flex-wrap mb-2">
+                            {HINT_CATEGORIES.map(c => (
+                              <button
+                                key={c.id}
+                                onClick={() => setEditCategory(c.id)}
+                                className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${editCategory === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                              >
+                                {c.label}
+                              </button>
+                            ))}
+                          </div>
+                          <textarea
+                            value={editContent}
+                            onChange={e => setEditContent(e.target.value)}
+                            maxLength={280}
+                            autoFocus
+                            rows={2}
+                            className="w-full px-3 py-2 rounded-xl border border-amber-400 text-sm text-stone-900 focus:outline-none resize-none mb-2"
+                          />
+                          <div className="flex items-center justify-between">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => saveHint(hint.id)}
+                                disabled={!editContent.trim() || hintSaving}
+                                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-semibold rounded-lg text-xs transition-colors"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelEditHint}
+                                className="px-3 py-1.5 border border-stone-200 text-stone-500 font-semibold rounded-lg text-xs hover:bg-stone-50 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                            <span className={`text-xs ${editContent.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
+                              {280 - editContent.length} left
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block mb-1 ${cat.color}`}>
+                              {cat.label}
+                            </span>
+                            <p className="text-stone-800 text-sm">{hint.content}</p>
+                          </div>
+                          {isOwner && (
+                            <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                              {confirmDeleteId === hint.id ? (
+                                <>
+                                  <button
+                                    onClick={() => deleteHint(hint.id)}
+                                    className="px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg"
+                                  >
+                                    Delete
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    className="px-2 py-1 border border-stone-200 text-stone-400 text-xs font-semibold rounded-lg hover:bg-stone-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => startEditHint(hint)}
+                                    aria-label="Edit hint"
+                                    className="p-1 text-stone-300 hover:text-amber-500 transition-colors"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeleteId(hint.id)}
+                                    aria-label="Delete hint"
+                                    className="p-1 text-stone-300 hover:text-red-400 transition-colors text-lg leading-none"
+                                  >
+                                    ×
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -643,7 +869,21 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">Please avoid</p>
             <ul className="flex flex-col gap-1">
               {avoidHints.map((hint) => (
-                <li key={hint.id} className="text-red-700 text-sm">— {hint.content}</li>
+                <li key={hint.id} className="flex items-center justify-between gap-3">
+                  <span className="text-red-700 text-sm">— {hint.content}</span>
+                  {isOwner && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {confirmDeleteId === hint.id ? (
+                        <>
+                          <button onClick={() => deleteHint(hint.id)} className="px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg">Delete</button>
+                          <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 border border-red-200 text-red-400 text-xs font-semibold rounded-lg hover:bg-red-50">Cancel</button>
+                        </>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteId(hint.id)} aria-label="Delete hint" className="p-1 text-red-300 hover:text-red-500 transition-colors text-lg leading-none">×</button>
+                      )}
+                    </div>
+                  )}
+                </li>
               ))}
             </ul>
           </div>

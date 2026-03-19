@@ -3,18 +3,8 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Clock, Users, UserPlus, MessageSquare, Pencil, LayoutDashboard } from "lucide-react";
+import { Eye, Clock, Users, UserPlus, LayoutDashboard } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
-
-const CATEGORIES = [
-  { id: "general", label: "Into lately", placeholder: "I've been really into sourdough baking..." },
-  { id: "love", label: "Love", placeholder: "Fresh flowers, especially tulips..." },
-  { id: "like", label: "Like", placeholder: "I enjoy a good audiobook..." },
-  { id: "want", label: "Want", placeholder: "I've been wanting to try a standing desk..." },
-  { id: "need", label: "Need", placeholder: "My headphones are finally dying..." },
-  { id: "dream", label: "Dream", placeholder: "Someday I'd love to go to Japan..." },
-  { id: "avoid", label: "Please no", placeholder: "No more candles or gift cards please..." },
-];
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -28,12 +18,13 @@ function timeAgo(dateStr: string): string {
 }
 
 function getCompletionItems(profile: Profile, hints: Hint[]) {
+  const profileUrl = profile.username ? `/for/${profile.username}` : null;
   return [
     { done: !!profile.name, label: "Add your display name", action: "/dashboard/edit" },
     { done: !!profile.bio, label: "Write a short bio", action: "/dashboard/edit" },
     { done: !!profile.birthday, label: "Add your birthday (so people know when to shop!)", action: "/dashboard/edit" },
-    { done: hints.filter(h => h.category !== "avoid").length >= 3, label: "Add at least 3 hints", action: null },
-    { done: hints.filter(h => h.category !== "avoid").length >= 8, label: "Add 8+ hints for the best recommendations", action: null },
+    { done: hints.filter(h => h.category !== "avoid").length >= 3, label: "Add at least 3 hints", action: profileUrl },
+    { done: hints.filter(h => h.category !== "avoid").length >= 8, label: "Add 8+ hints for the best recommendations", action: profileUrl },
   ];
 }
 
@@ -45,23 +36,10 @@ export default function DashboardPage() {
   const [visitCount, setVisitCount] = useState(0);
   const [claimCount, setClaimCount] = useState(0);
   const [recentVisits, setRecentVisits] = useState<{ created_at: string; device_type: string | null; referrer: string | null }[]>([]);
-  const [newHint, setNewHint] = useState("");
-  const [category, setCategory] = useState("general");
-  const [adding, setAdding] = useState(false);
-  const [addError, setAddError] = useState("");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [showVisitors, setShowVisitors] = useState(false);
-
-  // Inline delete confirm
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  // Edit hint state
-  const [editingHintId, setEditingHintId] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState("");
-  const [editCategory, setEditCategory] = useState("general");
-  const [saving, setSaving] = useState(false);
 
   // Follow requests
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -104,72 +82,6 @@ export default function DashboardPage() {
       body: JSON.stringify({ requester_id: requesterId, action, label }),
     });
     setFollowRequests(prev => prev.filter(r => r.requester_id !== requesterId));
-  }
-
-  async function addHint(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newHint.trim()) return;
-    setAdding(true);
-    setAddError("");
-    try {
-      const res = await fetch("/api/hints", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newHint.trim(), category }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to add hint");
-      setHints([data, ...hints]);
-      setNewHint("");
-    } catch (e: unknown) {
-      setAddError(e instanceof Error ? e.message : "Failed to add — try again");
-    } finally {
-      setAdding(false);
-    }
-  }
-
-  function startEditHint(hint: Hint) {
-    setEditingHintId(hint.id);
-    setEditContent(hint.content);
-    setEditCategory(hint.category);
-  }
-
-  function cancelEdit() {
-    setEditingHintId(null);
-    setEditContent("");
-    setEditCategory("general");
-  }
-
-  async function saveHint(id: string) {
-    if (!editContent.trim()) return;
-    setSaving(true);
-    const prev = hints;
-    setHints(hints.map(h => h.id === id ? { ...h, content: editContent.trim(), category: editCategory } : h));
-    setEditingHintId(null);
-    try {
-      const res = await fetch(`/api/hints/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: editContent.trim(), category: editCategory }),
-      });
-      if (!res.ok) setHints(prev);
-    } catch {
-      setHints(prev);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteHint(id: string) {
-    const prev = hints;
-    setHints(hints.filter((h) => h.id !== id));
-    setConfirmDeleteId(null);
-    try {
-      const res = await fetch(`/api/hints/${id}`, { method: "DELETE" });
-      if (!res.ok) setHints(prev);
-    } catch {
-      setHints(prev);
-    }
   }
 
   function formatReferrer(referrer: string | null): string {
@@ -436,163 +348,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-
-        {/* Add hint form */}
-        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">
-          <p className="text-sm font-semibold text-stone-700 mb-3">Drop a hint</p>
-          <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setCategory(c.id)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex-shrink-0 ${category === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <form onSubmit={addHint} className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <input
-                value={newHint}
-                onChange={(e) => setNewHint(e.target.value)}
-                maxLength={280}
-                placeholder={CATEGORIES.find(c => c.id === category)?.placeholder || "Add a hint..."}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
-              <button
-                type="submit"
-                disabled={!newHint.trim() || adding}
-                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 text-stone-900 font-semibold rounded-xl text-sm transition-colors whitespace-nowrap"
-              >
-                {adding ? "..." : "Add"}
-              </button>
-            </div>
-            <div className="flex items-center justify-between px-1">
-              {addError
-                ? <p className="text-red-500 text-xs">{addError}</p>
-                : <span />
-              }
-              {newHint.length > 0 && (
-                <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
-                  {280 - newHint.length} left
-                </p>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Hints feed */}
-        <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-3">My Hints</p>
-        <div className="flex flex-col gap-3">
-          {hints.length === 0 ? (
-            <div className="text-center py-12 text-stone-400">
-              <MessageSquare className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-              <p className="font-medium text-stone-600 mb-1">No hints yet</p>
-              <p className="text-sm">Add your first hint above — what have you been into lately?</p>
-            </div>
-          ) : (
-            hints.map((hint) => (
-              <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3 group">
-                {editingHintId === hint.id ? (
-                  <div>
-                    <div className="flex gap-1.5 flex-wrap mb-2">
-                      {CATEGORIES.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => setEditCategory(c.id)}
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${editCategory === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                    <textarea
-                      value={editContent}
-                      onChange={e => setEditContent(e.target.value)}
-                      maxLength={280}
-                      autoFocus
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-xl border border-amber-400 text-sm text-stone-900 focus:outline-none resize-none mb-2"
-                    />
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => saveHint(hint.id)}
-                          disabled={!editContent.trim() || saving}
-                          className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-semibold rounded-lg text-xs transition-colors"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="px-3 py-1.5 border border-stone-200 text-stone-500 font-semibold rounded-lg text-xs hover:bg-stone-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                      <span className={`text-xs ${editContent.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
-                        {280 - editContent.length} left
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 inline-block ${
-                        hint.category === "avoid" ? "bg-red-100 text-red-600" :
-                        hint.category === "love" ? "bg-pink-100 text-pink-600" :
-                        hint.category === "like" ? "bg-sky-100 text-sky-600" :
-                        hint.category === "want" ? "bg-blue-100 text-blue-600" :
-                        hint.category === "need" ? "bg-green-100 text-green-600" :
-                        hint.category === "dream" ? "bg-purple-100 text-purple-600" :
-                        "bg-amber-100 text-amber-700"
-                      }`}>
-                        {CATEGORIES.find(c => c.id === hint.category)?.label || hint.category}
-                      </span>
-                      <p className="text-stone-800 text-sm">{hint.content}</p>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      {confirmDeleteId === hint.id ? (
-                        <>
-                          <button
-                            onClick={() => deleteHint(hint.id)}
-                            className="px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-1 border border-stone-200 text-stone-400 text-xs font-semibold rounded-lg hover:bg-stone-50"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => startEditHint(hint)}
-                            aria-label="Edit hint"
-                            className="p-1 text-stone-300 hover:text-amber-500 transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(hint.id)}
-                            aria-label="Delete hint"
-                            className="p-1 text-stone-300 hover:text-red-400 transition-colors text-lg leading-none"
-                          >
-                            ×
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
 
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-6">
