@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Search } from "lucide-react";
+
+const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
+
+interface SearchResult {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string | null;
+  followStatus: "none" | "pending" | "accepted";
+}
 
 const QUIZ_STEPS = [
   {
@@ -47,8 +57,19 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [findingPeople, setFindingPeople] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
+
+  // Find people state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [searchNotFound, setSearchNotFound] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isQuiz = step < QUIZ_STEPS.length;
   const currentQuiz = QUIZ_STEPS[step];
@@ -93,6 +114,38 @@ export default function OnboardingPage() {
     }
   }
 
+  function handleSearchInput(val: string) {
+    setSearchQuery(val);
+    setSearchResult(null);
+    setSearchNotFound(false);
+    setSelectedLabel("");
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!val.trim() || val.trim().length < 2) return;
+    searchTimer.current = setTimeout(async () => {
+      setSearching(true);
+      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim().toLowerCase())}`);
+      const data = await res.json();
+      setSearching(false);
+      if (data.result) setSearchResult(data.result);
+      else setSearchNotFound(true);
+    }, 400);
+  }
+
+  async function sendFollowRequest(searchUsername: string) {
+    if (!selectedLabel) return;
+    setSendingRequest(true);
+    await fetch("/api/follows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: searchUsername, label: selectedLabel }),
+    });
+    setSentRequests(prev => [...prev, searchUsername]);
+    setSearchResult(null);
+    setSearchQuery("");
+    setSelectedLabel("");
+    setSendingRequest(false);
+  }
+
   async function copyLink() {
     const isMobile = window.innerWidth < 768;
     if (navigator.share && isMobile) {
@@ -110,6 +163,92 @@ export default function OnboardingPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  }
+
+  // Find your people screen
+  if (done && findingPeople) {
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-3">👥</div>
+            <h2 className="text-2xl font-bold text-stone-900 mb-1">Find your people</h2>
+            <p className="text-stone-400 text-sm">Search by username to send a connection request.</p>
+          </div>
+
+          {sentRequests.length > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 mb-4">
+              <p className="text-green-700 text-sm font-semibold">✓ {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
+            </div>
+          )}
+
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                value={searchQuery}
+                onChange={e => handleSearchInput(e.target.value)}
+                placeholder="Enter their username..."
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                autoFocus
+              />
+            </div>
+
+            {searching && <p className="text-xs text-stone-400">Searching...</p>}
+
+            {searchNotFound && !searching && (
+              <p className="text-xs text-stone-400">No profile found with that username.</p>
+            )}
+
+            {searchResult && !searching && (
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    {searchResult.avatar ? (
+                      <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                        {searchResult.name[0]?.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-stone-900 text-sm">{searchResult.name}</p>
+                    <p className="text-xs text-stone-400">@{searchResult.username}</p>
+                  </div>
+                </div>
+                <p className="text-xs font-semibold text-stone-500 mb-2">Who are they to you?</p>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {LABELS.map(l => (
+                    <button
+                      key={l}
+                      onClick={() => setSelectedLabel(l)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => sendFollowRequest(searchResult.username)}
+                  disabled={!selectedLabel || sendingRequest}
+                  className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+                >
+                  {sendingRequest ? "Sending..." : "Send request"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors"
+          >
+            Go to my dashboard →
+          </button>
+        </div>
+      </main>
+    );
   }
 
   // Profile live! share screen
@@ -152,16 +291,16 @@ export default function OnboardingPage() {
           </div>
 
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => setFindingPeople(true)}
             className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors mb-3"
           >
-            Go to my dashboard →
+            Find my people →
           </button>
           <button
-            onClick={() => window.open(`/for/${username}`, "_blank")}
+            onClick={() => router.push("/dashboard")}
             className="text-xs text-stone-400 hover:text-stone-600 underline"
           >
-            Preview my public profile
+            Skip — go to my dashboard
           </button>
         </div>
       </main>

@@ -186,6 +186,14 @@ export default function DashboardPage() {
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
           <div className="flex items-center gap-2">
+            <a href="/my-people" className="relative px-3 py-1.5 text-stone-500 hover:text-stone-800 font-semibold text-xs transition-colors">
+              My People
+              {followRequests.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {followRequests.length}
+                </span>
+              )}
+            </a>
             <button
               onClick={() => router.push("/dashboard/edit")}
               className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
@@ -444,7 +452,14 @@ export default function DashboardPage() {
 
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-6">
-          <a href="/my-people" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">My People</a>
+          <a href="/my-people" className="relative text-xs text-stone-400 hover:text-stone-600 transition-colors">
+            My People
+            {followRequests.length > 0 && (
+              <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {followRequests.length}
+              </span>
+            )}
+          </a>
           <button
             onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
             className="text-xs text-stone-400 hover:text-stone-600 underline"
