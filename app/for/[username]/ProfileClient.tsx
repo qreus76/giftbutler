@@ -12,7 +12,16 @@ interface GiftRecommendation {
   why: string;
   priceRange: string;
   searchUrl: string;
+  category: "product" | "experience" | "subscription" | "consumable";
 }
+
+const GIFT_CATEGORY_LABELS: Record<string, string> = {
+  all: "All",
+  product: "Products",
+  experience: "Experiences",
+  subscription: "Subscriptions",
+  consumable: "Consumables",
+};
 
 interface ClaimRecord {
   description: string;
@@ -60,6 +69,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [showAllRecs, setShowAllRecs] = useState(false);
 
   // Follow state
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -134,6 +145,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     setGenerating(true);
     setGenerateError("");
     setRecommendations([]);
+    setCategoryFilter("all");
+    setShowAllRecs(false);
     try {
       const res = await fetch("/api/recommend", {
         method: "POST",
@@ -345,14 +358,34 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                 >
                   <option value="">Select relationship...</option>
-                  <option value="partner">Partner</option>
-                  <option value="parent">Parent</option>
-                  <option value="child">Child</option>
-                  <option value="sibling">Sibling</option>
-                  <option value="best friend">Best friend</option>
-                  <option value="friend">Friend</option>
-                  <option value="colleague">Colleague</option>
-                  <option value="other family member">Other family member</option>
+                  <optgroup label="Partner">
+                    <option value="husband">Husband</option>
+                    <option value="wife">Wife</option>
+                    <option value="partner">Partner</option>
+                  </optgroup>
+                  <optgroup label="Family">
+                    <option value="dad">Dad</option>
+                    <option value="mom">Mom</option>
+                    <option value="son">Son</option>
+                    <option value="daughter">Daughter</option>
+                    <option value="brother">Brother</option>
+                    <option value="sister">Sister</option>
+                    <option value="grandfather">Grandfather</option>
+                    <option value="grandmother">Grandmother</option>
+                    <option value="grandson">Grandson</option>
+                    <option value="granddaughter">Granddaughter</option>
+                    <option value="uncle">Uncle</option>
+                    <option value="aunt">Aunt</option>
+                    <option value="nephew">Nephew</option>
+                    <option value="niece">Niece</option>
+                    <option value="cousin">Cousin</option>
+                  </optgroup>
+                  <optgroup label="Friends &amp; Others">
+                    <option value="best friend">Best Friend</option>
+                    <option value="friend">Friend</option>
+                    <option value="colleague">Colleague</option>
+                    <option value="other">Other</option>
+                  </optgroup>
                 </select>
               </div>
               <div>
@@ -407,61 +440,102 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         )}
 
         {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <div className="mb-6">
-            <h2 className="font-bold text-stone-900 mb-3">Gift ideas for {displayName}</h2>
-            <div className="flex flex-col gap-3">
-              {recommendations.map((rec, i) => {
-                const alreadyClaimed = isAlreadyClaimed(rec.title);
-                const iMineThis = myClaims.includes(rec.title);
-                return (
-                  <div key={i} className={`bg-white border rounded-2xl p-4 ${alreadyClaimed && !iMineThis ? "border-green-200 bg-green-50/30" : "border-stone-200"}`}>
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className="font-semibold text-stone-900 text-sm">{rec.title}</h3>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {recommendations.length > 0 && (() => {
+          const availableCategories = ["all", ...Array.from(new Set(recommendations.map(r => r.category)))];
+          const filtered = categoryFilter === "all" ? recommendations : recommendations.filter(r => r.category === categoryFilter);
+          const visible = showAllRecs ? filtered : filtered.slice(0, 5);
+          return (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-stone-900">Gift ideas for {displayName}</h2>
+                <span className="text-xs text-stone-400">{filtered.length} ideas</span>
+              </div>
+
+              {/* Category filter tabs */}
+              {availableCategories.length > 2 && (
+                <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-none">
+                  {availableCategories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                        categoryFilter === cat
+                          ? "bg-amber-400 text-stone-900"
+                          : "bg-white border border-stone-200 text-stone-500 hover:border-amber-300"
+                      }`}
+                    >
+                      {GIFT_CATEGORY_LABELS[cat] || cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3">
+                {visible.map((rec, i) => {
+                  const alreadyClaimed = isAlreadyClaimed(rec.title);
+                  const iMineThis = myClaims.includes(rec.title);
+                  return (
+                    <div key={i} className={`bg-white border rounded-2xl p-4 ${alreadyClaimed && !iMineThis ? "border-green-200 bg-green-50/30" : "border-stone-200"}`}>
+                      <div className="flex items-start justify-between gap-3 mb-1.5">
+                        <h3 className="font-semibold text-stone-900 text-sm leading-snug">{rec.title}</h3>
+                        <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">{rec.priceRange}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs text-stone-400 capitalize">{rec.category}</span>
                         {alreadyClaimed && !iMineThis && (
                           <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Someone&apos;s on it</span>
                         )}
-                        <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">{rec.priceRange}</span>
+                      </div>
+                      <p className="text-stone-500 text-xs leading-relaxed mb-3">{rec.why}</p>
+                      <div className="flex gap-2">
+                        <a
+                          href={rec.searchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors"
+                        >
+                          Find this gift →
+                        </a>
+                        <button
+                          onClick={() => claimGift(rec.title)}
+                          disabled={iMineThis || alreadyClaimed || claiming === rec.title}
+                          className="px-3 py-2 border border-stone-200 text-stone-500 text-xs font-semibold rounded-xl hover:bg-stone-50 disabled:bg-green-50 disabled:text-green-600 disabled:border-green-200 transition-colors whitespace-nowrap"
+                        >
+                          {iMineThis ? "✓ You're getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
+                        </button>
                       </div>
                     </div>
-                    <p className="text-stone-500 text-xs leading-relaxed mb-3">{rec.why}</p>
-                    <div className="flex gap-2">
-                      <a
-                        href={rec.searchUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors"
-                      >
-                        Find this gift →
-                      </a>
-                      <button
-                        onClick={() => claimGift(rec.title)}
-                        disabled={iMineThis || alreadyClaimed || claiming === rec.title}
-                        className="px-3 py-2 border border-stone-200 text-stone-500 text-xs font-semibold rounded-xl hover:bg-stone-50 disabled:bg-green-50 disabled:text-green-600 disabled:border-green-200 transition-colors whitespace-nowrap"
-                      >
-                        {iMineThis ? "✓ You're getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {!showAllRecs && filtered.length > 5 && (
+                <button
+                  onClick={() => setShowAllRecs(true)}
+                  className="w-full mt-3 py-2.5 border border-stone-200 text-stone-600 text-sm font-semibold rounded-xl hover:bg-stone-50 transition-colors"
+                >
+                  Show {filtered.length - 5} more ideas
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setRecommendations([]);
+                  setGenerateError("");
+                  setShowFinder(true);
+                  setCategoryFilter("all");
+                  setShowAllRecs(false);
+                  try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setTimeout(() => relationshipRef.current?.focus(), 400);
+                }}
+                className="w-full mt-2 py-2.5 border border-stone-200 text-stone-400 text-sm font-semibold rounded-xl hover:bg-stone-50 hover:text-stone-600 transition-colors"
+              >
+                Generate different ideas
+              </button>
             </div>
-            <button
-              onClick={() => {
-                setRecommendations([]);
-                setGenerateError("");
-                setShowFinder(true);
-                try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                setTimeout(() => relationshipRef.current?.focus(), 400);
-              }}
-              className="w-full mt-3 py-2.5 border border-stone-200 text-stone-500 text-sm font-semibold rounded-xl hover:bg-stone-50 transition-colors"
-            >
-              Generate different ideas
-            </button>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Hints feed */}
         {hintsToShow.length > 0 && (

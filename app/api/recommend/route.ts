@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const prompt = `You are GiftButler, an expert gift recommendation AI. You need to find the perfect gift${occasionText}.
+  const prompt = `You are GiftButler, an expert gift recommendation AI. Your goal is to find gifts so personal and specific that the recipient will feel truly seen and understood.
 
 RECIPIENT: ${name}
 RELATIONSHIP TO BUYER: ${relationship}
@@ -78,28 +78,32 @@ BUDGET: ${budget}${birthdayContext}
 THEIR HINTS (things they've shared about their life, interests, and wishes):
 ${hintsText}
 
-Generate exactly 5 specific, thoughtful gift recommendations based on their hints. Each gift should feel personal and directly connected to something they mentioned.
+Generate exactly 8 specific, emotionally resonant gift recommendations. Each gift must feel personally connected to this specific person — not generic suggestions that could work for anyone.
 
 Respond with ONLY a JSON array in this exact format:
 [
   {
-    "title": "Specific product name",
-    "why": "One sentence explaining exactly why this connects to their hints and would mean something to them personally.",
+    "title": "Specific product or experience name",
+    "why": "Two sentences: the first connects directly to their hints, the second explains the emotional significance — why this will make them feel seen and understood.",
     "priceRange": "$XX – $XX",
-    "searchQuery": "search terms to find this on Amazon"
+    "category": "product|experience|subscription|consumable",
+    "searchQuery": "precise Amazon search terms to find this exact item"
   }
 ]
 
 Rules:
-- Be SPECIFIC (not "a book" but "The Wim Hof Method book")
-- Connect each gift DIRECTLY to one of their hints
-- Stay within the budget
-- Avoid anything in their "avoid" hints
-- If no hints are provided, make reasonable suggestions based on their relationship`;
+- Be HYPER-SPECIFIC (not "golf club" but "Callaway Rogue ST Max Driver", not "book" but the actual title and author)
+- Every recommendation must trace back to a specific hint they shared
+- The "why" must feel warm and personal — like it came from someone who truly knows them
+- Mix categories across the 8 — don't give 8 physical products
+- Stay within budget — priceRange must fit within ${budget}
+- CRITICAL: Avoid anything in their "avoid" hints — this is non-negotiable
+- category must be exactly one of: product, experience, subscription, consumable
+- If no hints are provided, make thoughtful suggestions based on the relationship and what makes that relationship special`;
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 1024,
+    max_tokens: 2048,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -113,10 +117,11 @@ Rules:
     const jsonMatch = content.text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error("No JSON found");
     const parsed = JSON.parse(jsonMatch[0]);
-    recommendations = parsed.map((r: { title: string; why: string; priceRange: string; searchQuery: string }) => ({
+    recommendations = parsed.map((r: { title: string; why: string; priceRange: string; searchQuery: string; category: string }) => ({
       title: r.title,
       why: r.why,
       priceRange: r.priceRange,
+      category: r.category || "product",
       searchUrl: `https://www.amazon.com/s?k=${encodeURIComponent(r.searchQuery)}&tag=${AFFILIATE_TAG}`,
     }));
   } catch {
