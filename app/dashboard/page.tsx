@@ -462,7 +462,7 @@ export default function DashboardPage() {
           </a>
           <button
             onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
-            className="text-xs text-stone-400 hover:text-stone-600 underline"
+            className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
           >
             Preview my profile
           </button>
