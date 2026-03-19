@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Copy, Share } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -210,8 +211,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           {profile.bio && <p className="text-stone-600 text-sm mt-2">{profile.bio}</p>}
           <button
             onClick={shareProfile}
-            className="mt-4 px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors"
+            className="mt-4 px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
           >
+            <Share className="w-4 h-4 sm:hidden" />
+            <Copy className="w-4 h-4 hidden sm:block" />
             {shareCopied ? "Link copied!" : isOwner ? "Share my profile" : `Share ${displayName}'s profile`}
           </button>
         </div>
