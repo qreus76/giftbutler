@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Eye, Copy, Check, Clock, Share2, Users } from "lucide-react";
+import { Settings, Eye, Copy, Check, Clock, Share2, Users, UserPlus, MessageSquare } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -244,8 +244,9 @@ export default function DashboardPage() {
         {/* Follow requests */}
         {followRequests.length > 0 && (
           <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-4">
-            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-3">
-              👋 People requests ({followRequests.length})
+            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <UserPlus className="w-3.5 h-3.5" />
+              People requests ({followRequests.length})
             </p>
             <div className="flex flex-col gap-4">
               {followRequests.map(req => (
@@ -418,7 +419,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-3">
           {hints.length === 0 ? (
             <div className="text-center py-12 text-stone-400">
-              <p className="text-4xl mb-3">💬</p>
+              <MessageSquare className="w-10 h-10 text-stone-300 mx-auto mb-3" />
               <p className="font-medium text-stone-600 mb-1">No hints yet</p>
               <p className="text-sm">Add your first hint above — what have you been into lately?</p>
             </div>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share, Users } from "lucide-react";
+import { Copy, Share, Users, Cake } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -214,7 +214,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Birthday countdown banner */}
         {daysUntilBirthday !== null && daysUntilBirthday <= 60 && (
           <div className="bg-amber-400 rounded-2xl px-4 py-3 mb-5 flex items-center gap-3">
-            <span className="text-2xl">🎂</span>
+            <Cake className="w-7 h-7 text-stone-900 flex-shrink-0" />
             <div>
               {daysUntilBirthday === 0 ? (
                 <p className="font-bold text-stone-900">Today is {displayName}&apos;s birthday!</p>

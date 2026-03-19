@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Settings, Search, Users } from "lucide-react";
+import { Settings, Search, Users, Cake } from "lucide-react";
 
 interface Person {
   id: string;
@@ -27,11 +27,9 @@ const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "
 
 function birthdayText(days: number | null): string {
   if (days === null) return "Birthday unknown";
-  if (days === 0) return "🎂 Birthday is today!";
-  if (days === 1) return "🎂 Birthday is tomorrow!";
-  if (days <= 7) return `🎂 Birthday in ${days} days`;
-  if (days <= 30) return `🎂 Birthday in ${days} days`;
-  return `🎂 Birthday in ${days} days`;
+  if (days === 0) return "Birthday is today!";
+  if (days === 1) return "Birthday is tomorrow!";
+  return `Birthday in ${days} days`;
 }
 
 function birthdayUrgency(days: number | null): string {
@@ -221,7 +219,7 @@ export default function MyPeoplePage() {
 
         {!loading && people.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-4xl mb-4">👥</p>
+            <Users className="w-12 h-12 text-stone-300 mx-auto mb-4" />
             <p className="font-semibold text-stone-700 mb-2">No one here yet</p>
             <p className="text-stone-400 text-sm">Search for family and friends by username above to get started.</p>
           </div>
@@ -248,7 +246,8 @@ export default function MyPeoplePage() {
                         <span className="text-xs text-stone-400 font-medium">· {person.myLabel}</span>
                       )}
                     </div>
-                    <p className={`text-xs mt-0.5 ${birthdayUrgency(person.daysUntilBirthday)}`}>
+                    <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayUrgency(person.daysUntilBirthday)}`}>
+                      <Cake className="w-3.5 h-3.5 flex-shrink-0" />
                       {birthdayText(person.daysUntilBirthday)}
                     </p>
                   </div>

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, Search } from "lucide-react";
+import { Copy, Check, Search, Users } from "lucide-react";
 
 const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
 
@@ -171,7 +171,7 @@ export default function OnboardingPage() {
       <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <div className="text-4xl mb-3">👥</div>
+            <Users className="w-12 h-12 text-stone-300 mx-auto mb-3" />
             <h2 className="text-2xl font-bold text-stone-900 mb-1">Find your people</h2>
             <p className="text-stone-400 text-sm">Search by username to send a connection request.</p>
           </div>

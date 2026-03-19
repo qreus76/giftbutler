@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { RotateCcw } from "lucide-react";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"] });
@@ -55,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className={geist.className}>
           {/* Landscape orientation warning — mobile only */}
           <div className="rotate-warning fixed inset-0 z-50 bg-stone-900 flex-col items-center justify-center text-center px-8">
-            <p className="text-5xl mb-4">↩</p>
+            <RotateCcw className="w-12 h-12 text-white mb-4 mx-auto" />
             <p className="text-white font-bold text-xl mb-2">Please rotate your phone</p>
             <p className="text-stone-400 text-sm">GiftButler works best in portrait mode</p>
           </div>
