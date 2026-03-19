@@ -1,6 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
+
+export const metadata: Metadata = {
+  openGraph: {
+    images: [
+      {
+        url: "/present_giving.png",
+        width: 1200,
+        height: 1600,
+        alt: "GiftButler — The gift guide they made themselves.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/present_giving.png"],
+  },
+};
 
 async function getProfileCount(): Promise<number> {
   const { count } = await supabaseAdmin
