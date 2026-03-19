@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Eye, Copy, Check, Clock, Share2, ChevronDown, ChevronUp } from "lucide-react";
+import { Settings, Eye, Copy, Check, Clock, Share2 } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -49,10 +49,8 @@ export default function DashboardPage() {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [copiedMsg, setCopiedMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [showShareKit, setShowShareKit] = useState(false);
   const [showVisitors, setShowVisitors] = useState(false);
 
   useEffect(() => {
@@ -131,30 +129,7 @@ export default function DashboardPage() {
     }
   }
 
-  function copyMessage(msg: string) {
-    navigator.clipboard.writeText(msg).catch(() => {
-      alert("Unable to copy — please copy manually.");
-    });
-    setCopiedMsg(msg);
-    setTimeout(() => setCopiedMsg(null), 2000);
-  }
-
   const profileUrl = profile ? `${typeof window !== "undefined" ? window.location.origin : "https://giftbutler.io"}/for/${profile.username}` : "";
-
-  const shareMessages = profile ? [
-    {
-      label: "🎂 Birthday",
-      msg: `My birthday is coming up! Here's what I actually want (I finally stopped saying 'anything is fine'): ${profileUrl}`,
-    },
-    {
-      label: "🎄 Holidays",
-      msg: `Holiday shopping for me just got easier — I made a gift profile with things I'll actually love: ${profileUrl}`,
-    },
-    {
-      label: "💬 Anytime",
-      msg: `Tired of getting asked 'what do you want?' — here's my actual answer: ${profileUrl}`,
-    },
-  ] : [];
 
   const completionItems = profile ? getCompletionItems(profile, hints) : [];
   const completionDone = completionItems.filter(i => i.done).length;
@@ -318,35 +293,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Share kit */}
-        <div className="bg-white border border-stone-200 rounded-2xl mb-6 overflow-hidden">
-          <button
-            onClick={() => setShowShareKit(!showShareKit)}
-            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-semibold text-stone-800">Share kit — ready-to-send messages</span>
-            </div>
-            {showShareKit ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
-          </button>
-          {showShareKit && (
-            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-stone-100 pt-3">
-              {shareMessages.map((item) => (
-                <div key={item.label} className="bg-stone-50 rounded-xl p-3">
-                  <p className="text-xs font-semibold text-stone-500 mb-1.5">{item.label}</p>
-                  <p className="text-sm text-stone-700 leading-relaxed mb-2">{item.msg}</p>
-                  <button
-                    onClick={() => copyMessage(item.msg)}
-                    className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1"
-                  >
-                    {copiedMsg === item.msg ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy message</>}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Add hint form */}
         <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">
