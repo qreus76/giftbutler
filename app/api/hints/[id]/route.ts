@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const MAX_HINT_LENGTH = 280;
-const VALID_CATEGORIES = ["general", "want", "need", "dream", "love", "avoid"];
+const VALID_CATEGORIES = ["general", "love", "like", "want", "need", "dream", "avoid"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();

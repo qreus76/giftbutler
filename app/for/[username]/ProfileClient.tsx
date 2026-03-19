@@ -30,7 +30,8 @@ interface ClaimRecord {
 
 const CATEGORIES = {
   general: { label: "Into lately", color: "bg-amber-100 text-amber-700" },
-  love: { label: "I love", color: "bg-pink-100 text-pink-600" },
+  love: { label: "Love", color: "bg-pink-100 text-pink-600" },
+  like: { label: "Like", color: "bg-sky-100 text-sky-600" },
   want: { label: "Want", color: "bg-blue-100 text-blue-600" },
   need: { label: "Need", color: "bg-green-100 text-green-600" },
   dream: { label: "Dream", color: "bg-purple-100 text-purple-600" },
