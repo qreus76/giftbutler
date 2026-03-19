@@ -44,7 +44,7 @@ export default function DashboardPage() {
   const [hints, setHints] = useState<Hint[]>([]);
   const [visitCount, setVisitCount] = useState(0);
   const [claimCount, setClaimCount] = useState(0);
-  const [recentVisits, setRecentVisits] = useState<{ created_at: string }[]>([]);
+  const [recentVisits, setRecentVisits] = useState<{ created_at: string; device_type: string | null; referrer: string | null }[]>([]);
   const [newHint, setNewHint] = useState("");
   const [category, setCategory] = useState("general");
   const [adding, setAdding] = useState(false);
@@ -53,6 +53,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [showVisitors, setShowVisitors] = useState(false);
+
+  // Inline delete confirm
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Edit hint state
   const [editingHintId, setEditingHintId] = useState<string | null>(null);
@@ -158,15 +161,38 @@ export default function DashboardPage() {
   }
 
   async function deleteHint(id: string) {
-    if (!confirm("Delete this hint?")) return;
     const prev = hints;
     setHints(hints.filter((h) => h.id !== id));
+    setConfirmDeleteId(null);
     try {
       const res = await fetch(`/api/hints/${id}`, { method: "DELETE" });
       if (!res.ok) setHints(prev);
     } catch {
       setHints(prev);
     }
+  }
+
+  function formatReferrer(referrer: string | null): string {
+    if (!referrer) return "Direct visit";
+    try {
+      const host = new URL(referrer).hostname.replace("www.", "");
+      if (host.includes("instagram")) return "From Instagram";
+      if (host.includes("facebook") || host.includes("fb.")) return "From Facebook";
+      if (host.includes("twitter") || host.includes("x.com")) return "From X / Twitter";
+      if (host.includes("tiktok")) return "From TikTok";
+      if (host.includes("snapchat")) return "From Snapchat";
+      if (host.includes("pinterest")) return "From Pinterest";
+      if (host.includes("giftbutler")) return "From GiftButler";
+      return `From ${host}`;
+    } catch {
+      return "Shared link";
+    }
+  }
+
+  function formatDevice(device: string | null): string {
+    if (!device) return "";
+    const map: Record<string, string> = { ios: "iPhone", android: "Android", tablet: "Tablet", mobile: "Mobile", desktop: "Desktop" };
+    return map[device] || device;
   }
 
   async function copyLink() {
@@ -375,20 +401,26 @@ export default function DashboardPage() {
               <p className="text-stone-400 text-sm">No visits yet — share your link to get started.</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {recentVisits.map((v, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Eye className="w-3.5 h-3.5 text-amber-600" />
+                {recentVisits.map((v, i) => {
+                  const source = formatReferrer(v.referrer);
+                  const device = formatDevice(v.device_type);
+                  return (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Eye className="w-3.5 h-3.5 text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-stone-800 truncate">
+                          {source}{device ? ` · ${device}` : ""}
+                        </p>
+                        <p className="text-xs text-stone-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {timeAgo(v.created_at)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-stone-800">A visitor</p>
-                      <p className="text-xs text-stone-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {timeAgo(v.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -411,12 +443,12 @@ export default function DashboardPage() {
         {/* Add hint form */}
         <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">
           <p className="text-sm font-semibold text-stone-700 mb-3">Drop a hint</p>
-          <div className="flex gap-2 flex-wrap mb-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
             {CATEGORIES.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setCategory(c.id)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${category === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex-shrink-0 ${category === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
               >
                 {c.label}
               </button>
@@ -524,20 +556,39 @@ export default function DashboardPage() {
                       <p className="text-stone-800 text-sm">{hint.content}</p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => startEditHint(hint)}
-                        aria-label="Edit hint"
-                        className="p-1 text-stone-300 hover:text-amber-500 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => deleteHint(hint.id)}
-                        aria-label="Delete hint"
-                        className="p-1 text-stone-300 hover:text-red-400 transition-colors text-lg leading-none"
-                      >
-                        ×
-                      </button>
+                      {confirmDeleteId === hint.id ? (
+                        <>
+                          <button
+                            onClick={() => deleteHint(hint.id)}
+                            className="px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-2 py-1 border border-stone-200 text-stone-400 text-xs font-semibold rounded-lg hover:bg-stone-50"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEditHint(hint)}
+                            aria-label="Edit hint"
+                            className="p-1 text-stone-300 hover:text-amber-500 transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(hint.id)}
+                            aria-label="Delete hint"
+                            className="p-1 text-stone-300 hover:text-red-400 transition-colors text-lg leading-none"
+                          >
+                            ×
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -560,7 +611,7 @@ export default function DashboardPage() {
             onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
             className="text-xs text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
           >
-            Preview my profile
+            View my profile
           </button>
         </div>
       </div>

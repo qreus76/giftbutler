@@ -45,6 +45,7 @@ export default function MyPeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,9 +97,9 @@ export default function MyPeoplePage() {
     setSendingRequest(false);
   }
 
-  async function removeConnection(username: string, name: string) {
-    if (!confirm(`Remove ${name} from your people? This is silent — they won't be notified.`)) return;
+  async function removeConnection(username: string) {
     setRemoving(username);
+    setConfirmRemove(null);
     await fetch("/api/follows", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -266,13 +267,30 @@ export default function MyPeoplePage() {
                   >
                     Find them a gift →
                   </a>
-                  <button
-                    onClick={() => removeConnection(person.username, person.name)}
-                    disabled={removing === person.username}
-                    className="px-3 py-2 border border-stone-200 text-stone-400 hover:text-red-400 hover:border-red-200 font-semibold rounded-xl text-xs transition-colors"
-                  >
-                    {removing === person.username ? "..." : "Remove"}
-                  </button>
+                  {confirmRemove === person.username ? (
+                    <>
+                      <button
+                        onClick={() => removeConnection(person.username)}
+                        disabled={removing === person.username}
+                        className="px-3 py-2 bg-red-500 text-white font-semibold rounded-xl text-xs transition-colors"
+                      >
+                        {removing === person.username ? "..." : "Remove"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmRemove(null)}
+                        className="px-3 py-2 border border-stone-200 text-stone-400 font-semibold rounded-xl text-xs hover:bg-stone-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmRemove(person.username)}
+                      className="px-3 py-2 border border-stone-200 text-stone-400 hover:text-red-400 hover:border-red-200 font-semibold rounded-xl text-xs transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

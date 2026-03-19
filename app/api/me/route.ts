@@ -35,7 +35,7 @@ export async function GET() {
   // Recent visits for the feed (last 10)
   const { data: recentVisits } = await supabaseAdmin
     .from("profile_visits")
-    .select("created_at")
+    .select("created_at, device_type, referrer")
     .eq("profile_user_id", userId)
     .order("created_at", { ascending: false })
     .limit(10);

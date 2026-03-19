@@ -366,7 +366,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             <h2 className="font-bold text-stone-900 mb-4">Find the perfect gift</h2>
             <div className="flex flex-col gap-3 mb-4">
               <div>
-                <label className="text-xs font-semibold text-stone-500 mb-1 block">I am their</label>
+                <label className="text-xs font-semibold text-stone-500 mb-1 block">I&apos;m their</label>
                 <select
                   ref={relationshipRef}
                   value={relationship}
@@ -577,6 +577,17 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           );
         })()}
 
+        {/* CTA for signed-out visitors — shown after recommendations or gift finder */}
+        {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center mb-6">
+            <p className="text-stone-700 font-semibold text-sm mb-1">Want your own GiftButler profile?</p>
+            <p className="text-stone-400 text-xs mb-3">Free forever. Share your link. Get gifts you actually want.</p>
+            <a href="/sign-up" className="inline-block px-5 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
+              Create my profile →
+            </a>
+          </div>
+        )}
+
         {/* Hints feed */}
         {hintsToShow.length > 0 && (
           <div className="mb-6">
@@ -608,17 +619,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 <li key={hint.id} className="text-red-700 text-sm">— {hint.content}</li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {/* CTA for signed-out visitors only */}
-        {isLoaded && !user && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-            <p className="text-stone-700 font-semibold text-sm mb-1">Want your own GiftButler profile?</p>
-            <p className="text-stone-400 text-xs mb-3">Free forever. Share your link. Get gifts you actually want.</p>
-            <a href="/sign-up" className="inline-block px-5 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
-              Create my profile →
-            </a>
           </div>
         )}
 

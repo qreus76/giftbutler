@@ -75,7 +75,7 @@ export default async function Home() {
             {isSignedIn ? (
               <Link href="/dashboard"
                 className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-base transition-colors">
-                Go to my profile →
+                Go to my dashboard →
               </Link>
             ) : (
               <>
@@ -91,6 +91,10 @@ export default async function Home() {
             )}
           </div>
           <p className="text-center text-xs text-white/40 mt-4">Free forever · No credit card</p>
+          <div className="flex items-center justify-center gap-4 mt-3 text-xs text-white/25">
+            <Link href="/privacy" className="hover:text-white/50 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white/50 transition-colors">Terms</Link>
+          </div>
         </div>
       </div>
 
@@ -126,7 +130,7 @@ export default async function Home() {
               {isSignedIn ? (
                 <Link href="/dashboard"
                   className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-sm transition-colors">
-                  Go to my profile →
+                  Go to my dashboard →
                 </Link>
               ) : (
                 <>
@@ -153,11 +157,6 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Mobile footer */}
-      <div className="lg:hidden flex items-center justify-center gap-4 py-4 text-xs text-stone-300 border-t border-stone-100">
-        <Link href="/privacy" className="hover:text-stone-500 transition-colors">Privacy</Link>
-        <Link href="/terms" className="hover:text-stone-500 transition-colors">Terms</Link>
-      </div>
 
     </main>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, Users } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -76,6 +76,20 @@ export default function EditProfilePage() {
 
   return (
     <main className="min-h-screen bg-stone-50">
+      <nav className="border-b border-stone-100 bg-white">
+        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
+          <div className="flex items-center gap-2">
+            <a href="/my-people" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+              <Users className="w-5 h-5" />
+            </a>
+            <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+              My dashboard →
+            </a>
+          </div>
+        </div>
+      </nav>
+
       <div className="max-w-xl mx-auto px-4 py-8">
         <button onClick={() => router.push("/dashboard")} className="flex items-center gap-2 text-stone-400 hover:text-stone-700 mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -132,7 +146,7 @@ export default function EditProfilePage() {
               value={birthday}
               max={new Date().toISOString().split("T")[0]}
               onChange={e => setBirthday(e.target.value)}
-              className="w-full text-stone-900 text-sm focus:outline-none"
+              className="w-full text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg px-1"
             />
           </div>
 
