@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share, Users, Cake } from "lucide-react";
+import { Copy, Share, Users, Cake, LayoutDashboard } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -226,11 +226,20 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           <a href={user ? "/my-people" : "/"} className="text-base font-bold text-stone-900">GiftButler</a>
           {isLoaded && (isOwner || user ? (
             <div className="flex items-center gap-2">
-              <a href="/my-people" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+              <a href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <Users className="w-5 h-5" />
               </a>
-              <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
-                My dashboard →
+              <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+                <LayoutDashboard className="w-5 h-5" />
+              </a>
+              <a href="/dashboard/edit" title="Edit profile" aria-label="Edit profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
+                {user?.imageUrl ? (
+                  <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
+                    {user?.firstName?.[0]?.toUpperCase() || "?"}
+                  </div>
+                )}
               </a>
             </div>
           ) : (
