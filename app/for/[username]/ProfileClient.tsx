@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -45,6 +45,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [hints] = useState<Hint[]>(initialHints);
 
   const STORAGE_KEY = `gb_recs_${username}`;
+
+  const relationshipRef = useRef<HTMLSelectElement>(null);
 
   const [showFinder, setShowFinder] = useState(false);
   const [relationship, setRelationship] = useState("");
@@ -218,6 +220,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <div>
                 <label className="text-xs font-semibold text-stone-500 mb-1 block">I am their</label>
                 <select
+                  ref={relationshipRef}
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
@@ -326,7 +329,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               })}
             </div>
             <button
-              onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } }}
+              onClick={() => {
+                setRecommendations([]);
+                setGenerateError("");
+                setShowFinder(true);
+                try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                setTimeout(() => relationshipRef.current?.focus(), 400);
+              }}
               className="w-full mt-3 py-2.5 border border-stone-200 text-stone-500 text-sm font-semibold rounded-xl hover:bg-stone-50 transition-colors"
             >
               Generate different ideas
