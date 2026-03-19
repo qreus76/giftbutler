@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
 
@@ -39,6 +39,18 @@ export default async function ExplorePage() {
     .filter(p => (countMap[p.id] || 0) >= 3)
     .sort((a, b) => (countMap[b.id] || 0) - (countMap[a.id] || 0))
     .slice(0, 24);
+
+  // Batch fetch avatars from Clerk
+  const avatarMap: Record<string, string | null> = {};
+  if (featured.length > 0) {
+    try {
+      const clerk = await clerkClient();
+      const clerkUsers = await clerk.users.getUserList({ userId: featured.map(p => p.id), limit: 24 });
+      for (const u of clerkUsers.data) {
+        avatarMap[u.id] = u.imageUrl || null;
+      }
+    } catch { /* avatars not critical */ }
+  }
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -80,6 +92,7 @@ export default async function ExplorePage() {
               const days = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
               const birthdaySoon = days !== null && days <= 30;
               const displayName = profile.name || profile.username;
+              const avatar = avatarMap[profile.id] || null;
 
               return (
                 <Link
@@ -89,8 +102,14 @@ export default async function ExplorePage() {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-400 rounded-full flex items-center justify-center text-sm font-bold text-stone-900 flex-shrink-0">
-                        {displayName[0]?.toUpperCase()}
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                        {avatar ? (
+                          <img src={avatar} alt={displayName} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                            {displayName[0]?.toUpperCase()}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="font-bold text-stone-900 text-sm">{displayName}</p>
