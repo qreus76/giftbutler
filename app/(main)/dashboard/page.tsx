@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Clock, Users, UserPlus, LayoutDashboard, Cake, Gift } from "lucide-react";
+import { Eye, Clock, UserPlus, Cake, Gift } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 interface Person {
@@ -184,35 +184,6 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      {/* Nav */}
-      <nav className="border-b border-stone-100 bg-white">
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
-          <div className="flex items-center gap-2">
-            <a href="/my-people" title="My People" aria-label="My People" className="relative p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-              <Users className="w-5 h-5" />
-              {followRequests.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {followRequests.length}
-                </span>
-              )}
-            </a>
-            <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-amber-600 hover:bg-stone-100 rounded-xl transition-colors">
-              <LayoutDashboard className="w-5 h-5" />
-            </a>
-            <a href={profile?.username ? `/for/${profile.username}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                  {profile?.name?.[0]?.toUpperCase() || user?.firstName?.[0]?.toUpperCase() || "?"}
-                </div>
-              )}
-            </a>
-          </div>
-        </div>
-      </nav>
-
       <div className="max-w-xl mx-auto px-4 py-8">
 
         {/* Profile completion nudge */}

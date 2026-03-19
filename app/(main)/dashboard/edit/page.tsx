@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
-import { ArrowLeft, LogOut, Users, LayoutDashboard } from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
+import { ArrowLeft, LogOut } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
   const { signOut } = useClerk();
-  const { user } = useUser();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -77,29 +76,6 @@ export default function EditProfilePage() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <nav className="border-b border-stone-100 bg-white">
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
-          <div className="flex items-center gap-2">
-            <a href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-              <Users className="w-5 h-5" />
-            </a>
-            <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-              <LayoutDashboard className="w-5 h-5" />
-            </a>
-            <a href={currentUsername ? `/for/${currentUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                  {name?.[0]?.toUpperCase() || "?"}
-                </div>
-              )}
-            </a>
-          </div>
-        </div>
-      </nav>
-
       <div className="max-w-xl mx-auto px-4 py-8">
         <button onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/dashboard")} className="flex items-center gap-2 text-stone-400 hover:text-stone-700 mb-6 transition-colors cursor-pointer">
           <ArrowLeft className="w-4 h-4" />

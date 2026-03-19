@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Search, Users, Cake, LayoutDashboard } from "lucide-react";
+import { Search, Users, Cake } from "lucide-react";
 
 interface Person {
   id: string;
@@ -46,7 +46,6 @@ export default function MyPeoplePage() {
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
-  const [myUsername, setMyUsername] = useState("");
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,9 +64,6 @@ export default function MyPeoplePage() {
       .then(r => r.json())
       .then(d => setPeople(d.people || []))
       .finally(() => setLoading(false));
-    fetch("/api/me")
-      .then(r => r.json())
-      .then(d => { if (d.profile?.username) setMyUsername(d.profile.username); });
   }, [isLoaded, user, router]);
 
   function handleSearchInput(val: string) {
@@ -115,30 +111,6 @@ export default function MyPeoplePage() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      {/* Nav */}
-      <nav className="border-b border-stone-100 bg-white">
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
-          <div className="flex items-center gap-2">
-            <a href="/my-people" title="My People" aria-label="My People" className="p-2 text-amber-600 hover:text-amber-700 hover:bg-stone-100 rounded-xl transition-colors">
-              <Users className="w-5 h-5" />
-            </a>
-            <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-              <LayoutDashboard className="w-5 h-5" />
-            </a>
-            <a href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                  {user?.firstName?.[0]?.toUpperCase() || "?"}
-                </div>
-              )}
-            </a>
-          </div>
-        </div>
-      </nav>
-
       <div className="max-w-xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-stone-900 mb-1">My People</h1>
         <p className="text-stone-400 text-sm mb-6">Your gift network, sorted by upcoming birthday.</p>
