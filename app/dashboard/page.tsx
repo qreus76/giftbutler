@@ -53,6 +53,11 @@ export default function DashboardPage() {
   const [loadError, setLoadError] = useState(false);
   const [showVisitors, setShowVisitors] = useState(false);
 
+  // Follow requests
+  const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
+  const [followRequests, setFollowRequests] = useState<{ requester_id: string; name: string; username: string; avatar: string | null }[]>([]);
+  const [requestLabels, setRequestLabels] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (user) loadProfile();
   }, [user]);
@@ -67,11 +72,28 @@ export default function DashboardPage() {
       setVisitCount(data.visitCount || 0);
       setClaimCount(data.claimCount || 0);
       setRecentVisits(data.recentVisits || []);
+
+      // Load pending follow requests
+      const reqRes = await fetch("/api/follows/requests");
+      if (reqRes.ok) {
+        const reqData = await reqRes.json();
+        setFollowRequests(reqData.requests || []);
+      }
     } catch {
       setLoadError(true);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleFollowRequest(requesterId: string, action: "accept" | "reject") {
+    const label = requestLabels[requesterId] || null;
+    await fetch("/api/follows", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requester_id: requesterId, action, label }),
+    });
+    setFollowRequests(prev => prev.filter(r => r.requester_id !== requesterId));
   }
 
   async function addHint(e: React.FormEvent) {
@@ -208,6 +230,63 @@ export default function DashboardPage() {
                 Add →
               </button>
             )}
+          </div>
+        )}
+
+        {/* Follow requests */}
+        {followRequests.length > 0 && (
+          <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-4">
+            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-3">
+              👋 People requests ({followRequests.length})
+            </p>
+            <div className="flex flex-col gap-4">
+              {followRequests.map(req => (
+                <div key={req.requester_id}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                      {req.avatar ? (
+                        <img src={req.avatar} alt={req.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
+                          {req.name?.[0]?.toUpperCase() || "?"}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-stone-900">{req.name || req.username}</p>
+                      <p className="text-xs text-stone-400">@{req.username} wants to join your people</p>
+                    </div>
+                  </div>
+                  <p className="text-xs font-semibold text-stone-500 mb-2">Who are they to you?</p>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {LABELS.map(l => (
+                      <button
+                        key={l}
+                        onClick={() => setRequestLabels(prev => ({ ...prev, [req.requester_id]: l }))}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${requestLabels[req.requester_id] === l ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleFollowRequest(req.requester_id, "accept")}
+                      disabled={!requestLabels[req.requester_id]}
+                      className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleFollowRequest(req.requester_id, "reject")}
+                      className="px-4 py-2 border border-stone-200 text-stone-500 font-semibold rounded-xl text-sm hover:bg-stone-50 transition-colors"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
