@@ -50,6 +50,7 @@ export default function MyPeoplePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
+  const [searchIsSelf, setSearchIsSelf] = useState(false);
   const [searching, setSearching] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
@@ -68,6 +69,7 @@ export default function MyPeoplePage() {
     setSearchQuery(val);
     setSearchResult(null);
     setSearchNotFound(false);
+    setSearchIsSelf(false);
     setSelectedLabel("");
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!val.trim() || val.trim().length < 2) return;
@@ -77,6 +79,7 @@ export default function MyPeoplePage() {
       const data = await res.json();
       setSearching(false);
       if (data.result) setSearchResult(data.result);
+      else if (data.isSelf) setSearchIsSelf(true);
       else setSearchNotFound(true);
     }, 400);
   }
@@ -157,6 +160,9 @@ export default function MyPeoplePage() {
           {/* Not found */}
           {searchNotFound && !searching && (
             <p className="text-xs text-stone-400 mt-3">No profile found with that username.</p>
+          )}
+          {searchIsSelf && !searching && (
+            <p className="text-xs text-stone-400 mt-3">That's you! Search for someone else.</p>
           )}
 
           {/* Result */}

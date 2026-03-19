@@ -23,10 +23,10 @@ export default function NotFound() {
             Create my free profile →
           </Link>
           <Link
-            href="/explore"
+            href="/"
             className="px-6 py-3 border border-stone-200 hover:border-stone-300 text-stone-600 font-semibold rounded-2xl text-sm transition-colors"
           >
-            Browse profiles
+            Go home
           </Link>
         </div>
       </div>

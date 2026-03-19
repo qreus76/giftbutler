@@ -58,6 +58,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [recommendations, setRecommendations] = useState<GiftRecommendation[]>([]);
   const [myClaims, setMyClaims] = useState<string[]>([]);
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
+  const [claiming, setClaiming] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
 
   // Follow state
@@ -154,6 +155,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   }
 
   function claimGift(title: string) {
+    if (claiming) return;
+    setClaiming(title);
     const newClaims = [...myClaims, title];
     setMyClaims(newClaims);
     setExistingClaims([...existingClaims, { description: title.toLowerCase(), occasion: occasion || null }]);
@@ -170,7 +173,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }),
-    }).catch(() => { /* silent fail — optimistic UI already updated */ });
+    }).catch(() => { /* silent fail — optimistic UI already updated */ }).finally(() => setClaiming(null));
   }
 
   // A gift is "already claimed" if same title AND (no occasion specified OR occasions match)
@@ -434,7 +437,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                       </a>
                       <button
                         onClick={() => claimGift(rec.title)}
-                        disabled={iMineThis || alreadyClaimed}
+                        disabled={iMineThis || alreadyClaimed || claiming === rec.title}
                         className="px-3 py-2 border border-stone-200 text-stone-500 text-xs font-semibold rounded-xl hover:bg-stone-50 disabled:bg-green-50 disabled:text-green-600 disabled:border-green-200 transition-colors whitespace-nowrap"
                       >
                         {iMineThis ? "✓ You're getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}

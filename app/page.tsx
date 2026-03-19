@@ -146,7 +146,6 @@ export default async function Home() {
 
             {/* Minimal footer links */}
             <div className="flex items-center justify-center gap-4 mt-12 text-xs text-stone-300">
-              <Link href="/explore" className="hover:text-stone-500 transition-colors">Explore</Link>
               <Link href="/privacy" className="hover:text-stone-500 transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-stone-500 transition-colors">Terms</Link>
             </div>
@@ -156,7 +155,6 @@ export default async function Home() {
 
       {/* Mobile footer */}
       <div className="lg:hidden flex items-center justify-center gap-4 py-4 text-xs text-stone-300 border-t border-stone-100">
-        <Link href="/explore" className="hover:text-stone-500 transition-colors">Explore</Link>
         <Link href="/privacy" className="hover:text-stone-500 transition-colors">Privacy</Link>
         <Link href="/terms" className="hover:text-stone-500 transition-colors">Terms</Link>
       </div>
