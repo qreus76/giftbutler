@@ -220,16 +220,10 @@ export default function MyPeoplePage() {
         )}
 
         {!loading && people.length === 0 && (
-          <div className="text-center py-16">
+          <div className="text-center py-12">
             <p className="text-4xl mb-4">👥</p>
             <p className="font-semibold text-stone-700 mb-2">No one here yet</p>
-            <p className="text-stone-400 text-sm mb-6">Visit someone's profile and add them to your people.</p>
-            <a
-              href="/explore"
-              className="inline-block px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-xl text-sm transition-colors"
-            >
-              Explore profiles →
-            </a>
+            <p className="text-stone-400 text-sm">Search for family and friends by username above to get started.</p>
           </div>
         )}
 
