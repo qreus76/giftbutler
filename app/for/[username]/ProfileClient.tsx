@@ -60,6 +60,13 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
   const [shareCopied, setShareCopied] = useState(false);
 
+  // Follow state
+  const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
+  const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
+  const [showLabelPicker, setShowLabelPicker] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState("");
+  const [followLoading, setFollowLoading] = useState(false);
+
   async function shareProfile() {
     const url = `${window.location.origin}/for/${username}`;
     const shareText = isOwner
@@ -82,6 +89,27 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       fetch(`/api/profile/${username}?ref=${ref}`);
     }
   }, [username, isOwner, isLoaded]);
+
+  // Fetch follow status
+  useEffect(() => {
+    if (!isLoaded || !user || isOwner) return;
+    fetch(`/api/follows?username=${username}`)
+      .then(r => r.json())
+      .then(d => { if (d.status) setFollowStatus(d.status); });
+  }, [username, isLoaded, user, isOwner]);
+
+  async function sendFollowRequest() {
+    if (!selectedLabel) return;
+    setFollowLoading(true);
+    await fetch("/api/follows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, label: selectedLabel }),
+    });
+    setFollowStatus("pending");
+    setShowLabelPicker(false);
+    setFollowLoading(false);
+  }
 
   // Restore recommendations from sessionStorage on mount
   useEffect(() => {
@@ -209,14 +237,73 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
           <p className="text-stone-400 text-sm">@{username}</p>
           {profile.bio && <p className="text-stone-600 text-sm mt-2">{profile.bio}</p>}
-          <button
-            onClick={shareProfile}
-            className="mt-4 px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
-          >
-            <Share className="w-4 h-4 sm:hidden" />
-            <Copy className="w-4 h-4 hidden sm:block" />
-            {shareCopied ? "Link copied!" : isOwner ? "Share my profile" : `Share ${displayName}'s profile`}
-          </button>
+          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+            <button
+              onClick={shareProfile}
+              className="px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
+            >
+              <Share className="w-4 h-4 sm:hidden" />
+              <Copy className="w-4 h-4 hidden sm:block" />
+              {shareCopied ? "Link copied!" : isOwner ? "Share my profile" : `Share ${displayName}'s profile`}
+            </button>
+
+            {/* Follow button — only for signed-in non-owners */}
+            {isLoaded && user && !isOwner && (
+              <>
+                {followStatus === "none" && !showLabelPicker && (
+                  <button
+                    onClick={() => setShowLabelPicker(true)}
+                    className="px-5 py-2 border border-stone-200 hover:border-amber-300 text-stone-600 hover:text-amber-700 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
+                  >
+                    + Add to my people
+                  </button>
+                )}
+                {followStatus === "pending" && (
+                  <span className="px-5 py-2 text-stone-400 font-semibold text-sm">
+                    Request sent
+                  </span>
+                )}
+                {followStatus === "accepted" && (
+                  <span className="px-5 py-2 text-green-600 font-semibold text-sm">
+                    ✓ Connected
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Label picker */}
+          {showLabelPicker && (
+            <div className="mt-3 bg-white border border-stone-200 rounded-2xl p-4 text-left">
+              <p className="text-sm font-semibold text-stone-700 mb-3">Who is {displayName} to you?</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {LABELS.map(l => (
+                  <button
+                    key={l}
+                    onClick={() => setSelectedLabel(l)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={sendFollowRequest}
+                  disabled={!selectedLabel || followLoading}
+                  className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+                >
+                  {followLoading ? "Sending..." : "Send request"}
+                </button>
+                <button
+                  onClick={() => { setShowLabelPicker(false); setSelectedLabel(""); }}
+                  className="px-4 py-2 border border-stone-200 text-stone-500 font-semibold rounded-xl text-sm hover:bg-stone-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Find a gift button */}
