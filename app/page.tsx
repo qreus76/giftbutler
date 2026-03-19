@@ -10,7 +10,7 @@ export const metadata: Metadata = {
         url: "/present_giving.png",
         width: 1200,
         height: 1600,
-        alt: "GiftButler — The gift guide they made themselves.",
+        alt: "GiftButler — No more guessing. Just the right gift.",
       },
     ],
   },
@@ -59,7 +59,7 @@ export default async function Home() {
         {/* Content pinned to bottom, respects safe area */}
         <div className="absolute bottom-0 left-0 right-0 px-6" style={{ paddingBottom: "max(40px, env(safe-area-inset-bottom, 40px))" }}>
           <h1 className="text-3xl font-black text-white leading-tight mb-2">
-            The gift guide<br />they made themselves.
+            No more guessing.<br />Just the right gift.
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-1">
             Drop hints. Share your link. Get gifts you actually want.
@@ -111,7 +111,7 @@ export default async function Home() {
               GiftButler
             </h1>
             <p className="text-stone-400 text-sm text-center mb-10">
-              The gift guide they made themselves.
+              No more guessing. Just the right gift.
             </p>
 
             {/* Social proof */}
