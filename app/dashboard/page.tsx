@@ -3,8 +3,17 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Clock, Users, UserPlus, LayoutDashboard } from "lucide-react";
+import { Eye, Clock, Users, UserPlus, LayoutDashboard, Cake, Gift } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
+
+interface Person {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string | null;
+  daysUntilBirthday: number | null;
+  myLabel: string | null;
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -28,6 +37,13 @@ function getCompletionItems(profile: Profile, hints: Hint[]) {
   ];
 }
 
+function hintHealth(count: number): { label: string; color: string } {
+  if (count === 0) return { label: "Add hints to get started", color: "text-stone-400" };
+  if (count < 3) return { label: "Add a few more", color: "text-red-400" };
+  if (count < 8) return { label: "Good — add more for better ideas", color: "text-amber-500" };
+  return { label: "Looking great", color: "text-green-500" };
+}
+
 export default function DashboardPage() {
   const { user } = useUser();
   const router = useRouter();
@@ -36,10 +52,10 @@ export default function DashboardPage() {
   const [visitCount, setVisitCount] = useState(0);
   const [claimCount, setClaimCount] = useState(0);
   const [recentVisits, setRecentVisits] = useState<{ created_at: string; device_type: string | null; referrer: string | null }[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [showVisitors, setShowVisitors] = useState(false);
 
   // Follow requests
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -52,8 +68,12 @@ export default function DashboardPage() {
 
   async function loadProfile() {
     try {
-      const res = await fetch("/api/me");
-      const data = await res.json();
+      const [meRes, reqRes, peopleRes] = await Promise.all([
+        fetch("/api/me"),
+        fetch("/api/follows/requests"),
+        fetch("/api/follows/network"),
+      ]);
+      const data = await meRes.json();
       if (data.redirect) { router.push("/onboarding"); return; }
       setProfile(data.profile);
       setHints(data.hints);
@@ -61,11 +81,13 @@ export default function DashboardPage() {
       setClaimCount(data.claimCount || 0);
       setRecentVisits(data.recentVisits || []);
 
-      // Load pending follow requests
-      const reqRes = await fetch("/api/follows/requests");
       if (reqRes.ok) {
         const reqData = await reqRes.json();
         setFollowRequests(reqData.requests || []);
+      }
+      if (peopleRes.ok) {
+        const pd = await peopleRes.json();
+        setPeople(pd.people || []);
       }
     } catch {
       setLoadError(true);
@@ -128,12 +150,16 @@ export default function DashboardPage() {
     }
   }
 
-  const profileUrl = profile ? `${typeof window !== "undefined" ? window.location.origin : "https://giftbutler.io"}/for/${profile.username}` : "";
-
   const completionItems = profile ? getCompletionItems(profile, hints) : [];
   const completionDone = completionItems.filter(i => i.done).length;
-  const completionPct = Math.round((completionDone / completionItems.length) * 100);
+  const completionPct = completionItems.length ? Math.round((completionDone / completionItems.length) * 100) : 0;
   const nextStep = completionItems.find(i => !i.done);
+
+  const upcomingBirthdays = people
+    .filter(p => p.daysUntilBirthday !== null && p.daysUntilBirthday <= 30)
+    .sort((a, b) => (a.daysUntilBirthday ?? 999) - (b.daysUntilBirthday ?? 999));
+
+  const hint = hintHealth(hints.filter(h => h.category !== "avoid").length);
 
   if (loading) {
     return (
@@ -189,7 +215,6 @@ export default function DashboardPage() {
 
       <div className="max-w-xl mx-auto px-4 py-8">
 
-
         {/* Profile completion nudge */}
         {completionPct < 100 && nextStep && (
           <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
@@ -207,9 +232,9 @@ export default function DashboardPage() {
             {nextStep.action && (
               <button
                 onClick={() => router.push(nextStep.action!)}
-                className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex-shrink-0"
+                className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex-shrink-0 cursor-pointer"
               >
-                Add →
+                Go →
               </button>
             )}
           </div>
@@ -275,65 +300,130 @@ export default function DashboardPage() {
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <button
-            onClick={() => setShowVisitors(!showVisitors)}
-            className="bg-white border border-stone-200 rounded-2xl p-4 text-left hover:border-stone-300 transition-colors"
-          >
+          <div className="bg-white border border-stone-200 rounded-2xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <Eye className="w-3.5 h-3.5 text-stone-400" />
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Views</span>
             </div>
             <p className="text-2xl font-bold text-stone-900">{visitCount}</p>
-            <p className="text-xs text-stone-400">30 days</p>
-          </button>
+            <p className="text-xs text-stone-400">last 30 days</p>
+          </div>
           <div className="bg-white border border-stone-200 rounded-2xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Hints</span>
             </div>
             <p className="text-2xl font-bold text-stone-900">{hints.length}</p>
-            <p className="text-xs text-stone-400">on profile</p>
+            <p className={`text-xs ${hint.color}`}>{hint.label}</p>
           </div>
           <div className={`rounded-2xl p-4 border ${claimCount > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-stone-200"}`}>
             <div className="flex items-center gap-1.5 mb-1">
+              <Gift className="w-3.5 h-3.5 text-stone-400" />
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Gifts</span>
             </div>
             <p className={`text-2xl font-bold ${claimCount > 0 ? "text-amber-600" : "text-stone-900"}`}>{claimCount}</p>
-            <p className="text-xs text-stone-400">claimed</p>
+            <p className="text-xs text-stone-400">{claimCount > 0 ? "people are planning!" : "claimed"}</p>
           </div>
         </div>
 
-        {/* Recent visitors */}
-        {showVisitors && (
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
-            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Recent visitors</p>
-            {recentVisits.length === 0 ? (
-              <p className="text-stone-400 text-sm">No visits yet — share your link to get started.</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {recentVisits.map((v, i) => {
-                  const source = formatReferrer(v.referrer);
-                  const device = formatDevice(v.device_type);
-                  return (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Eye className="w-3.5 h-3.5 text-amber-600" />
+        {/* Upcoming birthdays — always visible */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <Cake className="w-3.5 h-3.5" />
+            Coming up
+          </p>
+          {upcomingBirthdays.length === 0 ? (
+            <div className="text-center py-6">
+              <Cake className="w-8 h-8 text-stone-200 mx-auto mb-2" />
+              <p className="text-stone-600 text-sm font-medium mb-1">
+                {people.length === 0 ? "No one in your network yet" : "No birthdays in the next 30 days"}
+              </p>
+              <p className="text-stone-400 text-xs mb-3">
+                {people.length === 0
+                  ? "Add family and friends to your people and you'll see their upcoming birthdays here."
+                  : "You're all caught up — check back closer to the next birthday."}
+              </p>
+              {people.length === 0 && (
+                <a href="/my-people" className="inline-block px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+                  Add people →
+                </a>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {upcomingBirthdays.slice(0, 5).map(person => (
+                <div key={person.id} className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                    {person.avatar ? (
+                      <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                        {person.name?.[0]?.toUpperCase() || "?"}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-800 truncate">
-                          {source}{device ? ` · ${device}` : ""}
-                        </p>
-                        <p className="text-xs text-stone-400 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {timeAgo(v.created_at)}
-                        </p>
-                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-stone-900 truncate">{person.name}</p>
+                    <p className={`text-xs font-medium ${person.daysUntilBirthday === 0 ? "text-red-500" : person.daysUntilBirthday! <= 7 ? "text-amber-600" : "text-stone-400"}`}>
+                      {person.daysUntilBirthday === 0 ? "Today!" : person.daysUntilBirthday === 1 ? "Tomorrow" : `In ${person.daysUntilBirthday} days`}
+                    </p>
+                  </div>
+                  <a
+                    href={`/for/${person.username}`}
+                    className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors flex-shrink-0"
+                  >
+                    Find a gift →
+                  </a>
+                </div>
+              ))}
+              {upcomingBirthdays.length > 5 && (
+                <a href="/my-people" className="text-xs text-amber-600 font-semibold hover:text-amber-700 text-center pt-1">
+                  See all {upcomingBirthdays.length} upcoming birthdays →
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Recent visitors — always visible */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <Eye className="w-3.5 h-3.5" />
+            Recent visitors
+          </p>
+          {recentVisits.length === 0 ? (
+            <div className="text-center py-6">
+              <Eye className="w-8 h-8 text-stone-200 mx-auto mb-2" />
+              <p className="text-stone-600 text-sm font-medium mb-1">No visits yet</p>
+              <p className="text-stone-400 text-xs mb-3">Share your profile link and you'll see who stops by here.</p>
+              <button onClick={copyLink} className="inline-block px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors cursor-pointer">
+                {copied ? "Copied!" : "Share my profile →"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {recentVisits.map((v, i) => {
+                const source = formatReferrer(v.referrer);
+                const device = formatDevice(v.device_type);
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Eye className="w-3.5 h-3.5 text-amber-600" />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-800 truncate">
+                        {source}{device ? ` · ${device}` : ""}
+                      </p>
+                      <p className="text-xs text-stone-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {timeAgo(v.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Profile link */}
         {profile && (
@@ -342,12 +432,11 @@ export default function DashboardPage() {
               <p className="text-xs text-stone-400 mb-0.5">Your gift profile</p>
               <p className="text-stone-900 font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>
             </div>
-            <button onClick={copyLink} className="text-xs text-amber-600 font-semibold hover:text-amber-700 flex-shrink-0 ml-2">
-              {copied ? "Copied!" : <><span className="md:hidden">Share</span><span className="hidden md:inline">Copy</span></>}
+            <button onClick={copyLink} className="text-xs text-amber-600 font-semibold hover:text-amber-700 flex-shrink-0 ml-2 cursor-pointer">
+              {copied ? "Copied!" : <><span className="md:hidden">Share</span><span className="hidden md:inline">Copy link</span></>}
             </button>
           </div>
         )}
-
 
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-6">
