@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useUser } from "@clerk/nextjs";
-import { ArrowLeft, LogOut, Users, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, LogOut, Users, LayoutDashboard, Settings } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
