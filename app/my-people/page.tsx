@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Settings } from "lucide-react";
+import { Settings, Search } from "lucide-react";
 
 interface Person {
   id: string;
@@ -14,6 +14,16 @@ interface Person {
   daysUntilBirthday: number | null;
   myLabel: string | null;
 }
+
+interface SearchResult {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string | null;
+  followStatus: "none" | "pending" | "accepted";
+}
+
+const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
 
 function birthdayText(days: number | null): string {
   if (days === null) return "Birthday unknown";
@@ -38,6 +48,15 @@ export default function MyPeoplePage() {
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
 
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [searchNotFound, setSearchNotFound] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (!isLoaded) return;
     if (!user) { router.push("/sign-in"); return; }
@@ -46,6 +65,35 @@ export default function MyPeoplePage() {
       .then(d => setPeople(d.people || []))
       .finally(() => setLoading(false));
   }, [isLoaded, user, router]);
+
+  function handleSearchInput(val: string) {
+    setSearchQuery(val);
+    setSearchResult(null);
+    setSearchNotFound(false);
+    setSelectedLabel("");
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!val.trim() || val.trim().length < 2) return;
+    searchTimer.current = setTimeout(async () => {
+      setSearching(true);
+      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim().toLowerCase())}`);
+      const data = await res.json();
+      setSearching(false);
+      if (data.result) setSearchResult(data.result);
+      else setSearchNotFound(true);
+    }, 400);
+  }
+
+  async function sendFollowRequest(username: string) {
+    if (!selectedLabel) return;
+    setSendingRequest(true);
+    await fetch("/api/follows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, label: selectedLabel }),
+    });
+    setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
+    setSendingRequest(false);
+  }
 
   async function removeConnection(username: string, name: string) {
     if (!confirm(`Remove ${name} from your people? This is silent — they won't be notified.`)) return;
@@ -86,6 +134,81 @@ export default function MyPeoplePage() {
       <div className="max-w-xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-stone-900 mb-1">My People</h1>
         <p className="text-stone-400 text-sm mb-6">Your gift network, sorted by upcoming birthday.</p>
+
+        {/* Search */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">
+          <p className="text-sm font-semibold text-stone-700 mb-3">Find someone by username</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input
+              value={searchQuery}
+              onChange={e => handleSearchInput(e.target.value)}
+              placeholder="Enter their username..."
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+
+          {/* Searching spinner */}
+          {searching && (
+            <p className="text-xs text-stone-400 mt-3">Searching...</p>
+          )}
+
+          {/* Not found */}
+          {searchNotFound && !searching && (
+            <p className="text-xs text-stone-400 mt-3">No profile found with that username.</p>
+          )}
+
+          {/* Result */}
+          {searchResult && !searching && (
+            <div className="mt-3">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                  {searchResult.avatar ? (
+                    <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                      {searchResult.name[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold text-stone-900 text-sm">{searchResult.name}</p>
+                  <p className="text-xs text-stone-400">@{searchResult.username}</p>
+                </div>
+              </div>
+
+              {searchResult.followStatus === "accepted" && (
+                <p className="text-xs text-green-600 font-semibold">✓ Already in your people</p>
+              )}
+              {searchResult.followStatus === "pending" && (
+                <p className="text-xs text-stone-400 font-semibold">Request already sent</p>
+              )}
+              {searchResult.followStatus === "none" && (
+                <>
+                  <p className="text-xs font-semibold text-stone-500 mb-2">Who are they to you?</p>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {LABELS.map(l => (
+                      <button
+                        key={l}
+                        onClick={() => setSelectedLabel(l)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => sendFollowRequest(searchResult.username)}
+                    disabled={!selectedLabel || sendingRequest}
+                    className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+                  >
+                    {sendingRequest ? "Sending..." : "Send request"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {loading && (
           <div className="flex justify-center py-16">
