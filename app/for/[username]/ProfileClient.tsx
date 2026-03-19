@@ -71,6 +71,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [shareCopied, setShareCopied] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showAllRecs, setShowAllRecs] = useState(false);
+  const [notifyPromptTitle, setNotifyPromptTitle] = useState<string | null>(null);
+  const [notifySent, setNotifySent] = useState<Set<string>>(new Set());
 
   // Follow state
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -181,12 +183,25 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, myClaims: newClaims }));
       }
     } catch { /* sessionStorage unavailable */ }
-    // Fire and forget with silent error handling
     fetch("/api/claims", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }),
-    }).catch(() => { /* silent fail — optimistic UI already updated */ }).finally(() => setClaiming(null));
+    }).catch(() => { /* silent fail — optimistic UI already updated */ }).finally(() => {
+      setClaiming(null);
+      setNotifyPromptTitle(title);
+    });
+  }
+
+  async function sendNotify() {
+    if (!notifyPromptTitle) return;
+    setNotifySent(prev => new Set(prev).add(notifyPromptTitle));
+    setNotifyPromptTitle(null);
+    await fetch("/api/claims/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipient_username: username, occasion }),
+    });
   }
 
   // A gift is "already claimed" if same title AND (no occasion specified OR occasions match)
@@ -504,6 +519,30 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                           {iMineThis ? "✓ You're getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
                         </button>
                       </div>
+
+                      {/* Notify prompt — appears once after claiming */}
+                      {notifyPromptTitle === rec.title && (
+                        <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between gap-3">
+                          <p className="text-xs text-stone-500">Let {displayName} know something is on the way?</p>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button
+                              onClick={sendNotify}
+                              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-lg text-xs transition-colors"
+                            >
+                              Send hint
+                            </button>
+                            <button
+                              onClick={() => setNotifyPromptTitle(null)}
+                              className="px-3 py-1.5 border border-stone-200 text-stone-400 font-semibold rounded-lg text-xs hover:bg-stone-50 transition-colors"
+                            >
+                              Keep secret
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {notifySent.has(rec.title) && (
+                        <p className="mt-2 text-xs text-green-600 font-semibold">✓ Hint sent — they know something&apos;s coming</p>
+                      )}
                     </div>
                   );
                 })}
