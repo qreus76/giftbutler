@@ -184,7 +184,7 @@ export default function DashboardPage() {
       {/* Nav */}
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
+          <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/dashboard/edit")}
