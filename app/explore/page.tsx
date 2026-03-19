@@ -56,10 +56,10 @@ export default async function ExplorePage() {
     <main className="min-h-screen bg-stone-50">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto border-b border-stone-100">
-        <Link href="/" className="text-xl font-bold text-stone-900">GiftButler</Link>
+        <Link href={isSignedIn ? "/my-people" : "/"} className="text-xl font-bold text-stone-900">GiftButler</Link>
         {isSignedIn ? (
           <Link href="/dashboard" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
-            My profile →
+            My dashboard →
           </Link>
         ) : (
           <Link href="/sign-up" className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">

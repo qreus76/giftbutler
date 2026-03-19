@@ -443,13 +443,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex items-center justify-center gap-6">
+          <a href="/my-people" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">My People</a>
           <button
             onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
             className="text-xs text-stone-400 hover:text-stone-600 underline"
           >
-            Preview my public profile
+            Preview my profile
           </button>
+          <a href="/explore" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">Explore</a>
         </div>
       </div>
     </main>
