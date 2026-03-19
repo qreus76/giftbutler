@@ -159,22 +159,10 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <div className="max-w-xl mx-auto px-4 py-8">
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="You" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                  {profile?.name?.[0]?.toUpperCase() || "?"}
-                </div>
-              )}
-            </div>
-            <h1 className="text-xl font-bold text-stone-900">GiftButler</h1>
-          </div>
+      {/* Nav */}
+      <nav className="border-b border-stone-100 bg-white">
+        <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/" className="text-base font-bold text-stone-900">GiftButler</a>
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/dashboard/edit")}
@@ -183,20 +171,19 @@ export default function DashboardPage() {
             >
               <Settings className="w-5 h-5" />
             </button>
-            <button
-              onClick={copyLink}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors"
-            >
-              {copied ? <Check className="w-4 h-4" /> : (
-                <>
-                  <Share2 className="w-4 h-4 md:hidden" />
-                  <Copy className="w-4 h-4 hidden md:block" />
-                </>
-              )}
-              {copied ? "Copied!" : "Share link"}
-            </button>
+            {profile?.username && (
+              <a
+                href={`/for/${profile.username}`}
+                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors"
+              >
+                My profile →
+              </a>
+            )}
           </div>
         </div>
+      </nav>
+
+      <div className="max-w-xl mx-auto px-4 py-8">
 
 
         {/* Profile completion nudge */}
