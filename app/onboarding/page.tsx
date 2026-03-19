@@ -247,10 +247,10 @@ export default function OnboardingPage() {
           </div>
 
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(`/for/${username}`)}
             className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors"
           >
-            Go to my dashboard →
+            Go to my profile →
           </button>
         </div>
       </main>
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
           <div className="text-5xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-stone-900 mb-2">Your profile is live!</h2>
           <p className="text-stone-400 text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
-          <p className="text-xs text-stone-400 mb-8">We added a few hints from your answers. You can edit or replace them from your dashboard anytime.</p>
+          <p className="text-xs text-stone-400 mb-8">We added a few hints from your answers. You can edit or replace them from your profile anytime.</p>
 
           {/* Link copy box */}
           <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
@@ -304,10 +304,10 @@ export default function OnboardingPage() {
             Find my people →
           </button>
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(`/for/${username}`)}
             className="text-xs text-stone-400 hover:text-stone-600 underline"
           >
-            Skip — go to my dashboard
+            Skip — go to my profile
           </button>
         </div>
       </main>
