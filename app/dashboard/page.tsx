@@ -270,17 +270,15 @@ export default function DashboardPage() {
             >
               <Settings className="w-5 h-5" />
             </button>
-            {profile?.username && (
-              <a href={`/for/${profile.username}`} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
-                {user?.imageUrl ? (
-                  <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                    {profile.name?.[0]?.toUpperCase() || user?.firstName?.[0]?.toUpperCase() || "?"}
-                  </div>
-                )}
-              </a>
-            )}
+            <a href={profile?.username ? `/for/${profile.username}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
+                  {profile?.name?.[0]?.toUpperCase() || user?.firstName?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
+            </a>
           </div>
         </div>
       </nav>

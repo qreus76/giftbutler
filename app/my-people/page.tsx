@@ -46,6 +46,7 @@ export default function MyPeoplePage() {
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [myUsername, setMyUsername] = useState("");
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,6 +65,9 @@ export default function MyPeoplePage() {
       .then(r => r.json())
       .then(d => setPeople(d.people || []))
       .finally(() => setLoading(false));
+    fetch("/api/me")
+      .then(r => r.json())
+      .then(d => { if (d.profile?.username) setMyUsername(d.profile.username); });
   }, [isLoaded, user, router]);
 
   function handleSearchInput(val: string) {
@@ -122,25 +126,18 @@ export default function MyPeoplePage() {
             <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
               <LayoutDashboard className="w-5 h-5" />
             </a>
-            <button
-              onClick={() => router.push("/dashboard/edit")}
-              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
-              aria-label="Edit profile"
-              title="Edit profile"
-            >
+            <a href="/dashboard/edit" title="Edit profile" aria-label="Edit profile" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
               <Settings className="w-5 h-5" />
-            </button>
-            {user && (
-              <a href="/dashboard" title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
-                {user.imageUrl ? (
-                  <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                    {user.firstName?.[0]?.toUpperCase() || "?"}
-                  </div>
-                )}
-              </a>
-            )}
+            </a>
+            <a href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
+                  {user?.firstName?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
+            </a>
           </div>
         </div>
       </nav>

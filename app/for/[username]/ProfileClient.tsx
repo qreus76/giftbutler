@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share, Users, Cake, LayoutDashboard } from "lucide-react";
+import { Copy, Share, Users, Cake, LayoutDashboard, Settings } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -74,6 +74,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [showAllRecs, setShowAllRecs] = useState(false);
   const [notifyPromptTitle, setNotifyPromptTitle] = useState<string | null>(null);
   const [notifySent, setNotifySent] = useState<Set<string>>(new Set());
+  const [myUsername, setMyUsername] = useState("");
 
   // Follow state
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -105,12 +106,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     }
   }, [username, isOwner, isLoaded]);
 
-  // Fetch follow status
+  // Fetch follow status and own username
   useEffect(() => {
-    if (!isLoaded || !user || isOwner) return;
-    fetch(`/api/follows?username=${username}`)
-      .then(r => r.json())
-      .then(d => { if (d.status) setFollowStatus(d.status); });
+    if (!isLoaded || !user) return;
+    if (isOwner) {
+      setMyUsername(username);
+    } else {
+      fetch(`/api/follows?username=${username}`)
+        .then(r => r.json())
+        .then(d => { if (d.status) setFollowStatus(d.status); });
+      fetch("/api/me")
+        .then(r => r.json())
+        .then(d => { if (d.profile?.username) setMyUsername(d.profile.username); });
+    }
   }, [username, isLoaded, user, isOwner]);
 
   async function sendFollowRequest() {
@@ -232,7 +240,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <LayoutDashboard className="w-5 h-5" />
               </a>
-              <a href="/dashboard/edit" title="Edit profile" aria-label="Edit profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
+              <a href="/dashboard/edit" title="Edit profile" aria-label="Edit profile" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+                <Settings className="w-5 h-5" />
+              </a>
+              <a href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
                 {user?.imageUrl ? (
                   <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
