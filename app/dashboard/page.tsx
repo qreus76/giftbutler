@@ -340,6 +340,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Hints feed */}
+        <p className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">My Hints</p>
         <div className="flex flex-col gap-3">
           {hints.length === 0 ? (
             <div className="text-center py-12 text-stone-400">
