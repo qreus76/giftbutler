@@ -10,28 +10,37 @@ export async function GET(req: NextRequest) {
   }
 
   const today = new Date();
-  const targetDate = new Date(today);
-  targetDate.setDate(today.getDate() + 7); // 7 days from now
 
-  const targetMonth = targetDate.getMonth() + 1; // 1-12
-  const targetDay = targetDate.getDate();
-
-  // Find all profiles whose birthday falls on the target date (month + day match)
-  // birthday is stored as YYYY-MM-DD, we match on MM-DD
-  const targetMMDD = `${String(targetMonth).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
-
-  const { data: birthdayProfiles, error } = await supabaseAdmin
-    .from("profiles")
-    .select("id, username, name, birthday")
-    .like("birthday", `%-${targetMMDD}`);
-
-  if (error) {
-    console.error("[birthday-reminders] Failed to fetch profiles:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  function mmdd(daysFromNow: number): string {
+    const d = new Date(today);
+    d.setDate(today.getDate() + daysFromNow);
+    return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
-  if (!birthdayProfiles || birthdayProfiles.length === 0) {
-    return NextResponse.json({ sent: 0, message: "No birthdays in 7 days" });
+  // Fetch profiles for all relevant milestones at once
+  const milestoneDays = [3, 7, 14];
+  const mmddValues = milestoneDays.map(d => mmdd(d));
+
+  const { data: allBirthdayProfiles, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, username, name, birthday")
+    .or(mmddValues.map(v => `birthday.like.%-${v}`).join(","));
+
+  // Separate profiles by which milestone they hit today
+  const profilesByMilestone: Record<number, typeof allBirthdayProfiles> = {};
+  for (const days of milestoneDays) {
+    const target = mmdd(days);
+    profilesByMilestone[days] = (allBirthdayProfiles || []).filter(p =>
+      p.birthday?.endsWith(`-${target}`) || p.birthday?.slice(5) === target
+    );
+  }
+
+  const birthdayProfiles = profilesByMilestone[7] || [];
+  const error7 = error;
+
+  if (error7) {
+    console.error("[birthday-reminders] Failed to fetch profiles:", error7.message);
+    return NextResponse.json({ error: error7.message }, { status: 500 });
   }
 
   const clerk = await clerkClient();
@@ -106,6 +115,67 @@ export async function GET(req: NextRequest) {
         sent++;
       } catch (err) {
         console.error(`[birthday-reminders] Failed to send for ${birthdayPerson.username}:`, err);
+      }
+    }
+  }
+
+  // Send reminders to the profile owner at 14 days and 3 days before their birthday
+  for (const [days, label, subject] of [
+    [14, "2 weeks", "Your birthday is 2 weeks away — is your list ready?"],
+    [3,  "3 days",  "3 days until your birthday — time to share your list!"],
+  ] as [number, string, string][]) {
+    const ownerProfiles = profilesByMilestone[days] || [];
+    for (const profile of ownerProfiles) {
+      try {
+        const clerkUser = await clerk.users.getUser(profile.id);
+        const email = clerkUser.emailAddresses[0]?.emailAddress;
+        if (!email) continue;
+
+        const name = profile.name || profile.username;
+        const profileUrl = `${baseUrl}/for/${profile.username}`;
+
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: "GiftButler <hello@giftbutler.io>",
+            to: [email],
+            subject,
+            text: `Hey ${name}! Your birthday is in ${label}.\n\nNow's the perfect time to share your GiftButler profile so the people who buy you gifts know exactly what you want.\n\nYour profile: ${profileUrl}\n\n---\nGiftButler · Free forever\nTo stop these emails, email privacy@giftbutler.io`,
+            html: `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
+                <div style="background: #fbbf24; border-radius: 16px; padding: 20px 24px; margin: 0 0 24px; text-align: center;">
+                  <h1 style="font-size: 22px; font-weight: 800; color: #1c1917; margin: 0 0 4px;">Your birthday is in ${label}</h1>
+                  <p style="color: #1c1917; font-size: 14px; margin: 0; opacity: 0.7;">Time to share your list, ${name}</p>
+                </div>
+                <p style="color: #78716c; font-size: 15px; margin: 0 0 16px; line-height: 1.6;">
+                  The people who want to get you something don&apos;t have to guess — share your GiftButler profile and they&apos;ll know exactly what to get you.
+                </p>
+                <div style="background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
+                  <p style="color: #a8a29e; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px;">Your profile link</p>
+                  <p style="color: #1c1917; font-size: 14px; font-weight: 600; margin: 0;">${profileUrl}</p>
+                </div>
+                <a href="${profileUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none; margin: 0 0 24px;">
+                  View &amp; share my profile →
+                </a>
+                <p style="color: #a8a29e; font-size: 12px; margin: 0; line-height: 1.6;">
+                  GiftButler · Free forever<br/>
+                  To stop these emails, email <a href="mailto:privacy@giftbutler.io" style="color: #a8a29e;">privacy@giftbutler.io</a>
+                </p>
+              </div>
+            `,
+            headers: {
+              "List-Unsubscribe": `<mailto:privacy@giftbutler.io?subject=Unsubscribe>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          }),
+        });
+        sent++;
+      } catch (err) {
+        console.error(`[birthday-reminders] Owner reminder failed for ${profile.username}:`, err);
       }
     }
   }

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, Search, Users } from "lucide-react";
+import { Copy, Check, Search, Users, Cake } from "lucide-react";
 
 const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
 
@@ -57,6 +57,9 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [birthdayDone, setBirthdayDone] = useState(false);
+  const [birthdayInput, setBirthdayInput] = useState("");
+  const [savingBirthday, setSavingBirthday] = useState(false);
   const [findingPeople, setFindingPeople] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
@@ -168,6 +171,19 @@ export default function OnboardingPage() {
     }
   }
 
+  async function saveBirthday() {
+    setSavingBirthday(true);
+    if (birthdayInput) {
+      await fetch("/api/profile/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ birthday: birthdayInput }),
+      });
+    }
+    setSavingBirthday(false);
+    setBirthdayDone(true);
+  }
+
   // Find your people screen
   if (done && findingPeople) {
     return (
@@ -251,6 +267,45 @@ export default function OnboardingPage() {
             className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors"
           >
             Go to my profile →
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // Birthday step
+  if (done && !birthdayDone) {
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Cake className="w-8 h-8 text-amber-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-stone-900 mb-2">When&apos;s your birthday?</h2>
+          <p className="text-stone-400 text-sm mb-8">
+            We&apos;ll remind you to share your profile before your birthday — so the people who matter know exactly what to get you.
+          </p>
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+            <input
+              type="date"
+              value={birthdayInput}
+              max={new Date().toISOString().split("T")[0]}
+              onChange={e => setBirthdayInput(e.target.value)}
+              className="w-full text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg px-1 py-1"
+            />
+          </div>
+          <button
+            onClick={saveBirthday}
+            disabled={savingBirthday || !birthdayInput}
+            className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-2xl transition-colors mb-3"
+          >
+            {savingBirthday ? "Saving..." : "Save my birthday →"}
+          </button>
+          <button
+            onClick={() => setBirthdayDone(true)}
+            className="text-xs text-stone-400 hover:text-stone-600 underline"
+          >
+            Skip for now
           </button>
         </div>
       </main>
