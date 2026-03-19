@@ -57,6 +57,21 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [recommendations, setRecommendations] = useState<GiftRecommendation[]>([]);
   const [myClaims, setMyClaims] = useState<string[]>([]);
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  async function shareProfile() {
+    const url = `${window.location.origin}/for/${username}`;
+    const shareText = isOwner
+      ? `Check out my gift profile on GiftButler!`
+      : `Check out ${displayName}'s gift profile on GiftButler!`;
+    if (navigator.share) {
+      try { await navigator.share({ title: `${displayName}'s Gift Profile`, text: shareText, url }); } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  }
 
   // Record visit client-side — wait until auth is known, skip if owner
   useEffect(() => {
@@ -193,6 +208,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
           <p className="text-stone-400 text-sm">@{username}</p>
           {profile.bio && <p className="text-stone-600 text-sm mt-2">{profile.bio}</p>}
+          <button
+            onClick={shareProfile}
+            className="mt-4 px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors"
+          >
+            {shareCopied ? "Link copied!" : isOwner ? "Share my profile" : `Share ${displayName}'s profile`}
+          </button>
         </div>
 
         {/* Find a gift button */}
