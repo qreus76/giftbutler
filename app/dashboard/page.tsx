@@ -196,7 +196,7 @@ export default function DashboardPage() {
             </a>
             <button
               onClick={() => router.push("/dashboard/edit")}
-              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
+              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
               aria-label="Edit profile"
             >
               <Settings className="w-5 h-5" />
@@ -462,11 +462,10 @@ export default function DashboardPage() {
           </a>
           <button
             onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
-            className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+            className="text-xs text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
           >
             Preview my profile
           </button>
-          <a href="/explore" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">Explore</a>
         </div>
       </div>
     </main>

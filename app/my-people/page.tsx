@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Settings, Search } from "lucide-react";
+import { Settings, Search, Users } from "lucide-react";
 
 interface Person {
   id: string;
@@ -112,11 +112,14 @@ export default function MyPeoplePage() {
       {/* Nav */}
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/dashboard" className="text-base font-bold text-stone-900">GiftButler</a>
+          <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
           <div className="flex items-center gap-2">
+            <a href="/my-people" className="p-2 text-amber-600 hover:text-amber-700 hover:bg-stone-100 rounded-xl transition-colors">
+              <Users className="w-5 h-5" />
+            </a>
             <button
               onClick={() => router.push("/dashboard/edit")}
-              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
+              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
               aria-label="Edit profile"
             >
               <Settings className="w-5 h-5" />

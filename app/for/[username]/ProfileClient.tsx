@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share } from "lucide-react";
+import { Copy, Share, Users } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -193,9 +193,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href={user ? "/my-people" : "/"} className="text-base font-bold text-stone-900">GiftButler</a>
           {isLoaded && (isOwner || user ? (
-            <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
-              My dashboard →
-            </a>
+            <div className="flex items-center gap-2">
+              <a href="/my-people" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+                <Users className="w-5 h-5" />
+              </a>
+              <a href="/dashboard" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+                My dashboard →
+              </a>
+            </div>
           ) : (
             <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
               Create yours free →
