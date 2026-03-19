@@ -35,12 +35,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white">
 
-      {/* Landscape warning — mobile only */}
-      <div className="rotate-warning fixed inset-0 z-50 bg-stone-900 flex-col items-center justify-center text-center px-8">
-        <p className="text-5xl mb-4">↩</p>
-        <p className="text-white font-bold text-xl mb-2">Please rotate your phone</p>
-        <p className="text-stone-400 text-sm">GiftButler works best in portrait mode</p>
-      </div>
 
       {/* ── MOBILE LAYOUT — full bleed image with overlay ── */}
       <div className="page-fullbleed lg:hidden">

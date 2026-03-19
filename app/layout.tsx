@@ -52,7 +52,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }}
     >
       <html lang="en">
-        <body className={geist.className}>{children}</body>
+        <body className={geist.className}>
+          {/* Landscape orientation warning — mobile only */}
+          <div className="rotate-warning fixed inset-0 z-50 bg-stone-900 flex-col items-center justify-center text-center px-8">
+            <p className="text-5xl mb-4">↩</p>
+            <p className="text-white font-bold text-xl mb-2">Please rotate your phone</p>
+            <p className="text-stone-400 text-sm">GiftButler works best in portrait mode</p>
+          </div>
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );
