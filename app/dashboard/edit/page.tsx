@@ -101,7 +101,7 @@ export default function EditProfilePage() {
       </nav>
 
       <div className="max-w-xl mx-auto px-4 py-8">
-        <button onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/dashboard")} className="flex items-center gap-2 text-stone-400 hover:text-stone-700 mb-6 transition-colors">
+        <button onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/dashboard")} className="flex items-center gap-2 text-stone-400 hover:text-stone-700 mb-6 transition-colors cursor-pointer">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Back to profile</span>
         </button>
