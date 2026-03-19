@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Eye, Copy, Check, Clock, Share2 } from "lucide-react";
+import { Settings, Eye, Copy, Check, Clock, Share2, Users } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -186,8 +186,8 @@ export default function DashboardPage() {
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/my-people" className="text-base font-bold text-stone-900">GiftButler</a>
           <div className="flex items-center gap-2">
-            <a href="/my-people" className="relative px-3 py-1.5 text-stone-500 hover:text-stone-800 font-semibold text-xs transition-colors">
-              My People
+            <a href="/my-people" className="relative p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+              <Users className="w-5 h-5" />
               {followRequests.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {followRequests.length}
