@@ -17,37 +17,42 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white">
 
-      {/* ── MOBILE LAYOUT ── */}
-      <div className="flex flex-col min-h-screen lg:hidden">
+      {/* ── MOBILE LAYOUT — full bleed image with overlay ── */}
+      <div className="relative h-screen lg:hidden overflow-hidden">
 
-        {/* Logo */}
-        <div className="flex justify-center pt-10 pb-6 px-6">
-          <span className="text-3xl font-black text-stone-900 tracking-tight">GiftButler</span>
+        {/* Full bleed image */}
+        <img
+          src="/present_giving.png"
+          alt="Someone giving a gift"
+          className="absolute inset-0 w-full h-full object-cover object-top"
+        />
+
+        {/* Gradient overlay — transparent top, dark bottom */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.92) 100%)"
+        }} />
+
+        {/* Logo — top left */}
+        <div className="absolute top-0 left-0 right-0 px-6 pt-12">
+          <span className="text-xl font-black text-white tracking-tight drop-shadow-sm">GiftButler</span>
         </div>
 
-        {/* Hero image */}
-        <div className="mx-6 rounded-3xl overflow-hidden" style={{ minHeight: "280px" }}>
-          <img src="/present_giving.png" alt="Someone giving a gift" className="w-full h-full object-cover" style={{ minHeight: "280px" }} />
-        </div>
-
-        {/* Copy + CTA */}
-        <div className="flex flex-col flex-1 px-6 pt-8 pb-10">
-          <h1 className="text-3xl font-black text-stone-900 leading-tight mb-3">
+        {/* Content pinned to bottom */}
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-10">
+          <h1 className="text-3xl font-black text-white leading-tight mb-2">
             The gift guide<br />they made themselves.
           </h1>
-          <p className="text-stone-500 text-base leading-relaxed mb-2">
+          <p className="text-white/70 text-sm leading-relaxed mb-1">
             Drop hints. Share your link. Get gifts you actually want.
           </p>
           {profileCount > 1 && (
-            <p className="text-xs font-semibold text-amber-600 mb-8">
+            <p className="text-amber-300 text-xs font-semibold mb-5">
               {profileCount.toLocaleString()} people have set up their profile
             </p>
           )}
-          {!profileCount || profileCount <= 1 && (
-            <div className="mb-8" />
-          )}
+          {(!profileCount || profileCount <= 1) && <div className="mb-5" />}
 
-          <div className="flex flex-col gap-3 mt-auto">
+          <div className="flex flex-col gap-3">
             {isSignedIn ? (
               <Link href="/dashboard"
                 className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-base transition-colors">
@@ -60,14 +65,13 @@ export default async function Home() {
                   Create my free profile
                 </Link>
                 <Link href="/sign-in"
-                  className="w-full py-4 border border-stone-200 hover:border-stone-300 text-stone-600 font-semibold rounded-2xl text-center text-base transition-colors">
+                  className="w-full py-4 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-2xl text-center text-base transition-colors backdrop-blur-sm">
                   Sign in
                 </Link>
               </>
             )}
           </div>
-
-          <p className="text-center text-xs text-stone-400 mt-4">Free forever · No credit card</p>
+          <p className="text-center text-xs text-white/40 mt-4">Free forever · No credit card</p>
         </div>
       </div>
 
