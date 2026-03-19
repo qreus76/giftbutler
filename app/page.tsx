@@ -18,7 +18,7 @@ export default async function Home() {
     <main className="min-h-screen bg-white">
 
       {/* ── MOBILE LAYOUT — full bleed image with overlay ── */}
-      <div className="relative h-screen lg:hidden overflow-hidden">
+      <div className="page-fullbleed lg:hidden">
 
         {/* Full bleed image */}
         <img
@@ -32,25 +32,25 @@ export default async function Home() {
           background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.92) 100%)"
         }} />
 
-        {/* Logo — top left */}
-        <div className="absolute top-0 left-0 right-0 px-6 pt-12">
+        {/* Logo — top left, respects safe area */}
+        <div className="absolute top-0 left-0 right-0 px-6" style={{ paddingTop: "max(48px, env(safe-area-inset-top, 48px))" }}>
           <span className="text-xl font-black text-white tracking-tight drop-shadow-sm">GiftButler</span>
         </div>
 
-        {/* Content pinned to bottom */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-10">
+        {/* Content pinned to bottom, respects safe area */}
+        <div className="absolute bottom-0 left-0 right-0 px-6" style={{ paddingBottom: "max(40px, env(safe-area-inset-bottom, 40px))" }}>
           <h1 className="text-3xl font-black text-white leading-tight mb-2">
             The gift guide<br />they made themselves.
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-1">
             Drop hints. Share your link. Get gifts you actually want.
           </p>
-          {profileCount > 1 && (
+          {profileCount >= 50 && (
             <p className="text-amber-300 text-xs font-semibold mb-5">
               {profileCount.toLocaleString()} people have set up their profile
             </p>
           )}
-          {(!profileCount || profileCount <= 1) && <div className="mb-5" />}
+          {profileCount < 50 && <div className="mb-5" />}
 
           <div className="flex flex-col gap-3">
             {isSignedIn ? (
@@ -96,7 +96,7 @@ export default async function Home() {
             </p>
 
             {/* Social proof */}
-            {profileCount > 1 && (
+            {profileCount >= 50 && (
               <p className="text-xs font-semibold text-amber-600 text-center mb-6">
                 {profileCount.toLocaleString()} people have set up their profile
               </p>
