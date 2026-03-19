@@ -25,15 +25,9 @@ export default async function Home() {
           <span className="text-3xl font-black text-stone-900 tracking-tight">GiftButler</span>
         </div>
 
-        {/* Hero image placeholder */}
-        <div className="mx-6 rounded-3xl overflow-hidden bg-amber-50 border-2 border-dashed border-amber-200 flex items-center justify-center"
-          style={{ minHeight: "280px" }}>
-          {/* Replace this div with your <img> or <Image> once you have a photo */}
-          <div className="text-center px-6 py-10">
-            <p className="text-4xl mb-3">🎁</p>
-            <p className="text-sm font-medium text-amber-600">Your image goes here</p>
-            <p className="text-xs text-stone-400 mt-1">Warm, real, personal — a gift moment</p>
-          </div>
+        {/* Hero image */}
+        <div className="mx-6 rounded-3xl overflow-hidden" style={{ minHeight: "280px" }}>
+          <img src="/present_giving.png" alt="Someone giving a gift" className="w-full h-full object-cover" style={{ minHeight: "280px" }} />
         </div>
 
         {/* Copy + CTA */}
@@ -81,13 +75,8 @@ export default async function Home() {
       <div className="hidden lg:grid lg:grid-cols-2 min-h-screen">
 
         {/* Left — image */}
-        <div className="relative bg-amber-50 border-r-2 border-dashed border-amber-200 flex items-center justify-center">
-          {/* Replace this div with your <img> or <Image> once you have a photo */}
-          <div className="text-center px-12">
-            <p className="text-6xl mb-4">🎁</p>
-            <p className="text-base font-medium text-amber-600">Your image goes here</p>
-            <p className="text-sm text-stone-400 mt-1">Warm, real, personal — a gift moment</p>
-          </div>
+        <div className="relative overflow-hidden">
+          <img src="/present_giving.png" alt="Someone giving a gift" className="w-full h-full object-cover absolute inset-0" />
         </div>
 
         {/* Right — logo + CTA */}
