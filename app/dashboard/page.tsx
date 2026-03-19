@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Eye, Copy, Check, Clock, Share2, Users, UserPlus, MessageSquare } from "lucide-react";
+import { Settings, Eye, Clock, Users, UserPlus, MessageSquare, Pencil } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -52,6 +52,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [showVisitors, setShowVisitors] = useState(false);
+
+  // Edit hint state
+  const [editingHintId, setEditingHintId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editCategory, setEditCategory] = useState("general");
+  const [saving, setSaving] = useState(false);
 
   // Follow requests
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
@@ -115,6 +121,38 @@ export default function DashboardPage() {
       setAddError(e instanceof Error ? e.message : "Failed to add — try again");
     } finally {
       setAdding(false);
+    }
+  }
+
+  function startEditHint(hint: Hint) {
+    setEditingHintId(hint.id);
+    setEditContent(hint.content);
+    setEditCategory(hint.category);
+  }
+
+  function cancelEdit() {
+    setEditingHintId(null);
+    setEditContent("");
+    setEditCategory("general");
+  }
+
+  async function saveHint(id: string) {
+    if (!editContent.trim()) return;
+    setSaving(true);
+    const prev = hints;
+    setHints(hints.map(h => h.id === id ? { ...h, content: editContent.trim(), category: editCategory } : h));
+    setEditingHintId(null);
+    try {
+      const res = await fetch(`/api/hints/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editContent.trim(), category: editCategory }),
+      });
+      if (!res.ok) setHints(prev);
+    } catch {
+      setHints(prev);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -425,27 +463,82 @@ export default function DashboardPage() {
             </div>
           ) : (
             hints.map((hint) => (
-              <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3 flex items-start justify-between gap-3 group">
-                <div className="min-w-0">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 inline-block ${
-                    hint.category === "avoid" ? "bg-red-100 text-red-600" :
-                    hint.category === "love" ? "bg-pink-100 text-pink-600" :
-                    hint.category === "want" ? "bg-blue-100 text-blue-600" :
-                    hint.category === "need" ? "bg-green-100 text-green-600" :
-                    hint.category === "dream" ? "bg-purple-100 text-purple-600" :
-                    "bg-amber-100 text-amber-700"
-                  }`}>
-                    {CATEGORIES.find(c => c.id === hint.category)?.label || hint.category}
-                  </span>
-                  <p className="text-stone-800 text-sm">{hint.content}</p>
-                </div>
-                <button
-                  onClick={() => deleteHint(hint.id)}
-                  aria-label="Delete hint"
-                  className="text-stone-300 hover:text-red-400 active:text-red-400 transition-colors flex-shrink-0 text-lg leading-none mt-0.5 sm:opacity-0 sm:group-hover:opacity-100"
-                >
-                  ×
-                </button>
+              <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3 group">
+                {editingHintId === hint.id ? (
+                  <div>
+                    <div className="flex gap-1.5 flex-wrap mb-2">
+                      {CATEGORIES.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => setEditCategory(c.id)}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${editCategory === c.id ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={editContent}
+                      onChange={e => setEditContent(e.target.value)}
+                      maxLength={280}
+                      autoFocus
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-xl border border-amber-400 text-sm text-stone-900 focus:outline-none resize-none mb-2"
+                    />
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => saveHint(hint.id)}
+                          disabled={!editContent.trim() || saving}
+                          className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-semibold rounded-lg text-xs transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="px-3 py-1.5 border border-stone-200 text-stone-500 font-semibold rounded-lg text-xs hover:bg-stone-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <span className={`text-xs ${editContent.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
+                        {280 - editContent.length} left
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 inline-block ${
+                        hint.category === "avoid" ? "bg-red-100 text-red-600" :
+                        hint.category === "love" ? "bg-pink-100 text-pink-600" :
+                        hint.category === "want" ? "bg-blue-100 text-blue-600" :
+                        hint.category === "need" ? "bg-green-100 text-green-600" :
+                        hint.category === "dream" ? "bg-purple-100 text-purple-600" :
+                        "bg-amber-100 text-amber-700"
+                      }`}>
+                        {CATEGORIES.find(c => c.id === hint.category)?.label || hint.category}
+                      </span>
+                      <p className="text-stone-800 text-sm">{hint.content}</p>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => startEditHint(hint)}
+                        aria-label="Edit hint"
+                        className="p-1 text-stone-300 hover:text-amber-500 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => deleteHint(hint.id)}
+                        aria-label="Delete hint"
+                        className="p-1 text-stone-300 hover:text-red-400 transition-colors text-lg leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
