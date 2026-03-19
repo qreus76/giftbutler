@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Share, Users, Cake, LayoutDashboard, Settings } from "lucide-react";
+import { Copy, Share, Users, Cake, LayoutDashboard, Pencil } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -240,9 +240,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <LayoutDashboard className="w-5 h-5" />
               </a>
-              <a href="/dashboard/edit" title="Edit profile" aria-label="Edit profile" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-                <Settings className="w-5 h-5" />
-              </a>
               <a href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
                 {user?.imageUrl ? (
                   <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
@@ -303,6 +300,16 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <Copy className="w-4 h-4 hidden sm:block" />
               {shareCopied ? "Link copied!" : isOwner ? "Share my profile" : `Share ${displayName}'s profile`}
             </button>
+
+            {isOwner && (
+              <a
+                href="/dashboard/edit"
+                className="px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit profile
+              </a>
+            )}
 
             {/* Follow button — only for signed-in non-owners */}
             {isLoaded && user && !isOwner && (

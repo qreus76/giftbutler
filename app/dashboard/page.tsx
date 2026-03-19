@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Eye, Clock, Users, UserPlus, MessageSquare, Pencil, LayoutDashboard } from "lucide-react";
+import { Eye, Clock, Users, UserPlus, MessageSquare, Pencil, LayoutDashboard } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 
 const CATEGORIES = [
@@ -262,14 +262,6 @@ export default function DashboardPage() {
             <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-amber-600 hover:bg-stone-100 rounded-xl transition-colors">
               <LayoutDashboard className="w-5 h-5" />
             </a>
-            <button
-              onClick={() => router.push("/dashboard/edit")}
-              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
-              aria-label="Edit profile"
-              title="Edit profile"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
             <a href={profile?.username ? `/for/${profile.username}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
               {user?.imageUrl ? (
                 <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />

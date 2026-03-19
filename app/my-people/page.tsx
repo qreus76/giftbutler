@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Settings, Search, Users, Cake, LayoutDashboard } from "lucide-react";
+import { Search, Users, Cake, LayoutDashboard } from "lucide-react";
 
 interface Person {
   id: string;
@@ -125,9 +125,6 @@ export default function MyPeoplePage() {
             </a>
             <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
               <LayoutDashboard className="w-5 h-5" />
-            </a>
-            <a href="/dashboard/edit" title="Edit profile" aria-label="Edit profile" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-              <Settings className="w-5 h-5" />
             </a>
             <a href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
               {user?.imageUrl ? (
