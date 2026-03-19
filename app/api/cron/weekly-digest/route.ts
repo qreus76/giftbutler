@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
             <p style="color: #92400e; font-size: 13px; line-height: 1.6; margin: 0 0 12px;">
               You have ${hintCount} hint${hintCount === 1 ? "" : "s"}. The more you add, the more personal the gift recommendations. Try adding things you want, need, or dream about.
             </p>
-            <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 600; font-size: 13px; padding: 8px 16px; border-radius: 8px; text-decoration: none;">Add hints →</a>
+            <a href="${profileUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 600; font-size: 13px; padding: 8px 16px; border-radius: 8px; text-decoration: none;">Add hints →</a>
           </div>`
         : "";
 
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
           from: "GiftButler <hello@giftbutler.io>",
           to: [email],
           subject: `${viewText} this week`,
-          text: `${viewText} this week on GiftButler.\n\nView your profile: ${profileUrl}\nAdd hints: ${dashboardUrl}\n\n---\nGiftButler · Free forever\nTo stop these emails, email privacy@giftbutler.io`,
+          text: `${viewText} this week on GiftButler.\n\nView your profile: ${profileUrl}\nAdd hints: ${profileUrl}\n\n---\nGiftButler · Free forever\nTo stop these emails, email privacy@giftbutler.io`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
               <h1 style="font-size: 22px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">Your weekly update, ${name}</h1>

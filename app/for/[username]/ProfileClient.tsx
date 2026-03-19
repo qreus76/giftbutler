@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Copy, Share, Users, Cake, LayoutDashboard, Pencil, MessageSquare } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
@@ -317,16 +318,16 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* Nav */}
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href={user ? "/my-people" : "/"} className="text-base font-bold text-stone-900">GiftButler</a>
+          <Link href={user ? "/my-people" : "/"} className="text-base font-bold text-stone-900">GiftButler</Link>
           {isLoaded && (isOwner || user ? (
             <div className="flex items-center gap-2">
-              <a href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+              <Link href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <Users className="w-5 h-5" />
-              </a>
-              <a href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+              </Link>
+              <Link href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <LayoutDashboard className="w-5 h-5" />
-              </a>
-              <a href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
+              </Link>
+              <Link href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
                 {user?.imageUrl ? (
                   <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -334,12 +335,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                     {user?.firstName?.[0]?.toUpperCase() || "?"}
                   </div>
                 )}
-              </a>
+              </Link>
             </div>
           ) : (
-            <a href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+            <Link href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
               Create yours free →
-            </a>
+            </Link>
           ))}
         </div>
       </nav>

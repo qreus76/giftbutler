@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
             from: "GiftButler <hello@giftbutler.io>",
             to: [email],
             subject: "Your GiftButler profile is live 🎁",
-            text: `Welcome to GiftButler!\n\nYour profile is live at: ${profileUrl}\n\nShare this link with the people who buy you gifts — they'll get AI-powered recommendations based on your hints.\n\nThe more hints you add, the better the recommendations. Head to your dashboard to add more: ${dashboardUrl}\n\n---\nGiftButler · Free forever\nTo stop these emails, reply with "unsubscribe" or email privacy@giftbutler.io`,
+            text: `Welcome to GiftButler!\n\nYour profile is live at: ${profileUrl}\n\nShare this link with the people who buy you gifts — they'll get AI-powered recommendations based on your hints.\n\nThe more hints you add, the better the recommendations. Add more from your profile: ${profileUrl}\n\n---\nGiftButler · Free forever\nTo stop these emails, reply with "unsubscribe" or email privacy@giftbutler.io`,
             html: `
               <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
                 <p style="font-size: 28px; margin: 0 0 4px;">🎁</p>
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
                   <p style="color: #78716c; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
                     Add hints about things you love, want, need, and dream about. The AI uses them to suggest gifts that feel personal — not generic.
                   </p>
-                  <a href="${dashboardUrl}" style="display: inline-block; background: #1c1917; color: #fff; font-weight: 600; font-size: 13px; padding: 10px 20px; border-radius: 10px; text-decoration: none;">
+                  <a href="${profileUrl}" style="display: inline-block; background: #1c1917; color: #fff; font-weight: 600; font-size: 13px; padding: 10px 20px; border-radius: 10px; text-decoration: none;">
                     Add more hints →
                   </a>
                 </div>

@@ -5,21 +5,18 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Users, LayoutDashboard } from "lucide-react";
+import { FollowRequestProvider, useFollowRequests } from "@/lib/follow-request-context";
 
 function SharedNav() {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
   const [username, setUsername] = useState("");
-  const [followRequestCount, setFollowRequestCount] = useState(0);
+  const { followRequests } = useFollowRequests();
 
   useEffect(() => {
     if (!isLoaded || !user) return;
-    Promise.all([
-      fetch("/api/me").then(r => r.json()),
-      fetch("/api/follows/requests").then(r => r.json()),
-    ]).then(([meData, reqData]) => {
-      if (meData.profile?.username) setUsername(meData.profile.username);
-      setFollowRequestCount(reqData.requests?.length || 0);
+    fetch("/api/me").then(r => r.json()).then(d => {
+      if (d.profile?.username) setUsername(d.profile.username);
     });
   }, [isLoaded, user]);
 
@@ -39,9 +36,9 @@ function SharedNav() {
               className={`relative p-2 hover:bg-stone-100 rounded-xl transition-colors ${onMyPeople ? "text-amber-600" : "text-stone-400 hover:text-stone-700"}`}
             >
               <Users className="w-5 h-5" />
-              {followRequestCount > 0 && (
+              {followRequests.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {followRequestCount}
+                  {followRequests.length}
                 </span>
               )}
             </Link>
@@ -76,9 +73,9 @@ function SharedNav() {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <FollowRequestProvider>
       <SharedNav />
       {children}
-    </>
+    </FollowRequestProvider>
   );
 }

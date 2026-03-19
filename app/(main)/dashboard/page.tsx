@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Clock, UserPlus, Cake, Gift } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
+import { useFollowRequests } from "@/lib/follow-request-context";
 
 interface Person {
   id: string;
@@ -57,9 +58,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  // Follow requests
+  // Follow requests — sourced from shared context (no double-fetch)
   const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
-  const [followRequests, setFollowRequests] = useState<{ requester_id: string; name: string; username: string; avatar: string | null }[]>([]);
+  const { followRequests, removeRequest } = useFollowRequests();
   const [requestLabels, setRequestLabels] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -68,9 +69,8 @@ export default function DashboardPage() {
 
   async function loadProfile() {
     try {
-      const [meRes, reqRes, peopleRes] = await Promise.all([
+      const [meRes, peopleRes] = await Promise.all([
         fetch("/api/me"),
-        fetch("/api/follows/requests"),
         fetch("/api/follows/network"),
       ]);
       const data = await meRes.json();
@@ -81,10 +81,6 @@ export default function DashboardPage() {
       setClaimCount(data.claimCount || 0);
       setRecentVisits(data.recentVisits || []);
 
-      if (reqRes.ok) {
-        const reqData = await reqRes.json();
-        setFollowRequests(reqData.requests || []);
-      }
       if (peopleRes.ok) {
         const pd = await peopleRes.json();
         setPeople(pd.people || []);
@@ -103,7 +99,7 @@ export default function DashboardPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requester_id: requesterId, action, label }),
     });
-    setFollowRequests(prev => prev.filter(r => r.requester_id !== requesterId));
+    removeRequest(requesterId);
   }
 
   function formatReferrer(referrer: string | null): string {
@@ -420,7 +416,7 @@ export default function DashboardPage() {
             )}
           </a>
           <button
-            onClick={() => window.open(`/for/${profile?.username}`, "_blank")}
+            onClick={() => router.push(`/for/${profile?.username}`)}
             className="text-xs text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
           >
             View my profile
