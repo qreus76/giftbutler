@@ -20,17 +20,17 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <nav className="border-b border-amber-100/70 bg-[#fef9ef] sticky top-0 z-10">
+      <nav className="border-b border-[#E5D9CC] bg-[#FAF4EC] sticky top-0 z-10">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href={username ? `/for/${username}` : "/activity"} className="text-base font-display text-stone-900 tracking-wide">
+          <Link href={username ? `/for/${username}` : "/activity"} className="text-base font-display text-[#6B2437] tracking-wide">
             GiftButler
           </Link>
           {isLoaded && user && (
-            <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0">
+            <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C08A3C] transition-all flex-shrink-0">
               {user.imageUrl ? (
                 <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
                   {user.firstName?.[0]?.toUpperCase() || "?"}
                 </div>
               )}

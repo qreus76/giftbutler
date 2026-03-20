@@ -23,7 +23,7 @@ interface SearchResult {
   followStatus: "none" | "pending" | "accepted";
 }
 
-const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
+const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother","Sister","Grandfather","Grandmother","Grandson","Granddaughter","Uncle","Aunt","Nephew","Niece","Cousin","Best Friend","Friend","Colleague","Other"];
 
 function birthdayText(days: number | null): string {
   if (days === null) return "Birthday unknown";
@@ -33,10 +33,10 @@ function birthdayText(days: number | null): string {
 }
 
 function birthdayUrgency(days: number | null): string {
-  if (days === null) return "text-stone-400";
-  if (days <= 7) return "text-red-500 font-semibold";
-  if (days <= 30) return "text-amber-600 font-semibold";
-  return "text-stone-500";
+  if (days === null) return "text-[#7A6A5E]";
+  if (days <= 7) return "text-[#922B21] font-semibold";
+  if (days <= 30) return "text-[#C08A3C] font-semibold";
+  return "text-[#7A6A5E]";
 }
 
 export default function MyPeoplePage() {
@@ -47,7 +47,6 @@ export default function MyPeoplePage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
-  // Search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
@@ -110,38 +109,34 @@ export default function MyPeoplePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fef9ef]">
-      <div className="max-w-xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-display text-stone-900 mb-1">My People</h1>
-        <p className="text-stone-400 text-sm mb-6">Your gift network, sorted by upcoming birthday.</p>
+    <main className="min-h-screen bg-[#FAF4EC]">
+      <div className="max-w-xl mx-auto px-4 py-6">
+        <h1 className="text-3xl font-display text-[#1A1410] mb-1">My People</h1>
+        <p className="text-[#7A6A5E] text-sm mb-6">Your gift network, sorted by upcoming birthday.</p>
 
         {/* Search */}
         <div className="bg-white rounded-2xl shadow-card p-4 mb-6">
-          <p className="text-sm font-semibold text-stone-700 mb-3">Find someone by username</p>
+          <p className="text-sm font-semibold text-[#1A1410] mb-3">Find someone by username</p>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6A5E]" />
             <input
               value={searchQuery}
               onChange={e => handleSearchInput(e.target.value)}
               placeholder="Enter their username..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#E5D9CC] text-sm text-[#1A1410] placeholder-[#7A6A5E] focus:outline-none focus:ring-2 focus:ring-[#6B2437]"
             />
           </div>
 
-          {/* Searching spinner */}
           {searching && (
-            <p className="text-xs text-stone-400 mt-3">Searching...</p>
+            <p className="text-xs text-[#7A6A5E] mt-3">Searching...</p>
           )}
-
-          {/* Not found */}
           {searchNotFound && !searching && (
-            <p className="text-xs text-stone-400 mt-3">No profile found with that username.</p>
+            <p className="text-xs text-[#7A6A5E] mt-3">No profile found with that username.</p>
           )}
           {searchIsSelf && !searching && (
-            <p className="text-xs text-stone-400 mt-3">That's you! Search for someone else.</p>
+            <p className="text-xs text-[#7A6A5E] mt-3">That&apos;s you! Search for someone else.</p>
           )}
 
-          {/* Result */}
           {searchResult && !searching && (
             <div className="mt-3">
               <div className="flex items-center gap-3 mb-3">
@@ -149,32 +144,32 @@ export default function MyPeoplePage() {
                   {searchResult.avatar ? (
                     <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
+                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
                       {searchResult.name[0]?.toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold text-stone-900 text-sm">{searchResult.name}</p>
-                  <p className="text-xs text-stone-400">@{searchResult.username}</p>
+                  <p className="font-semibold text-[#1A1410] text-sm">{searchResult.name}</p>
+                  <p className="text-xs text-[#7A6A5E]">@{searchResult.username}</p>
                 </div>
               </div>
 
               {searchResult.followStatus === "accepted" && (
-                <p className="text-xs text-green-600 font-semibold">✓ Already in your people</p>
+                <p className="text-xs text-[#2D6A4F] font-semibold">✓ Already in your people</p>
               )}
               {searchResult.followStatus === "pending" && (
-                <p className="text-xs text-stone-400 font-semibold">Request already sent</p>
+                <p className="text-xs text-[#7A6A5E] font-semibold">Request already sent</p>
               )}
               {searchResult.followStatus === "none" && (
                 <>
-                  <p className="text-xs font-semibold text-stone-500 mb-2">Who are they to you?</p>
+                  <p className="text-xs font-semibold text-[#7A6A5E] mb-2">Who are they to you?</p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {LABELS.map(l => (
                       <button
                         key={l}
                         onClick={() => setSelectedLabel(l)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-[#6B2437] bg-[#F5E8EC] text-[#6B2437]" : "border-[#E5D9CC] text-[#7A6A5E] hover:border-[#6B2437]"}`}
                       >
                         {l}
                       </button>
@@ -183,7 +178,7 @@ export default function MyPeoplePage() {
                   <button
                     onClick={() => sendFollowRequest(searchResult.username)}
                     disabled={!selectedLabel || sendingRequest}
-                    className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+                    className="w-full py-2.5 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-xl text-sm transition-colors"
                   >
                     {sendingRequest ? "Sending..." : "Send request"}
                   </button>
@@ -195,15 +190,15 @@ export default function MyPeoplePage() {
 
         {loading && (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#C08A3C] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
         {!loading && people.length === 0 && (
           <div className="text-center py-12">
-            <Users className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-            <p className="font-semibold text-stone-700 mb-2">No one here yet</p>
-            <p className="text-stone-400 text-sm">Search for family and friends by username above to get started.</p>
+            <Users className="w-12 h-12 text-[#E5D9CC] mx-auto mb-4" />
+            <p className="font-semibold text-[#1A1410] mb-2">No one here yet</p>
+            <p className="text-[#7A6A5E] text-sm">Search for family and friends by username above to get started.</p>
           </div>
         )}
 
@@ -216,16 +211,16 @@ export default function MyPeoplePage() {
                     {person.avatar ? (
                       <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-lg font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
+                      <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
                         {person.name?.[0]?.toUpperCase() || "?"}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-stone-900">{person.name}</p>
+                      <p className="font-semibold text-[#1A1410]">{person.name}</p>
                       {person.myLabel && (
-                        <span className="text-xs text-stone-400 font-medium">· {person.myLabel}</span>
+                        <span className="text-xs text-[#7A6A5E] font-medium">· {person.myLabel}</span>
                       )}
                     </div>
                     <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayUrgency(person.daysUntilBirthday)}`}>
@@ -238,7 +233,7 @@ export default function MyPeoplePage() {
                 <div className="flex gap-2 mt-3">
                   <a
                     href={`/for/${person.username}`}
-                    className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors"
+                    className="flex-1 py-2 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-semibold rounded-xl text-xs text-center transition-colors"
                   >
                     Find them a gift →
                   </a>
@@ -247,13 +242,13 @@ export default function MyPeoplePage() {
                       <button
                         onClick={() => removeConnection(person.username)}
                         disabled={removing === person.username}
-                        className="px-3 py-2 bg-red-500 text-white font-semibold rounded-xl text-xs transition-colors"
+                        className="px-3 py-2 bg-[#922B21] text-white font-semibold rounded-xl text-xs transition-colors"
                       >
                         {removing === person.username ? "..." : "Remove"}
                       </button>
                       <button
                         onClick={() => setConfirmRemove(null)}
-                        className="px-3 py-2 border border-stone-200 text-stone-400 font-semibold rounded-xl text-xs hover:bg-stone-50 transition-colors"
+                        className="px-3 py-2 border border-[#E5D9CC] text-[#7A6A5E] font-semibold rounded-xl text-xs hover:bg-[#EFE6DA] transition-colors"
                       >
                         Cancel
                       </button>
@@ -261,7 +256,7 @@ export default function MyPeoplePage() {
                   ) : (
                     <button
                       onClick={() => setConfirmRemove(person.username)}
-                      className="px-3 py-2 border border-stone-200 text-stone-400 hover:text-red-400 hover:border-red-200 font-semibold rounded-xl text-xs transition-colors"
+                      className="px-3 py-2 border border-[#E5D9CC] text-[#7A6A5E] hover:text-[#922B21] hover:border-red-200 font-semibold rounded-xl text-xs transition-colors"
                     >
                       Remove
                     </button>

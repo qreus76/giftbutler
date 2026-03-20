@@ -1,24 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  --color-amber-400: #E8A000;
-  --color-amber-500: #D49000;
-  --color-navy: #1E3A5F;
-  --color-navy-light: #EEF3F9;
-  --color-success: #16A34A;
+  /* ── Brand: Wine / Ivory / Gold ── */
+  --color-wine: #6B2437;
+  --color-wine-dark: #4A1828;
+  --color-wine-deep: #2A0E17;
+  --color-wine-light: #F5E8EC;
+  --color-wine-muted: #8B3050;
+
+  --color-gold: #C08A3C;
+  --color-gold-dark: #A87A32;
+  --color-gold-light: #F0D090;
+  --color-gold-tint: #FBF3E2;
+
+  --color-ivory: #FAF4EC;
+  --color-surface: #EFE6DA;
+  --color-border: #E5D9CC;
+
+  --color-ink: #1A1410;
+  --color-muted: #7A6A5E;
+
+  --color-success: #2D6A4F;
+  --color-error: #922B21;
+
+  /* Keep amber tokens for any remaining references */
+  --color-amber-400: #C08A3C;
+  --color-amber-500: #A87A32;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #fef9ef;
+  background-color: #FAF4EC;
+  color: #1A1410;
 }
 
 .font-display {
   font-family: var(--font-dm-serif), Georgia, serif;
 }
 
+/* Elevation via shadow — not border */
 .shadow-card {
-  box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px 0 rgba(26, 20, 16, 0.07), 0 1px 3px 0 rgba(26, 20, 16, 0.05);
+}
+
+.shadow-card-lg {
+  box-shadow: 0 4px 24px 0 rgba(26, 20, 16, 0.10), 0 2px 6px 0 rgba(26, 20, 16, 0.06);
 }
 
 /* Prevent iOS Safari from zooming on input focus */
@@ -65,4 +91,13 @@ input, textarea, select {
 .cl-socialButtonsBlockButton {
   padding: 14px 16px !important;
   min-height: 52px !important;
+}
+
+/* Hide scrollbar on horizontal scroll containers */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

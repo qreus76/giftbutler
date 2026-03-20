@@ -30,7 +30,7 @@ export default function EditProfilePage() {
           setCurrentUsername(data.profile.username || "");
         }
       })
-      .catch(() => { /* silent fail — fields stay empty */ })
+      .catch(() => { /* silent fail */ })
       .finally(() => setLoading(false));
   }, []);
 
@@ -58,7 +58,6 @@ export default function EditProfilePage() {
       return;
     }
 
-    // If username changed, update local state
     if (data.username) {
       setCurrentUsername(data.username);
       setUsername(data.username);
@@ -69,81 +68,88 @@ export default function EditProfilePage() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+    <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#C08A3C] border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-[#fef9ef]">
+    <main className="min-h-screen bg-[#FAF4EC]">
       <div className="max-w-xl mx-auto px-4 py-8">
-        <button onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/activity")} className="flex items-center gap-2 text-stone-400 hover:text-stone-700 mb-6 transition-colors cursor-pointer">
+        <button
+          onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/activity")}
+          className="flex items-center gap-2 text-[#7A6A5E] hover:text-[#1A1410] mb-6 transition-colors cursor-pointer"
+        >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Back to profile</span>
         </button>
 
-        <h1 className="text-2xl font-display text-stone-900 mb-6">Edit profile</h1>
+        <h1 className="text-2xl font-display text-[#1A1410] mb-6">Edit profile</h1>
 
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <div className="bg-white rounded-2xl shadow-card p-4">
-            <label className="text-xs font-semibold text-stone-500 mb-2 block">Display name</label>
+            <label className="text-xs font-semibold text-[#7A6A5E] mb-2 block">Display name</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Your name"
               maxLength={60}
-              className="w-full text-stone-900 text-sm focus:outline-none placeholder-stone-400"
+              className="w-full text-[#1A1410] text-sm focus:outline-none placeholder-[#7A6A5E]"
             />
           </div>
 
           <div className="bg-white rounded-2xl shadow-card p-4">
-            <label className="text-xs font-semibold text-stone-500 mb-2 block">Username</label>
+            <label className="text-xs font-semibold text-[#7A6A5E] mb-2 block">Username</label>
             <div className="flex items-center gap-1">
-              <span className="text-stone-400 text-sm">giftbutler.io/for/</span>
+              <span className="text-[#7A6A5E] text-sm">giftbutler.io/for/</span>
               <input
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                className="flex-1 text-stone-900 text-sm focus:outline-none font-medium"
+                className="flex-1 text-[#1A1410] text-sm focus:outline-none font-medium"
               />
             </div>
             {username !== currentUsername && (
-              <p className="text-xs text-amber-600 mt-2">⚠ Your old link will stop working — share your new link after saving.</p>
+              <p className="text-xs text-[#C08A3C] mt-2">⚠ Your old link will stop working — share your new link after saving.</p>
             )}
           </div>
 
           <div className="bg-white rounded-2xl shadow-card p-4">
-            <label className="text-xs font-semibold text-stone-500 mb-2 block">Bio <span className="text-stone-300 font-normal">(optional)</span></label>
+            <label className="text-xs font-semibold text-[#7A6A5E] mb-2 block">
+              Bio <span className="text-[#E5D9CC] font-normal">(optional)</span>
+            </label>
             <textarea
               value={bio}
               onChange={e => setBio(e.target.value)}
               placeholder="A little about you..."
               rows={3}
               maxLength={160}
-              className="w-full text-stone-900 text-sm focus:outline-none resize-none placeholder-stone-400"
+              className="w-full text-[#1A1410] text-sm focus:outline-none resize-none placeholder-[#7A6A5E]"
             />
           </div>
 
           <div className="bg-white rounded-2xl shadow-card p-4">
-            <label className="text-xs font-semibold text-stone-500 mb-2 block">Birthday <span className="text-stone-300 font-normal">(optional — helps people know when to shop)</span></label>
+            <label className="text-xs font-semibold text-[#7A6A5E] mb-2 block">
+              Birthday <span className="text-[#E5D9CC] font-normal">(optional — helps people know when to shop)</span>
+            </label>
             <input
               type="date"
               value={birthday}
               max={new Date().toISOString().split("T")[0]}
               onChange={e => setBirthday(e.target.value)}
-              className="w-full text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg px-1"
+              className="w-full text-[#1A1410] text-sm focus:outline-none focus:ring-2 focus:ring-[#6B2437] rounded-lg px-1"
             />
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm px-1">{error}</p>
+            <p className="text-[#922B21] text-sm px-1">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 text-stone-900 font-bold rounded-2xl transition-colors"
+            className="w-full py-3 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-2xl transition-colors"
           >
             {saved ? "✓ Saved!" : saving ? "Saving..." : "Save changes"}
           </button>
@@ -151,7 +157,7 @@ export default function EditProfilePage() {
 
         <button
           onClick={() => signOut(() => router.push("/"))}
-          className="mt-6 w-full flex items-center justify-center gap-2 py-3 border-2 border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200 font-semibold rounded-2xl text-sm transition-colors active:scale-[0.98] duration-100"
+          className="mt-6 w-full flex items-center justify-center gap-2 py-3 border-2 border-[#E5D9CC] text-[#7A6A5E] hover:text-[#922B21] hover:border-red-200 font-semibold rounded-2xl text-sm transition-colors active:scale-[0.98] duration-100"
         >
           <LogOut className="w-4 h-4" />
           Sign out

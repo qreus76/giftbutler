@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Copy, Check, Search, Users, Cake } from "lucide-react";
 
-const LABELS = ["Husband", "Wife", "Partner", "Dad", "Mom", "Son", "Daughter", "Brother", "Sister", "Grandfather", "Grandmother", "Grandson", "Granddaughter", "Uncle", "Aunt", "Nephew", "Niece", "Cousin", "Best Friend", "Friend", "Colleague", "Other"];
+const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother","Sister","Grandfather","Grandmother","Grandson","Granddaughter","Uncle","Aunt","Nephew","Niece","Cousin","Best Friend","Friend","Colleague","Other"];
 
 interface SearchResult {
   id: string;
@@ -64,7 +64,6 @@ export default function OnboardingPage() {
   const [copied, setCopied] = useState(false);
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
 
-  // Find people state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
@@ -163,9 +162,7 @@ export default function OnboardingPage() {
         });
       } catch { /* user cancelled */ }
     } else {
-      navigator.clipboard.writeText(profileUrl).catch(() => {
-        alert("Unable to copy — please copy manually.");
-      });
+      navigator.clipboard.writeText(profileUrl).catch(() => { alert("Unable to copy — please copy manually."); });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -187,39 +184,38 @@ export default function OnboardingPage() {
   // Find your people screen
   if (done && findingPeople) {
     return (
-      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <Users className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <h2 className="text-2xl font-display text-stone-900 mb-1">Find your people</h2>
-            <p className="text-stone-400 text-sm">Search by username to send a connection request.</p>
+            <Users className="w-12 h-12 text-[#E5D9CC] mx-auto mb-3" />
+            <h2 className="text-2xl font-display text-[#1A1410] mb-1">Find your people</h2>
+            <p className="text-[#7A6A5E] text-sm">Search by username to send a connection request.</p>
           </div>
 
           {sentRequests.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 mb-4">
-              <p className="text-green-700 text-sm font-semibold">✓ {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 mb-4">
+              <p className="text-[#2D6A4F] text-sm font-semibold">✓ {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
             </div>
           )}
 
           <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
             <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6A5E]" />
               <input
                 value={searchQuery}
                 onChange={e => handleSearchInput(e.target.value)}
                 placeholder="Enter their username..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#E5D9CC] text-sm text-[#1A1410] placeholder-[#7A6A5E] focus:outline-none focus:ring-2 focus:ring-[#6B2437]"
                 autoFocus
               />
             </div>
 
-            {searching && <p className="text-xs text-stone-400">Searching...</p>}
-
+            {searching && <p className="text-xs text-[#7A6A5E]">Searching...</p>}
             {searchNotFound && !searching && (
-              <p className="text-xs text-stone-400">No profile found with that username.</p>
+              <p className="text-xs text-[#7A6A5E]">No profile found with that username.</p>
             )}
             {searchIsSelf && !searching && (
-              <p className="text-xs text-stone-400">That's you! Search for someone else.</p>
+              <p className="text-xs text-[#7A6A5E]">That&apos;s you! Search for someone else.</p>
             )}
 
             {searchResult && !searching && (
@@ -229,23 +225,23 @@ export default function OnboardingPage() {
                     {searchResult.avatar ? (
                       <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
                         {searchResult.name[0]?.toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-stone-900 text-sm">{searchResult.name}</p>
-                    <p className="text-xs text-stone-400">@{searchResult.username}</p>
+                    <p className="font-semibold text-[#1A1410] text-sm">{searchResult.name}</p>
+                    <p className="text-xs text-[#7A6A5E]">@{searchResult.username}</p>
                   </div>
                 </div>
-                <p className="text-xs font-semibold text-stone-500 mb-2">Who are they to you?</p>
+                <p className="text-xs font-semibold text-[#7A6A5E] mb-2">Who are they to you?</p>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {LABELS.map(l => (
                     <button
                       key={l}
                       onClick={() => setSelectedLabel(l)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-amber-400 bg-amber-50 text-amber-700" : "border-stone-200 text-stone-500 hover:border-amber-300"}`}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-[#6B2437] bg-[#F5E8EC] text-[#6B2437]" : "border-[#E5D9CC] text-[#7A6A5E] hover:border-[#6B2437]"}`}
                     >
                       {l}
                     </button>
@@ -254,7 +250,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={() => sendFollowRequest(searchResult.username)}
                   disabled={!selectedLabel || sendingRequest}
-                  className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl text-sm transition-colors"
+                  className="w-full py-2.5 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-xl text-sm transition-colors"
                 >
                   {sendingRequest ? "Sending..." : "Send request"}
                 </button>
@@ -264,7 +260,7 @@ export default function OnboardingPage() {
 
           <button
             onClick={() => router.push(`/for/${username}`)}
-            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors"
+            className="w-full py-3.5 bg-[#6B2437] hover:bg-[#4A1828] text-white font-bold rounded-2xl transition-colors"
           >
             Go to my profile →
           </button>
@@ -276,13 +272,13 @@ export default function OnboardingPage() {
   // Birthday step
   if (done && !birthdayDone) {
     return (
-      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Cake className="w-8 h-8 text-amber-500" />
+          <div className="w-16 h-16 bg-[#F5E8EC] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Cake className="w-8 h-8 text-[#6B2437]" />
           </div>
-          <h2 className="text-2xl font-display text-stone-900 mb-2">When&apos;s your birthday?</h2>
-          <p className="text-stone-400 text-sm mb-8">
+          <h2 className="text-2xl font-display text-[#1A1410] mb-2">When&apos;s your birthday?</h2>
+          <p className="text-[#7A6A5E] text-sm mb-8">
             We&apos;ll remind you to share your profile before your birthday — so the people who matter know exactly what to get you.
           </p>
           <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
@@ -291,19 +287,19 @@ export default function OnboardingPage() {
               value={birthdayInput}
               max={new Date().toISOString().split("T")[0]}
               onChange={e => setBirthdayInput(e.target.value)}
-              className="w-full text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg px-1 py-1"
+              className="w-full text-[#1A1410] text-sm focus:outline-none focus:ring-2 focus:ring-[#6B2437] rounded-lg px-1 py-1"
             />
           </div>
           <button
             onClick={saveBirthday}
             disabled={savingBirthday || !birthdayInput}
-            className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-2xl transition-colors mb-3"
+            className="w-full py-3.5 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-2xl transition-colors mb-3"
           >
             {savingBirthday ? "Saving..." : "Save my birthday →"}
           </button>
           <button
             onClick={() => setBirthdayDone(true)}
-            className="text-xs text-stone-400 hover:text-stone-600 underline"
+            className="text-xs text-[#7A6A5E] hover:text-[#1A1410] underline"
           >
             Skip for now
           </button>
@@ -312,7 +308,7 @@ export default function OnboardingPage() {
     );
   }
 
-  // Profile live! share screen
+  // Profile live screen
   if (done) {
     const shareMessages = [
       `My birthday is coming up — here's what I actually want: ${profileUrl}`,
@@ -320,47 +316,45 @@ export default function OnboardingPage() {
     ];
 
     return (
-      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-display text-stone-900 mb-2">Your profile is live!</h2>
-          <p className="text-stone-400 text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
-          <p className="text-xs text-stone-400 mb-8">We added a few hints from your answers. You can edit or replace them from your profile anytime.</p>
+          <h2 className="text-2xl font-display text-[#1A1410] mb-2">Your profile is live!</h2>
+          <p className="text-[#7A6A5E] text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
+          <p className="text-xs text-[#7A6A5E] mb-8">We added a few hints from your answers. You can edit or replace them from your profile anytime.</p>
 
-          {/* Link copy box */}
           <div className="bg-white rounded-2xl shadow-card p-4 mb-4 flex items-center justify-between gap-3">
-            <p className="text-stone-700 font-medium text-sm truncate">giftbutler.io/for/{username}</p>
+            <p className="text-[#1A1410] font-medium text-sm truncate">giftbutler.io/for/{username}</p>
             <button
               onClick={copyLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-semibold rounded-xl text-xs transition-colors flex-shrink-0"
             >
               {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy link</>}
             </button>
           </div>
 
-          {/* Pre-written messages */}
           <div className="flex flex-col gap-2 mb-6">
             {shareMessages.map((msg, i) => (
               <button
                 key={i}
                 onClick={() => { navigator.clipboard.writeText(msg).catch(() => { alert("Unable to copy — please copy manually."); }); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
-                className="text-left bg-white border border-stone-200 rounded-xl px-4 py-3 hover:border-amber-300 transition-colors group"
+                className="text-left bg-white border border-[#E5D9CC] rounded-xl px-4 py-3 hover:border-[#6B2437] transition-colors group"
               >
-                <p className="text-stone-600 text-xs leading-relaxed">{msg}</p>
-                <p className="text-amber-600 text-xs font-semibold mt-1.5 group-hover:text-amber-700">{copiedMsgIndex === i ? "✓ Copied!" : "Copy this message →"}</p>
+                <p className="text-[#7A6A5E] text-xs leading-relaxed">{msg}</p>
+                <p className="text-[#6B2437] text-xs font-semibold mt-1.5 group-hover:text-[#4A1828]">{copiedMsgIndex === i ? "✓ Copied!" : "Copy this message →"}</p>
               </button>
             ))}
           </div>
 
           <button
             onClick={() => setFindingPeople(true)}
-            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl transition-colors mb-3"
+            className="w-full py-3.5 bg-[#6B2437] hover:bg-[#4A1828] text-white font-bold rounded-2xl transition-colors mb-3"
           >
             Find my people →
           </button>
           <button
             onClick={() => router.push(`/for/${username}`)}
-            className="text-xs text-stone-400 hover:text-stone-600 underline"
+            className="text-xs text-[#7A6A5E] hover:text-[#1A1410] underline"
           >
             Skip — go to my profile
           </button>
@@ -370,25 +364,25 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Progress */}
+        {/* Progress bar */}
         <div className="flex gap-1.5 mb-8">
           {[...QUIZ_STEPS, { id: "username" }].map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-amber-400" : "bg-stone-200"}`} />
+            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-[#6B2437]" : "bg-[#E5D9CC]"}`} />
           ))}
         </div>
 
         {isQuiz ? (
           <div>
-            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Quick question {step + 1} of {QUIZ_STEPS.length}</p>
-            <h2 className="text-2xl font-display text-stone-900 mb-6">{currentQuiz.question}</h2>
+            <p className="text-xs font-semibold text-[#6B2437] uppercase tracking-wide mb-2">Quick question {step + 1} of {QUIZ_STEPS.length}</p>
+            <h2 className="text-2xl font-display text-[#1A1410] mb-6">{currentQuiz.question}</h2>
             <div className="flex flex-col gap-3">
               {currentQuiz.options.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => handleAnswer(opt.value)}
-                  className="w-full text-left px-5 py-4 bg-white border-2 border-stone-200 hover:border-amber-400 hover:bg-[#FFF3CC] rounded-2xl text-stone-700 font-medium transition-all active:scale-[0.98] active:border-amber-400 active:bg-[#FFF3CC] duration-100"
+                  className="w-full text-left px-5 py-4 bg-white border-2 border-[#E5D9CC] hover:border-[#6B2437] hover:bg-[#F5E8EC] rounded-2xl text-[#1A1410] font-medium transition-all active:scale-[0.98] active:border-[#6B2437] active:bg-[#F5E8EC] duration-100"
                 >
                   {opt.label}
                 </button>
@@ -397,7 +391,7 @@ export default function OnboardingPage() {
               {!showCustom ? (
                 <button
                   onClick={() => setShowCustom(true)}
-                  className="w-full text-left px-5 py-4 bg-white border-2 border-dotted border-stone-300 hover:border-amber-400 hover:bg-[#FFF3CC] rounded-2xl text-stone-400 font-medium transition-all active:scale-[0.98] duration-100"
+                  className="w-full text-left px-5 py-4 bg-white border-2 border-dotted border-[#E5D9CC] hover:border-[#6B2437] hover:bg-[#F5E8EC] rounded-2xl text-[#7A6A5E] font-medium transition-all active:scale-[0.98] duration-100"
                 >
                   Something else — type your own
                 </button>
@@ -410,19 +404,19 @@ export default function OnboardingPage() {
                     onChange={(e) => setCustomAnswer(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleCustomSubmit()}
                     placeholder="Type your answer..."
-                    className="w-full px-5 py-4 bg-white border-2 border-amber-400 rounded-2xl text-stone-700 font-medium focus:outline-none"
+                    className="w-full px-5 py-4 bg-white border-2 border-[#6B2437] rounded-2xl text-[#1A1410] font-medium focus:outline-none"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleCustomSubmit}
                       disabled={!customAnswer.trim()}
-                      className="flex-1 py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-semibold rounded-xl transition-colors"
+                      className="flex-1 py-3 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-semibold rounded-xl transition-colors"
                     >
                       Continue →
                     </button>
                     <button
                       onClick={() => { setShowCustom(false); setCustomAnswer(""); }}
-                      className="px-4 py-3 border border-stone-200 text-stone-400 font-semibold rounded-xl hover:bg-stone-50 transition-colors"
+                      className="px-4 py-3 border border-[#E5D9CC] text-[#7A6A5E] font-semibold rounded-xl hover:bg-[#EFE6DA] transition-colors"
                     >
                       Cancel
                     </button>
@@ -433,25 +427,25 @@ export default function OnboardingPage() {
           </div>
         ) : (
           <div>
-            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Almost done</p>
-            <h2 className="text-2xl font-display text-stone-900 mb-2">Choose your username</h2>
-            <p className="text-stone-400 text-sm mb-6">Your profile will live at <span className="text-stone-700 font-medium">giftbutler.io/for/[username]</span></p>
-            <div className="flex items-center gap-2 bg-white border-2 border-stone-200 rounded-2xl px-4 py-3 mb-3 focus-within:border-amber-400 transition-colors">
-              <span className="text-stone-400 text-sm">giftbutler.io/for/</span>
+            <p className="text-xs font-semibold text-[#6B2437] uppercase tracking-wide mb-2">Almost done</p>
+            <h2 className="text-2xl font-display text-[#1A1410] mb-2">Choose your username</h2>
+            <p className="text-[#7A6A5E] text-sm mb-6">Your profile will live at <span className="text-[#1A1410] font-medium">giftbutler.io/for/[username]</span></p>
+            <div className="flex items-center gap-2 bg-white border-2 border-[#E5D9CC] rounded-2xl px-4 py-3 mb-3 focus-within:border-[#6B2437] transition-colors">
+              <span className="text-[#7A6A5E] text-sm">giftbutler.io/for/</span>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                 placeholder="yourname"
-                className="flex-1 text-stone-900 font-medium text-sm focus:outline-none"
+                className="flex-1 text-[#1A1410] font-medium text-sm focus:outline-none"
                 autoFocus
               />
             </div>
-            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            {error && <p className="text-[#922B21] text-sm mb-3">{error}</p>}
             <button
               onClick={handleFinish}
               disabled={!username.trim() || saving}
-              className="w-full py-4 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-2xl transition-colors"
+              className="w-full py-4 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-2xl transition-colors"
             >
               {saving ? "Setting up your profile..." : "Create my profile →"}
             </button>

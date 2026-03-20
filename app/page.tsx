@@ -42,7 +42,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white">
 
-
       {/* ── MOBILE LAYOUT — full bleed image with overlay ── */}
       <div className="page-fullbleed lg:hidden">
 
@@ -53,9 +52,9 @@ export default async function Home() {
           className="absolute inset-0 w-full h-full object-cover object-top"
         />
 
-        {/* Gradient overlay — transparent top, dark bottom */}
+        {/* Gradient overlay — wine-tinted, transparent top, rich bottom */}
         <div className="absolute inset-0" style={{
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, rgba(28,25,23,0.9) 100%)"
+          background: "linear-gradient(to bottom, rgba(107,36,55,0.1) 0%, rgba(74,24,40,0.65) 55%, rgba(26,8,16,0.92) 100%)"
         }} />
 
         {/* Logo — top left, respects safe area */}
@@ -72,7 +71,7 @@ export default async function Home() {
             Drop hints. Share your link. Get gifts you actually want.
           </p>
           {profileCount >= 50 && (
-            <p className="text-amber-300 text-xs font-semibold mb-5">
+            <p className="text-[#F0D090] text-xs font-semibold mb-5">
               {profileCount.toLocaleString()} people have set up their profile
             </p>
           )}
@@ -81,13 +80,13 @@ export default async function Home() {
           <div className="flex flex-col gap-3">
             {isSignedIn ? (
               <Link href={returnUrl}
-                className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-base transition-colors">
+                className="w-full py-4 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-bold rounded-2xl text-center text-base transition-colors">
                 View my profile →
               </Link>
             ) : (
               <>
                 <Link href="/sign-up"
-                  className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-base transition-colors">
+                  className="w-full py-4 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-bold rounded-2xl text-center text-base transition-colors">
                   Create my free profile
                 </Link>
                 <Link href="/sign-in"
@@ -111,23 +110,24 @@ export default async function Home() {
         {/* Left — image */}
         <div className="relative overflow-hidden">
           <img src="/present_giving.png" alt="Someone giving a gift" className="w-full h-full object-cover absolute inset-0" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent 60%, rgba(250,244,236,0.3) 100%)" }} />
         </div>
 
         {/* Right — logo + CTA */}
-        <div className="flex flex-col items-center justify-center px-16 py-16">
+        <div className="flex flex-col items-center justify-center px-16 py-16 bg-[#FAF4EC]">
           <div className="w-full max-w-sm">
 
             {/* Logo */}
-            <h1 className="text-4xl font-display text-stone-900 mb-2 text-center">
+            <h1 className="text-4xl font-display text-[#6B2437] mb-2 text-center">
               GiftButler
             </h1>
-            <p className="text-stone-400 text-sm text-center mb-10">
+            <p className="text-[#7A6A5E] text-sm text-center mb-10">
               No more guessing. Just the right gift.
             </p>
 
             {/* Social proof */}
             {profileCount >= 50 && (
-              <p className="text-xs font-semibold text-amber-600 text-center mb-6">
+              <p className="text-xs font-semibold text-[#C08A3C] text-center mb-6">
                 {profileCount.toLocaleString()} people have set up their profile
               </p>
             )}
@@ -136,34 +136,33 @@ export default async function Home() {
             <div className="flex flex-col gap-3">
               {isSignedIn ? (
                 <Link href={returnUrl}
-                  className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-sm transition-colors">
+                  className="w-full py-3.5 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-bold rounded-2xl text-center text-sm transition-colors">
                   View my profile →
                 </Link>
               ) : (
                 <>
                   <Link href="/sign-up"
-                    className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-sm transition-colors">
+                    className="w-full py-3.5 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-bold rounded-2xl text-center text-sm transition-colors">
                     Create my free profile
                   </Link>
                   <Link href="/sign-in"
-                    className="w-full py-3.5 border border-stone-200 hover:border-stone-300 text-stone-600 font-semibold rounded-2xl text-center text-sm transition-colors">
+                    className="w-full py-3.5 border-2 border-[#E5D9CC] hover:border-[#6B2437] text-[#7A6A5E] hover:text-[#6B2437] font-semibold rounded-2xl text-center text-sm transition-colors">
                     Sign in
                   </Link>
                 </>
               )}
             </div>
 
-            <p className="text-center text-xs text-stone-400 mt-4">Free forever · No credit card</p>
+            <p className="text-center text-xs text-[#7A6A5E] mt-4">Free forever · No credit card</p>
 
-            {/* Minimal footer links */}
-            <div className="flex items-center justify-center gap-4 mt-12 text-xs text-stone-300">
-              <Link href="/privacy" className="hover:text-stone-500 transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-stone-500 transition-colors">Terms</Link>
+            {/* Footer links */}
+            <div className="flex items-center justify-center gap-4 mt-12 text-xs text-[#E5D9CC]">
+              <Link href="/privacy" className="hover:text-[#7A6A5E] transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-[#7A6A5E] transition-colors">Terms</Link>
             </div>
           </div>
         </div>
       </div>
-
 
     </main>
   );
