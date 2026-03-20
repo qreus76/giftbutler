@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { ArrowLeft, Copy, Check, Gift, Shuffle } from "lucide-react";
+import { ArrowLeft, Copy, Check, Gift, Shuffle, Share2 } from "lucide-react";
 import { use } from "react";
 
 interface CircleDetail {
@@ -46,6 +46,9 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   const [copied, setCopied] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -191,7 +194,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
                 giftbutler.io/join/{circle.invite_code}
               </p>
               <button onClick={shareInviteLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs flex-shrink-0">
-                {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                {copied ? <><Check className="w-3 h-3" /> Copied</> : isMobile ? <><Share2 className="w-3 h-3" /> Share</> : <><Copy className="w-3 h-3" /> Copy</>}
               </button>
             </div>
 
@@ -219,7 +222,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
                 giftbutler.io/join/{circle.invite_code}
               </p>
               <button onClick={shareInviteLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs flex-shrink-0">
-                {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                {copied ? <><Check className="w-3 h-3" /> Copied</> : isMobile ? <><Share2 className="w-3 h-3" /> Share</> : <><Copy className="w-3 h-3" /> Copy</>}
               </button>
             </div>
           </div>
