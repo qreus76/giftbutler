@@ -48,88 +48,95 @@ export default function EditProfilePage() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#EAEDED] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#FF9900] border-t-transparent rounded-full animate-spin" />
+    <main className="min-h-screen bg-[#EAEAE0] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#111111] border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-[#EAEDED]">
-      <div className="max-w-xl mx-auto px-3 py-4 space-y-3">
+    <main className="min-h-screen bg-[#EAEAE0]">
+      <div className="max-w-xl mx-auto px-4 py-5 space-y-5">
         <button
           onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/activity")}
-          className="flex items-center gap-2 text-[#565959] hover:text-[#0F1111] transition-colors"
+          className="flex items-center gap-2 text-[#888888] hover:text-[#111111] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back to profile</span>
+          <span className="text-sm font-medium">Back</span>
         </button>
 
-        <h1 className="text-2xl font-bold text-[#0F1111] px-1">Edit profile</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-[#111111]">Edit profile</h1>
+          <p className="text-[#888888] text-sm mt-0.5">Update your details</p>
+        </div>
 
         <form onSubmit={handleSave} className="space-y-3">
-          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
-              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Display name</label>
+          {[
+            { label: "Display name", value: name, onChange: setName, placeholder: "Your name", maxLength: 60, type: "text" },
+          ].map(field => (
+            <div key={field.label} className="bg-white rounded-2xl shadow-card overflow-hidden">
+              <div className="px-4 pt-3 pb-0.5">
+                <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide">{field.label}</label>
+              </div>
+              <div className="px-4 pb-4">
+                <input
+                  type={field.type}
+                  value={field.value}
+                  onChange={e => field.onChange(e.target.value)}
+                  placeholder={field.placeholder}
+                  maxLength={field.maxLength}
+                  className="w-full text-[#111111] text-base focus:outline-none placeholder-[#CCCCCC] mt-1"
+                />
+              </div>
             </div>
-            <div className="px-4 py-3">
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Your name"
-                maxLength={60}
-                className="w-full text-[#0F1111] text-sm focus:outline-none placeholder-[#565959]"
-              />
-            </div>
-          </div>
+          ))}
 
-          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
-              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Username</label>
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div className="px-4 pt-3 pb-0.5">
+              <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Username</label>
             </div>
-            <div className="px-4 py-3">
-              <div className="flex items-center gap-1">
-                <span className="text-[#565959] text-sm">giftbutler.io/for/</span>
+            <div className="px-4 pb-4">
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[#888888] text-sm">giftbutler.io/for/</span>
                 <input
                   type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                  className="flex-1 text-[#0F1111] text-sm focus:outline-none font-medium"
+                  className="flex-1 text-[#111111] text-base focus:outline-none font-medium"
                 />
               </div>
               {username !== currentUsername && (
-                <p className="text-xs text-[#FF9900] mt-1.5">⚠ Your old link will stop working after saving.</p>
+                <p className="text-xs text-[#C4824A] mt-1.5">⚠ Your old link will stop working after saving.</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
-              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Bio <span className="text-[#565959] normal-case font-normal">(optional)</span></label>
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div className="px-4 pt-3 pb-0.5">
+              <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Bio <span className="text-[#CCCCCC] normal-case font-normal">(optional)</span></label>
             </div>
-            <div className="px-4 py-3">
+            <div className="px-4 pb-4">
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
                 placeholder="A little about you..."
                 rows={3}
                 maxLength={160}
-                className="w-full text-[#0F1111] text-sm focus:outline-none resize-none placeholder-[#565959]"
+                className="w-full text-[#111111] text-base focus:outline-none resize-none placeholder-[#CCCCCC] mt-1"
               />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
-              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Birthday <span className="text-[#565959] normal-case font-normal">(optional)</span></label>
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div className="px-4 pt-3 pb-0.5">
+              <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide">Birthday <span className="text-[#CCCCCC] normal-case font-normal">(optional)</span></label>
             </div>
-            <div className="px-4 py-3">
+            <div className="px-4 pb-4">
               <input
                 type="date"
                 value={birthday}
                 max={new Date().toISOString().split("T")[0]}
                 onChange={e => setBirthday(e.target.value)}
-                className="w-full text-[#0F1111] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9900] rounded-lg px-1"
+                className="w-full text-[#111111] text-base focus:outline-none mt-1"
               />
             </div>
           </div>
@@ -139,7 +146,7 @@ export default function EditProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#D5D9D9] disabled:text-[#565959] text-[#0F1111] font-bold rounded-full transition-colors"
+            className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors text-base"
           >
             {saved ? "✓ Saved!" : saving ? "Saving..." : "Save changes"}
           </button>
@@ -147,7 +154,7 @@ export default function EditProfilePage() {
 
         <button
           onClick={() => signOut(() => router.push("/"))}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-[#D5D9D9] hover:bg-red-50 hover:border-red-200 text-[#565959] hover:text-red-500 font-semibold rounded-full text-sm transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-[#E0E0D8] hover:bg-red-50 hover:border-red-200 text-[#888888] hover:text-red-500 font-semibold rounded-full text-sm transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Sign out

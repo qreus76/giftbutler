@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Cake, Pencil, X, Star } from "lucide-react";
+import { Copy, Share, Cake, Pencil, X, ArrowRight } from "lucide-react";
 import BottomTabBar from "@/app/components/BottomTabBar";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
@@ -24,23 +24,16 @@ const GIFT_CATEGORY_LABELS: Record<string, string> = {
   consumable: "Consumables",
 };
 
-const GIFT_CATEGORY_EMOJI: Record<string, string> = {
-  product: "🎁",
-  experience: "🎟️",
-  subscription: "📦",
-  consumable: "🌿",
-};
-
 interface ClaimRecord { description: string; occasion: string | null; }
 
 const CATEGORIES = {
-  general: { label: "Into lately",  color: "bg-orange-100 text-orange-800" },
+  general: { label: "Into lately",  color: "bg-[#C4D4B4] text-[#2D4A1E]" },
   love:    { label: "Love",          color: "bg-red-100 text-red-700" },
-  like:    { label: "Like",          color: "bg-sky-100 text-sky-700" },
+  like:    { label: "Like",          color: "bg-[#B8CED0] text-[#1A3D42]" },
   want:    { label: "Want",          color: "bg-blue-100 text-blue-700" },
   need:    { label: "Need",          color: "bg-emerald-100 text-emerald-700" },
   dream:   { label: "Dream",         color: "bg-purple-100 text-purple-700" },
-  style:   { label: "My Style",      color: "bg-teal-100 text-teal-700" },
+  style:   { label: "My Style",      color: "bg-[#ECC8AE] text-[#5C3118]" },
   avoid:   { label: "Please no",     color: "bg-red-100 text-red-700" },
 };
 
@@ -236,24 +229,24 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const showFixedCTA = !isOwner && recommendations.length === 0 && !showFinder;
 
   return (
-    <main className="min-h-screen bg-[#EAEDED]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
+    <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
 
-      {/* Amazon-style dark header — replaces main layout nav on this page */}
-      <header className="bg-[#131921] sticky top-0 z-10">
+      {/* Minimal light header */}
+      <header className="bg-[#EAEAE0] sticky top-0 z-10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-lg font-bold text-[#FF9900] tracking-tight">
+          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-lg font-bold text-[#111111] tracking-tight">
             GiftButler
           </Link>
           <div className="flex items-center gap-2">
             {isLoaded && !user && (
-              <Link href="/sign-up" className="px-3 py-1.5 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-sm transition-colors">
+              <Link href="/sign-up" className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                 Sign up
               </Link>
             )}
             {isLoaded && user && (
-              <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#FF9900] transition-all flex-shrink-0">
+              <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#111111] transition-all flex-shrink-0">
                 {user.imageUrl ? <img src={user.imageUrl} alt="" className="w-full h-full object-cover" /> : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#131921] bg-[#FF9900]">{user.firstName?.[0]?.toUpperCase() || "?"}</div>
+                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-[#111111]">{user.firstName?.[0]?.toUpperCase() || "?"}</div>
                 )}
               </Link>
             )}
@@ -261,140 +254,130 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         </div>
       </header>
 
-      {/* Profile card — like an Amazon seller storefront */}
-      <div className="bg-white border-b border-[#D5D9D9]">
-        <div className="max-w-xl mx-auto px-4 py-4">
-          <div className="flex items-start gap-4">
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-lg overflow-hidden border border-[#D5D9D9] flex-shrink-0 shadow-card">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-[#131921] bg-[#FFD814]">
-                  {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-[#0F1111] leading-tight">{displayName}</h1>
-              <p className="text-[#007185] text-sm">@{username}</p>
-              {profile.bio && <p className="text-[#565959] text-sm mt-1 leading-relaxed">{profile.bio}</p>}
-
-              {/* Hint count styled like Amazon reviews */}
-              {hintsToShow.length > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  {[1,2,3,4,5].map(s => (
-                    <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.min(5, Math.round((hintsToShow.length / 8) * 5)) ? "fill-[#FF9900] text-[#FF9900]" : "text-[#D5D9D9]"}`} />
-                  ))}
-                  <span className="text-xs text-[#007185] ml-1">{hintsToShow.length} hints</span>
-                </div>
-              )}
-
-              {/* Birthday */}
-              {daysUntilBirthday !== null && daysUntilBirthday <= 60 && (
-                <div className="inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 bg-[#FFF3E0] border border-[#FF9900]/30 rounded text-xs font-semibold text-[#C7511F]">
-                  <Cake className="w-3 h-3" />
-                  {daysUntilBirthday === 0 ? "Birthday today! 🎉" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
-                </div>
-              )}
-            </div>
+      {/* Profile section */}
+      <div className="max-w-xl mx-auto px-4 py-5">
+        <div className="flex items-start gap-4 mb-4">
+          {/* Circular avatar */}
+          <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 shadow-card">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white bg-[#111111]">
+                {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
+              </div>
+            )}
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {isOwner && (
-              <>
-                <button onClick={shareProfile}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-sm border border-[#FFA41C] transition-colors">
-                  <Share className="w-3.5 h-3.5" />
-                  {shareCopied ? "Copied!" : "Share profile"}
-                </button>
-                <Link href="/profile/edit"
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-[#EAEDED] text-[#0F1111] font-semibold rounded-full text-sm border border-[#D5D9D9] transition-colors">
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit
-                </Link>
-              </>
+          <div className="flex-1 min-w-0 pt-1">
+            <h1 className="text-2xl font-bold text-[#111111] leading-tight">{displayName}</h1>
+            <p className="text-[#888888] text-sm">@{username}</p>
+            {profile.bio && <p className="text-[#555555] text-sm mt-1.5 leading-relaxed">{profile.bio}</p>}
+            {hintsToShow.length > 0 && (
+              <p className="text-xs text-[#888888] mt-1">{hintsToShow.length} hints</p>
             )}
+          </div>
+        </div>
 
-            {isLoaded && user && !isOwner && (
-              <>
-                {followStatus === "none" && !showLabelPicker && (
-                  <button onClick={() => setShowLabelPicker(true)}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-sm border border-[#FFA41C] transition-colors">
-                    + Add to my people
-                  </button>
-                )}
-                {followStatus === "pending" && <span className="px-4 py-1.5 bg-[#EAEDED] text-[#565959] font-semibold rounded-full text-sm border border-[#D5D9D9]">Request sent</span>}
-                {followStatus === "accepted" && <span className="px-4 py-1.5 bg-[#EAEDED] text-emerald-700 font-semibold rounded-full text-sm border border-[#D5D9D9]">✓ In my people</span>}
-                <button onClick={shareProfile}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-[#EAEDED] text-[#0F1111] font-semibold rounded-full text-sm border border-[#D5D9D9] transition-colors">
-                  <Copy className="w-3.5 h-3.5" />
-                  {shareCopied ? "Copied!" : "Share"}
-                </button>
-              </>
-            )}
-            {isLoaded && !user && (
+        {/* Birthday badge */}
+        {daysUntilBirthday !== null && daysUntilBirthday <= 60 && (
+          <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+            <Cake className="w-3.5 h-3.5" />
+            {daysUntilBirthday === 0 ? "Birthday today! 🎉" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-wrap gap-2">
+          {isOwner && (
+            <>
               <button onClick={shareProfile}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-[#EAEDED] text-[#0F1111] font-semibold rounded-full text-sm border border-[#D5D9D9] transition-colors">
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                <Share className="w-3.5 h-3.5" />
+                {shareCopied ? "Copied!" : "Share profile"}
+              </button>
+              <Link href="/profile/edit"
+                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </Link>
+            </>
+          )}
+
+          {isLoaded && user && !isOwner && (
+            <>
+              {followStatus === "none" && !showLabelPicker && (
+                <button onClick={() => setShowLabelPicker(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                  + Add to my people
+                </button>
+              )}
+              {followStatus === "pending" && <span className="px-4 py-2 bg-white text-[#888888] font-semibold rounded-full text-sm border border-[#E0E0D8]">Request sent</span>}
+              {followStatus === "accepted" && <span className="px-4 py-2 bg-[#C4D4B4] text-[#2D4A1E] font-semibold rounded-full text-sm">✓ In my people</span>}
+              <button onClick={shareProfile}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
                 <Copy className="w-3.5 h-3.5" />
                 {shareCopied ? "Copied!" : "Share"}
               </button>
-            )}
-          </div>
-
-          {/* Label picker */}
-          {showLabelPicker && (
-            <div className="mt-3 bg-[#EAEDED] rounded-lg p-4 border border-[#D5D9D9]">
-              <p className="text-sm font-bold text-[#0F1111] mb-3">Who is {displayName} to you?</p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {LABELS.map(l => (
-                  <button key={l} onClick={() => setSelectedLabel(l)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#FF9900] border-[#FF9900] text-white" : "bg-white border-[#D5D9D9] text-[#0F1111] hover:border-[#FF9900]"}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={sendFollowRequest} disabled={!selectedLabel || followLoading}
-                  className="flex-1 py-2 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#EAEDED] disabled:text-[#D5D9D9] text-[#0F1111] font-bold rounded-full text-sm border border-[#FFA41C] disabled:border-[#D5D9D9] transition-colors">
-                  {followLoading ? "Sending..." : "Send request"}
-                </button>
-                <button onClick={() => { setShowLabelPicker(false); setSelectedLabel(""); }}
-                  className="px-4 py-2 bg-white hover:bg-[#EAEDED] text-[#0F1111] font-semibold rounded-full text-sm border border-[#D5D9D9] transition-colors">
-                  Cancel
-                </button>
-              </div>
-            </div>
+            </>
+          )}
+          {isLoaded && !user && (
+            <button onClick={shareProfile}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
+              <Copy className="w-3.5 h-3.5" />
+              {shareCopied ? "Copied!" : "Share"}
+            </button>
           )}
         </div>
+
+        {/* Label picker */}
+        {showLabelPicker && (
+          <div className="mt-4 bg-white rounded-2xl p-4 shadow-card">
+            <p className="text-sm font-bold text-[#111111] mb-3">Who is {displayName} to you?</p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {LABELS.map(l => (
+                <button key={l} onClick={() => setSelectedLabel(l)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={sendFollowRequest} disabled={!selectedLabel || followLoading}
+                className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                {followLoading ? "Sending..." : "Send request"}
+              </button>
+              <button onClick={() => { setShowLabelPicker(false); setSelectedLabel(""); }}
+                className="px-4 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] font-semibold rounded-full text-sm transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── CONTENT ── */}
-      <div className="max-w-xl mx-auto px-3 py-3 space-y-3">
+      <div className="max-w-xl mx-auto px-4 space-y-4">
 
         {/* Education banner */}
         {!isOwner && hintsToShow.length > 0 && recommendations.length === 0 && !showFinder && (() => {
           try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
         })() && (
-          <div className="bg-[#FFF3E0] border border-[#FF9900]/40 rounded-lg p-3">
-            <p className="text-xs font-bold text-[#C7511F] mb-1">✨ GiftButler AI</p>
-            <p className="text-[#0F1111] text-sm leading-relaxed">
-              {displayName} dropped {hintsToShow.length} hints about their interests and wishes. Our AI reads them all together to suggest gifts they&apos;d genuinely love — not a generic search.
+          <div className="bg-[#B8CED0] rounded-2xl p-4">
+            <p className="text-xs font-bold text-[#1A3D42] mb-1">✨ GiftButler AI</p>
+            <p className="text-[#1A3D42] text-sm leading-relaxed">
+              {displayName} dropped {hintsToShow.length} hints about their interests. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
             </p>
           </div>
         )}
 
-        {/* Gift Finder — styled like Amazon checkout */}
+        {/* Gift Finder */}
         {showFinder && recommendations.length === 0 && (
-          <div className="bg-white rounded-lg shadow-card border border-[#D5D9D9] p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-[#0F1111]">Find the perfect gift</h2>
-              <button onClick={() => setShowFinder(false)} className="p-1 text-[#565959] hover:text-[#0F1111]"><X className="w-5 h-5" /></button>
+          <div className="bg-white rounded-2xl shadow-card p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
+              <button onClick={() => setShowFinder(false)} className="p-1.5 bg-[#F0F0E8] rounded-full text-[#888888] hover:text-[#111111]"><X className="w-4 h-4" /></button>
             </div>
-            <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col gap-4 mb-5">
               {[
                 { label: "I'm their", value: relationship, onChange: (v: string) => setRelationship(v), ref: relationshipRef, placeholder: "Select relationship...", options: [
                   { group: "Partner", items: [["husband","Husband"],["wife","Wife"],["partner","Partner"]] },
@@ -403,9 +386,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 ]},
               ].map(field => (
                 <div key={field.label}>
-                  <label className="text-xs font-bold text-[#565959] mb-1.5 block">{field.label}</label>
+                  <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">{field.label}</label>
                   <select ref={field.ref as React.Ref<HTMLSelectElement>} value={field.value} onChange={e => field.onChange(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#D5D9D9] text-sm text-[#0F1111] focus:outline-none focus:ring-1 focus:ring-[#FF9900] focus:border-[#FF9900] bg-white">
+                    className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
                     <option value="">{field.placeholder}</option>
                     {field.options.map(og => (
                       <optgroup key={og.group} label={og.group}>
@@ -416,9 +399,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </div>
               ))}
               <div>
-                <label className="text-xs font-bold text-[#565959] mb-1.5 block">Budget</label>
+                <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Budget</label>
                 <select value={budget} onChange={e => setBudget(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#D5D9D9] text-sm text-[#0F1111] focus:outline-none focus:ring-1 focus:ring-[#FF9900] focus:border-[#FF9900] bg-white">
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
                   <option value="">Select budget...</option>
                   <option value="under $25">Under $25</option>
                   <option value="$25-$50">$25 – $50</option>
@@ -428,9 +411,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-[#565959] mb-1.5 block">Occasion <span className="font-normal text-[#D5D9D9]">(optional)</span></label>
+                <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
                 <select value={occasion} onChange={e => setOccasion(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#D5D9D9] text-sm text-[#0F1111] focus:outline-none focus:ring-1 focus:ring-[#FF9900] focus:border-[#FF9900] bg-white">
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
                   <option value="">Select occasion...</option>
                   <option value="birthday">Birthday</option>
                   <option value="holiday">Holiday</option>
@@ -444,33 +427,33 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             </div>
             {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
             <button onClick={generateGifts} disabled={!relationship || !budget || generating}
-              className="w-full py-2.5 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#EAEDED] disabled:text-[#D5D9D9] text-[#0F1111] font-bold rounded-full border border-[#FFA41C] disabled:border-[#D5D9D9] transition-colors">
+              className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2">
               {generating ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-[#0F1111]/30 border-t-[#0F1111] rounded-full animate-spin inline-block" />
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
                   Finding the perfect gift...
-                </span>
-              ) : generateError ? "Try again" : "Generate gift ideas"}
+                </>
+              ) : generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
             </button>
           </div>
         )}
 
-        {/* Recommendations — Amazon product cards */}
+        {/* Recommendations */}
         {recommendations.length > 0 && (() => {
           const availableCategories = ["all", ...Array.from(new Set(recommendations.map(r => r.category)))];
           const filtered = categoryFilter === "all" ? recommendations : recommendations.filter(r => r.category === categoryFilter);
           const visible = showAllRecs ? filtered : filtered.slice(0, 5);
           return (
             <div>
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="font-bold text-[#0F1111]">Results for &ldquo;{displayName}&rdquo;</h2>
-                <span className="text-xs text-[#565959]">{filtered.length} ideas</span>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-[#111111]">Gift ideas for {displayName}</h2>
+                <span className="text-xs text-[#888888]">{filtered.length} ideas</span>
               </div>
               {availableCategories.length > 2 && (
                 <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-none">
                   {availableCategories.map(cat => (
                     <button key={cat} onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 border ${categoryFilter === cat ? "bg-[#232F3E] text-white border-[#232F3E]" : "bg-white text-[#0F1111] border-[#D5D9D9] hover:border-[#FF9900]"}`}>
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${categoryFilter === cat ? "bg-[#111111] text-white" : "bg-white text-[#111111] shadow-card hover:bg-[#F0F0E8]"}`}>
                       {GIFT_CATEGORY_LABELS[cat] || cat}
                     </button>
                   ))}
@@ -481,33 +464,30 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   const alreadyClaimed = isAlreadyClaimed(rec.title);
                   const iMineThis = myClaims.includes(rec.title);
                   return (
-                    <div key={i} className={`bg-white rounded-lg shadow-card border ${alreadyClaimed && !iMineThis ? "border-emerald-300" : "border-[#D5D9D9]"} p-4`}>
-                      <div className="flex items-start justify-between gap-3 mb-1">
-                        <h3 className="font-semibold text-[#007185] text-sm leading-snug hover:text-[#C7511F] cursor-default">{rec.title}</h3>
+                    <div key={i} className={`bg-white rounded-2xl shadow-card p-4 ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
+                      <h3 className="font-semibold text-[#111111] text-sm leading-snug mb-1">{rec.title}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-base font-bold text-[#111111]">{rec.priceRange}</span>
+                        <span className="text-xs text-[#888888]">· {rec.category}</span>
+                        {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
                       </div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg font-bold text-[#0F1111]">{rec.priceRange}</span>
-                        <span className="text-xs text-[#565959]">{GIFT_CATEGORY_EMOJI[rec.category]} {rec.category}</span>
-                        {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Someone&apos;s on it</span>}
-                      </div>
-                      <p className="text-[#565959] text-xs leading-relaxed mb-3">{rec.why}</p>
-                      {/* Amazon-style button stack */}
+                      <p className="text-[#888888] text-xs leading-relaxed mb-3">{rec.why}</p>
                       <div className="flex flex-col gap-2">
                         <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
-                          className="w-full py-2 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-sm text-center border border-[#FFA41C] transition-colors">
-                          Find this gift
+                          className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+                          Find this gift <ArrowRight className="w-3.5 h-3.5" />
                         </a>
                         <button onClick={() => claimGift(rec.title)} disabled={iMineThis || alreadyClaimed || claiming === rec.title}
-                          className="w-full py-2 bg-[#FF9900] hover:bg-[#E47911] disabled:bg-[#EAEDED] disabled:text-[#565959] disabled:border-[#D5D9D9] text-white font-bold rounded-full text-sm border border-[#E47911] transition-colors">
+                          className="w-full py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
                           {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
                         </button>
                       </div>
                       {notifyPromptTitle === rec.title && (
-                        <div className="mt-3 pt-3 border-t border-[#D5D9D9] flex items-center justify-between gap-3">
-                          <p className="text-xs text-[#565959]">Let {displayName} know something&apos;s on the way?</p>
+                        <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
+                          <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={sendNotify} className="px-3 py-1 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-xs border border-[#FFA41C]">Send hint</button>
-                            <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1 bg-white text-[#565959] font-semibold rounded-full text-xs border border-[#D5D9D9]">Keep secret</button>
+                            <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Send hint</button>
+                            <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
                           </div>
                         </div>
                       )}
@@ -518,12 +498,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </div>
               <div className="mt-3 space-y-2">
                 {!showAllRecs && filtered.length > 5 && (
-                  <button onClick={() => setShowAllRecs(true)} className="w-full py-2 bg-white hover:bg-[#EAEDED] text-[#007185] font-semibold rounded-full text-sm border border-[#D5D9D9] transition-colors">
+                  <button onClick={() => setShowAllRecs(true)} className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm shadow-card transition-colors">
                     See all {filtered.length} results
                   </button>
                 )}
                 <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => relationshipRef.current?.focus(), 400); }}
-                  className="w-full py-2 bg-white hover:bg-[#EAEDED] text-[#565959] font-semibold rounded-full text-sm border border-[#D5D9D9] transition-colors">
+                  className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
                   Refine search
                 </button>
               </div>
@@ -533,24 +513,24 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Sign-up CTA for visitors */}
         {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
-          <div className="bg-[#FFF3E0] border border-[#FF9900]/40 rounded-lg p-4 text-center">
-            <p className="text-[#0F1111] font-bold text-sm mb-1">Create your own gift profile — free</p>
-            <p className="text-[#565959] text-xs mb-3">Share your link. Get gifts you actually want.</p>
-            <a href="/sign-up" className="inline-block px-6 py-2 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-sm border border-[#FFA41C] transition-colors">
-              Get started
+          <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
+            <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
+            <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
+            <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+              Get started <ArrowRight className="w-4 h-4" />
             </a>
           </div>
         )}
 
         {/* Drop a hint (owner) */}
         {isOwner && (
-          <div className="bg-white rounded-lg shadow-card border border-[#D5D9D9] p-4">
-            <p className="text-sm font-bold text-[#0F1111] mb-0.5">Drop a hint</p>
-            <p className="text-xs text-[#565959] mb-3">The AI reads all your hints together to suggest gifts people know you&apos;ll love.</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
+          <div className="bg-white rounded-2xl shadow-card p-5">
+            <p className="text-base font-bold text-[#111111] mb-0.5">Drop a hint</p>
+            <p className="text-xs text-[#888888] mb-4">The AI reads all your hints together to find gifts people know you&apos;ll love.</p>
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
               {HINT_CATEGORIES.map(c => (
                 <button key={c.id} onClick={() => setHintCategory(c.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex-shrink-0 border ${hintCategory === c.id ? "bg-[#232F3E] text-white border-[#232F3E]" : "bg-white text-[#0F1111] border-[#D5D9D9] hover:border-[#FF9900]"}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
                   {c.label}
                 </button>
               ))}
@@ -559,15 +539,15 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <div className="flex gap-2">
                 <input value={newHint} onChange={e => setNewHint(e.target.value)} maxLength={280}
                   placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
-                  className="flex-1 px-3 py-2 rounded-lg border border-[#D5D9D9] text-sm text-[#0F1111] placeholder-[#D5D9D9] focus:outline-none focus:ring-1 focus:ring-[#FF9900] focus:border-[#FF9900]" />
+                  className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
                 <button type="submit" disabled={!newHint.trim() || adding}
-                  className="px-4 py-2 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#EAEDED] disabled:text-[#D5D9D9] text-[#0F1111] font-bold rounded-full text-sm border border-[#FFA41C] disabled:border-[#D5D9D9] transition-colors whitespace-nowrap">
+                  className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
                   {adding ? "..." : "Add"}
                 </button>
               </div>
-              <div className="flex justify-between px-0.5">
-                {addError ? <p className="text-red-600 text-xs">{addError}</p> : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid" ? <p className="text-xs text-[#565959]">More detail = better gifts</p> : <span />}
-                {newHint.length > 0 && <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-600" : "text-[#565959]"}`}>{280 - newHint.length}</p>}
+              <div className="flex justify-between px-1">
+                {addError ? <p className="text-red-600 text-xs">{addError}</p> : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid" ? <p className="text-xs text-[#888888]">More detail = better gifts</p> : <span />}
+                {newHint.length > 0 && <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</p>}
               </div>
             </form>
           </div>
@@ -575,15 +555,15 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Progress nudge */}
         {isOwner && hintsToShow.length >= 1 && hintsToShow.length < 8 && (
-          <div className="bg-[#FFF3E0] border border-[#FF9900]/40 rounded-lg p-4">
+          <div className="bg-[#C4D4B4] rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-[#C7511F]">{hintsToShow.length < 3 ? "Getting started" : hintsToShow.length < 5 ? "Building nicely" : "Almost there"}</p>
-              <span className="text-xs font-bold text-[#C7511F]">{hintsToShow.length}/8 hints</span>
+              <p className="text-xs font-bold text-[#2D4A1E]">{hintsToShow.length < 3 ? "Getting started" : hintsToShow.length < 5 ? "Building nicely" : "Almost there"}</p>
+              <span className="text-xs font-bold text-[#2D4A1E]">{hintsToShow.length}/8</span>
             </div>
-            <div className="w-full h-1.5 bg-orange-200 rounded-full mb-2 overflow-hidden">
-              <div className="h-full bg-[#FF9900] rounded-full transition-all" style={{ width: `${Math.round((hintsToShow.length / 8) * 100)}%` }} />
+            <div className="w-full h-1.5 bg-white/40 rounded-full mb-2 overflow-hidden">
+              <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((hintsToShow.length / 8) * 100)}%` }} />
             </div>
-            <p className="text-xs text-[#565959] leading-relaxed">
+            <p className="text-xs text-[#2D4A1E]/80">
               {hintsToShow.length < 3 ? "Add more hints — the AI needs context to go beyond generic suggestions." : "8+ hints is where gift ideas start feeling truly personal."}
             </p>
           </div>
@@ -591,63 +571,63 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Hints list */}
         {(isOwner || hintsToShow.length > 0) && (
-          <div className="bg-white rounded-lg shadow-card border border-[#D5D9D9] overflow-hidden">
-            <div className="px-4 py-3 bg-[#232F3E] flex items-center justify-between">
-              <p className="text-xs font-bold text-white uppercase tracking-wide">
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
+              <p className="text-sm font-bold text-[#111111]">
                 {isOwner ? "My Hints" : `${displayName}'s hints`}
               </p>
-              {hintsToShow.length > 0 && <span className="text-xs text-[#AAAAAA]">{hintsToShow.length} hints</span>}
+              {hintsToShow.length > 0 && <span className="text-xs text-[#888888]">{hintsToShow.length}</span>}
             </div>
             {isOwner && hints.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-2xl mb-2">🎁</p>
-                <p className="font-bold text-[#0F1111] text-sm mb-1">Your hints = gifts people want to give</p>
-                <p className="text-[#565959] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love — not a generic search.</p>
+                <p className="font-bold text-[#111111] text-sm mb-1">Your hints = gifts people want to give</p>
+                <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#D5D9D9]">
+              <div className="divide-y divide-[#F0F0E8]">
                 {hintsToShow.map(hint => {
                   const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
                   return (
-                    <div key={hint.id} className="px-4 py-3 group">
+                    <div key={hint.id} className="px-4 py-3.5 group">
                       {isOwner && editingHintId === hint.id ? (
                         <div>
                           <div className="flex gap-1.5 flex-wrap mb-2">
                             {HINT_CATEGORIES.map(c => (
                               <button key={c.id} onClick={() => setEditCategory(c.id)}
-                                className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${editCategory === c.id ? "bg-[#232F3E] text-white border-[#232F3E]" : "bg-white text-[#0F1111] border-[#D5D9D9] hover:border-[#FF9900]"}`}>
+                                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${editCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
                                 {c.label}
                               </button>
                             ))}
                           </div>
                           <textarea value={editContent} onChange={e => setEditContent(e.target.value)} maxLength={280} autoFocus rows={2}
-                            className="w-full px-3 py-2 rounded-lg border border-[#FF9900] text-sm text-[#0F1111] focus:outline-none resize-none mb-2" />
+                            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] focus:outline-none resize-none mb-2" />
                           <div className="flex items-center justify-between">
                             <div className="flex gap-2">
                               <button onClick={() => saveHint(hint.id)} disabled={!editContent.trim() || hintSaving}
-                                className="px-3 py-1.5 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#EAEDED] text-[#0F1111] font-bold rounded-full text-xs border border-[#FFA41C]">Save</button>
-                              <button onClick={cancelEditHint} className="px-3 py-1.5 bg-white text-[#565959] font-semibold rounded-full text-xs border border-[#D5D9D9]">Cancel</button>
+                                className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs">Save</button>
+                              <button onClick={cancelEditHint} className="px-4 py-1.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs">Cancel</button>
                             </div>
-                            <span className={`text-xs ${editContent.length >= 260 ? "text-red-600" : "text-[#565959]"}`}>{280 - editContent.length}</span>
+                            <span className={`text-xs ${editContent.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - editContent.length}</span>
                           </div>
                         </div>
                       ) : (
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block mb-1 ${cat.color}`}>{cat.label}</span>
-                            <p className="text-[#0F1111] text-sm">{hint.content}</p>
+                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full inline-block mb-1.5 ${cat.color}`}>{cat.label}</span>
+                            <p className="text-[#111111] text-sm">{hint.content}</p>
                           </div>
                           {isOwner && (
                             <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               {confirmDeleteId === hint.id ? (
                                 <>
-                                  <button onClick={() => deleteHint(hint.id)} className="px-2 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                                  <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 bg-white text-[#565959] text-xs font-semibold rounded-full border border-[#D5D9D9]">Cancel</button>
+                                  <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                                  <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => startEditHint(hint)} className="p-1 text-[#D5D9D9] hover:text-[#FF9900] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                                  <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1 text-[#D5D9D9] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                                  <button onClick={() => startEditHint(hint)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
                                 </>
                               )}
                             </div>
@@ -665,29 +645,29 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Avoid nudge */}
         {isOwner && avoidHints.length === 0 && hints.length > 0 && (
           <button onClick={() => setHintCategory("avoid")}
-            className="w-full px-4 py-3 bg-white border border-dashed border-red-300 rounded-lg text-left hover:bg-red-50 transition-colors">
-            <p className="text-sm font-semibold text-red-600">+ What should people NOT get you?</p>
-            <p className="text-xs text-[#565959] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
+            className="w-full px-4 py-3.5 bg-white rounded-2xl shadow-card text-left hover:bg-[#F0F0E8] transition-colors border-2 border-dashed border-[#E0E0D8] hover:border-red-300">
+            <p className="text-sm font-semibold text-[#888888] hover:text-red-500">+ What should people NOT get you?</p>
+            <p className="text-xs text-[#AAAAAA] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
           </button>
         )}
 
         {avoidHints.length > 0 && (
-          <div className="bg-white rounded-lg shadow-card border border-red-200 overflow-hidden">
-            <div className="px-4 py-2 bg-red-50 border-b border-red-200">
-              <p className="text-xs font-bold text-red-600 uppercase tracking-wide">Please avoid</p>
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div className="px-4 py-3 border-b border-red-100">
+              <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
             </div>
-            <div className="divide-y divide-[#D5D9D9]">
+            <div className="divide-y divide-[#F0F0E8]">
               {avoidHints.map(hint => (
                 <div key={hint.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                  <span className="text-[#0F1111] text-sm">— {hint.content}</span>
+                  <span className="text-[#888888] text-sm">— {hint.content}</span>
                   {isOwner && (
                     confirmDeleteId === hint.id ? (
                       <div className="flex gap-1">
-                        <button onClick={() => deleteHint(hint.id)} className="px-2 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 bg-white text-[#565959] text-xs font-semibold rounded-full border border-[#D5D9D9]">Cancel</button>
+                        <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                        <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
                       </div>
                     ) : (
-                      <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1 text-[#D5D9D9] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                      <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
                     )
                   )}
                 </div>
@@ -696,21 +676,22 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         )}
 
-        <div className="text-center pb-2">
-          <p className="text-xs text-[#D5D9D9]">
-            As an Amazon Associate, GiftButler earns from qualifying purchases. <a href="/privacy" className="hover:text-[#565959] underline">Privacy</a> · <a href="/terms" className="hover:text-[#565959] underline">Terms</a>
+        <div className="text-center pb-4">
+          <p className="text-xs text-[#CCCCCC]">
+            As an Amazon Associate, GiftButler earns from qualifying purchases. <a href="/privacy" className="hover:text-[#888888] underline">Privacy</a> · <a href="/terms" className="hover:text-[#888888] underline">Terms</a>
           </p>
         </div>
       </div>
 
       {/* Fixed bottom CTA */}
       {showFixedCTA && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#131921] border-t border-[#3D4F5C] px-4"
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-sm border-t border-[#E8E8E0] px-4"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 12px)", paddingTop: "12px" }}>
           <div className="max-w-xl mx-auto">
             <button onClick={() => setShowFinder(true)}
-              className="w-full py-3 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-base border border-[#FFA41C] transition-colors">
+              className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-base transition-colors flex items-center justify-center gap-2">
               {hintsToShow.length > 0 ? `Find ${displayName} a gift` : `Find a gift for ${displayName}`}
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

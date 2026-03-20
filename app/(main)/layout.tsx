@@ -20,18 +20,18 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Amazon-style dark header */}
-      <header className="bg-[#131921] sticky top-0 z-10">
+      {/* Minimal light header */}
+      <header className="bg-[#EAEAE0] sticky top-0 z-10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href={username ? `/for/${username}` : "/activity"} className="text-lg font-bold text-[#FF9900] tracking-tight">
+          <Link href={username ? `/for/${username}` : "/activity"} className="text-lg font-bold text-[#111111] tracking-tight">
             GiftButler
           </Link>
           {isLoaded && user && (
-            <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#FF9900] transition-all flex-shrink-0">
+            <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#111111] transition-all flex-shrink-0">
               {user.imageUrl ? (
                 <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#131921] bg-[#FF9900]">
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-[#111111]">
                   {user.firstName?.[0]?.toUpperCase() || "?"}
                 </div>
               )}

@@ -26,34 +26,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider
       appearance={{
         variables: {
-          colorPrimary: "#FF9900",
-          colorText: "#0F1111",
-          colorTextSecondary: "#565959",
+          colorPrimary: "#111111",
+          colorText: "#111111",
+          colorTextSecondary: "#888888",
           colorBackground: "#ffffff",
           colorInputBackground: "#ffffff",
-          colorInputText: "#0F1111",
-          borderRadius: "0.5rem",
+          colorInputText: "#111111",
+          borderRadius: "1rem",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         },
         elements: {
-          card: "shadow-card border border-[#D5D9D9]",
-          headerTitle: "text-[#0F1111] font-bold",
-          headerSubtitle: "text-[#565959]",
+          card: "shadow-float border-0",
+          headerTitle: "text-[#111111] font-bold",
+          headerSubtitle: "text-[#888888]",
           socialButtonsBlockButton: {
-            className: "border-[#D5D9D9] hover:bg-[#EAEDED] text-[#0F1111] font-semibold rounded-lg",
+            className: "border border-[#E0E0E0] hover:bg-[#F5F5F0] text-[#111111] font-semibold rounded-full",
             style: { padding: "12px 16px" },
           },
           formButtonPrimary: {
-            className: "bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full shadow-none",
+            className: "bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full shadow-none",
             style: { padding: "12px 24px" },
           },
           formFieldInput: {
-            className: "border-[#D5D9D9] rounded-lg focus:ring-[#FF9900] focus:border-[#FF9900]",
+            className: "border border-[#E0E0E0] rounded-xl focus:ring-[#111111] focus:border-[#111111]",
             style: { padding: "10px 16px" },
           },
-          footerActionLink: "text-[#007185] hover:text-[#C7511F] font-semibold underline",
-          identityPreviewEditButton: "text-[#007185]",
-          formResendCodeLink: "text-[#007185]",
+          footerActionLink: "text-[#111111] font-semibold underline",
+          identityPreviewEditButton: "text-[#888888]",
+          formResendCodeLink: "text-[#888888]",
         },
       }}
     >

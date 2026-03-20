@@ -1,25 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-amz-dark:   #131921;
-  --color-amz-nav:    #232F3E;
-  --color-amz-orange: #FF9900;
-  --color-amz-yellow: #FFD814;
-  --color-amz-teal:   #007185;
-  --color-amz-bg:     #EAEDED;
-  --color-amz-border: #D5D9D9;
-  --color-amz-text:   #0F1111;
-  --color-amz-muted:  #565959;
-
-  /* Keep amber tokens mapped */
-  --color-amber-400: #FF9900;
-  --color-amber-500: #E47911;
+  /* Artilate-inspired pastel system */
+  --color-gb-bg:    #EAEAE0;
+  --color-gb-sage:  #C4D4B4;
+  --color-gb-teal:  #B8CED0;
+  --color-gb-peach: #ECC8AE;
+  --color-gb-card:  #FFFFFF;
+  --color-gb-ink:   #111111;
+  --color-gb-muted: #888888;
+  --color-gb-dim:   #CCCCCC;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #EAEDED;
-  color: #0F1111;
+  background-color: #EAEAE0;
+  color: #111111;
 }
 
 .font-display {
@@ -27,7 +23,11 @@ body {
 }
 
 .shadow-card {
-  box-shadow: 0 2px 5px 0 rgba(213,217,217,.5);
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.06);
+}
+
+.shadow-float {
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.10);
 }
 
 /* Prevent iOS Safari zoom on input focus */
