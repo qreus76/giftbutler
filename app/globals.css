@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-amber-400: #E09500;
-  --color-amber-500: #CA8500;
+  --color-amber-400: #E8A000;
+  --color-amber-500: #D49000;
+  --color-navy: #1E3A5F;
+  --color-navy-light: #EEF3F9;
+  --color-success: #16A34A;
 }
 
 body {

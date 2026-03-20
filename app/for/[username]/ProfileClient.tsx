@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Users, Cake, Bell, Pencil, MessageSquare } from "lucide-react";
+import { Copy, Share, Cake, Pencil } from "lucide-react";
+import BottomTabBar from "@/app/components/BottomTabBar";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -29,6 +30,13 @@ const GIFT_CATEGORY_BORDER: Record<string, string> = {
   experience: "border-l-purple-400",
   subscription: "border-l-blue-400",
   consumable: "border-l-green-500",
+};
+
+const GIFT_CATEGORY_EMOJI: Record<string, string> = {
+  product: "🎁",
+  experience: "🎟️",
+  subscription: "📦",
+  consumable: "🌿",
 };
 
 interface ClaimRecord {
@@ -323,34 +331,27 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const displayName = profile.name || username;
 
   return (
-    <main className="min-h-screen bg-[#fef9ef]">
+    <main className="min-h-screen bg-[#fef9ef] pb-24">
       {/* Nav */}
       <nav className="border-b border-amber-100/70 bg-[#fef9ef]">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-base font-display text-stone-900 tracking-wide">GiftButler</Link>
-          {isLoaded && (isOwner || user ? (
-            <div className="flex items-center gap-2">
-              <Link href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-                <Users className="w-5 h-5" />
-              </Link>
-              <Link href="/activity" title="Activity" aria-label="Activity" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-                <Bell className="w-5 h-5" />
-              </Link>
-              <Link href="/profile/edit" title="Edit profile" aria-label="Edit profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
-                {user?.imageUrl ? (
-                  <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
-                    {user?.firstName?.[0]?.toUpperCase() || "?"}
-                  </div>
-                )}
-              </Link>
-            </div>
-          ) : (
-            <Link href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors">
+          {isLoaded && !user && (
+            <Link href="/sign-up" className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs transition-colors active:scale-95 duration-100">
               Create yours free →
             </Link>
-          ))}
+          )}
+          {isLoaded && user && (
+            <Link href="/profile/edit" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
+              {user.imageUrl ? (
+                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
+                  {user.firstName?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -379,7 +380,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-amber-400 flex items-center justify-center text-2xl font-bold text-stone-900">
+              <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
                 {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
               </div>
             )}
@@ -401,7 +402,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             {/* Share — primary for owner, secondary for visitor */}
             <button
               onClick={shareProfile}
-              className={`px-5 py-2 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2 ${
+              className={`px-5 py-2 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2 active:scale-95 duration-100 ${
                 isOwner
                   ? "bg-amber-400 hover:bg-amber-500 text-stone-900"
                   : "border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800"
@@ -415,7 +416,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             {isOwner && (
               <Link
                 href="/profile/edit"
-                className="px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
+                className="px-5 py-2 border-2 border-[#1E3A5F] text-[#1E3A5F] hover:bg-[#EEF3F9] font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2 active:scale-95 duration-100"
               >
                 <Pencil className="w-4 h-4" />
                 Edit profile
@@ -488,7 +489,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             )}
             <button
               onClick={() => setShowFinder(true)}
-              className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-base transition-colors shadow-sm"
+              className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-base transition-colors shadow-sm active:scale-[0.98] duration-100"
             >
               {hintsToShow.length > 0
                 ? `Get AI gift ideas based on ${displayName}'s hints →`
@@ -585,7 +586,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             <button
               onClick={generateGifts}
               disabled={!relationship || !budget || generating}
-              className="w-full py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl transition-colors"
+              className="w-full py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 disabled:text-stone-400 text-stone-900 font-bold rounded-xl transition-colors active:scale-[0.98] duration-100"
             >
               {generating ? (
                 <span className="flex items-center justify-center gap-2">
@@ -633,13 +634,13 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   const alreadyClaimed = isAlreadyClaimed(rec.title);
                   const iMineThis = myClaims.includes(rec.title);
                   return (
-                    <div key={i} className={`bg-white rounded-2xl shadow-card p-4 border-l-4 ${GIFT_CATEGORY_BORDER[rec.category] || "border-l-stone-200"} ${alreadyClaimed && !iMineThis ? "ring-1 ring-green-200 bg-green-50/30" : ""}`}>
+                    <div key={i} className={`bg-white rounded-2xl shadow-card p-4 border-l-4 ${GIFT_CATEGORY_BORDER[rec.category] || "border-l-stone-200"} ${alreadyClaimed && !iMineThis ? "ring-1 ring-green-200 bg-green-50/30" : ""} active:scale-[0.98] transition-transform duration-100`}>
                       <div className="flex items-start justify-between gap-3 mb-1.5">
                         <h3 className="font-semibold text-stone-900 text-sm leading-snug">{rec.title}</h3>
                         <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">{rec.priceRange}</span>
                       </div>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs text-stone-400 capitalize">{rec.category}</span>
+                        <span className="text-xs text-stone-400 capitalize">{GIFT_CATEGORY_EMOJI[rec.category]} {rec.category}</span>
                         {alreadyClaimed && !iMineThis && (
                           <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Someone&apos;s on it</span>
                         )}
@@ -650,7 +651,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                           href={rec.searchUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors"
+                          className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-xs text-center transition-colors active:scale-95 duration-100"
                         >
                           Find this gift →
                         </a>
@@ -974,6 +975,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </p>
         </div>
       </div>
+
+      {isLoaded && user && <BottomTabBar myUsername={myUsername} />}
     </main>
   );
 }

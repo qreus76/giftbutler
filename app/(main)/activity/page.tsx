@@ -222,7 +222,7 @@ export default function ActivityPage() {
                       {req.avatar ? (
                         <img src={req.avatar} alt={req.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-amber-400 flex items-center justify-center text-xs font-bold text-stone-900">
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
                           {req.name?.[0]?.toUpperCase() || "?"}
                         </div>
                       )}
@@ -323,7 +323,7 @@ export default function ActivityPage() {
                     {person.avatar ? (
                       <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
                         {person.name?.[0]?.toUpperCase() || "?"}
                       </div>
                     )}

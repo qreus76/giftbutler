@@ -187,11 +187,11 @@ export default function OnboardingPage() {
   // Find your people screen
   if (done && findingPeople) {
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
             <Users className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <h2 className="text-2xl font-bold text-stone-900 mb-1">Find your people</h2>
+            <h2 className="text-2xl font-display text-stone-900 mb-1">Find your people</h2>
             <p className="text-stone-400 text-sm">Search by username to send a connection request.</p>
           </div>
 
@@ -201,7 +201,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+          <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
               <input
@@ -276,16 +276,16 @@ export default function OnboardingPage() {
   // Birthday step
   if (done && !birthdayDone) {
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Cake className="w-8 h-8 text-amber-500" />
           </div>
-          <h2 className="text-2xl font-bold text-stone-900 mb-2">When&apos;s your birthday?</h2>
+          <h2 className="text-2xl font-display text-stone-900 mb-2">When&apos;s your birthday?</h2>
           <p className="text-stone-400 text-sm mb-8">
             We&apos;ll remind you to share your profile before your birthday — so the people who matter know exactly what to get you.
           </p>
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+          <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
             <input
               type="date"
               value={birthdayInput}
@@ -320,15 +320,15 @@ export default function OnboardingPage() {
     ];
 
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-stone-900 mb-2">Your profile is live!</h2>
+          <h2 className="text-2xl font-display text-stone-900 mb-2">Your profile is live!</h2>
           <p className="text-stone-400 text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
           <p className="text-xs text-stone-400 mb-8">We added a few hints from your answers. You can edit or replace them from your profile anytime.</p>
 
           {/* Link copy box */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
+          <div className="bg-white rounded-2xl shadow-card p-4 mb-4 flex items-center justify-between gap-3">
             <p className="text-stone-700 font-medium text-sm truncate">giftbutler.io/for/{username}</p>
             <button
               onClick={copyLink}
@@ -370,25 +370,25 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Progress */}
         <div className="flex gap-1.5 mb-8">
           {[...QUIZ_STEPS, { id: "username" }].map((_, i) => (
-            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? "bg-amber-400" : "bg-stone-200"}`} />
+            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-amber-400" : "bg-stone-200"}`} />
           ))}
         </div>
 
         {isQuiz ? (
           <div>
-            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">Quick question {step + 1} of {QUIZ_STEPS.length}</p>
-            <h2 className="text-2xl font-bold text-stone-900 mb-6">{currentQuiz.question}</h2>
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Quick question {step + 1} of {QUIZ_STEPS.length}</p>
+            <h2 className="text-2xl font-display text-stone-900 mb-6">{currentQuiz.question}</h2>
             <div className="flex flex-col gap-3">
               {currentQuiz.options.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => handleAnswer(opt.value)}
-                  className="w-full text-left px-5 py-4 bg-white border-2 border-stone-200 hover:border-amber-400 rounded-2xl text-stone-700 font-medium transition-all"
+                  className="w-full text-left px-5 py-4 bg-white border-2 border-stone-200 hover:border-amber-400 hover:bg-[#FFF3CC] rounded-2xl text-stone-700 font-medium transition-all active:scale-[0.98] active:border-amber-400 active:bg-[#FFF3CC] duration-100"
                 >
                   {opt.label}
                 </button>
@@ -397,7 +397,7 @@ export default function OnboardingPage() {
               {!showCustom ? (
                 <button
                   onClick={() => setShowCustom(true)}
-                  className="w-full text-left px-5 py-4 bg-white border-2 border-dashed border-stone-200 hover:border-amber-400 rounded-2xl text-stone-400 font-medium transition-all"
+                  className="w-full text-left px-5 py-4 bg-white border-2 border-dotted border-stone-300 hover:border-amber-400 hover:bg-[#FFF3CC] rounded-2xl text-stone-400 font-medium transition-all active:scale-[0.98] duration-100"
                 >
                   Something else — type your own
                 </button>
@@ -433,8 +433,8 @@ export default function OnboardingPage() {
           </div>
         ) : (
           <div>
-            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">Almost done</p>
-            <h2 className="text-2xl font-bold text-stone-900 mb-2">Choose your username</h2>
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Almost done</p>
+            <h2 className="text-2xl font-display text-stone-900 mb-2">Choose your username</h2>
             <p className="text-stone-400 text-sm mb-6">Your profile will live at <span className="text-stone-700 font-medium">giftbutler.io/for/[username]</span></p>
             <div className="flex items-center gap-2 bg-white border-2 border-stone-200 rounded-2xl px-4 py-3 mb-3 focus-within:border-amber-400 transition-colors">
               <span className="text-stone-400 text-sm">giftbutler.io/for/</span>

@@ -151,7 +151,7 @@ export default function EditProfilePage() {
 
         <button
           onClick={() => signOut(() => router.push("/"))}
-          className="mt-6 w-full flex items-center justify-center gap-2 py-3 border border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200 font-semibold rounded-2xl text-sm transition-colors"
+          className="mt-6 w-full flex items-center justify-center gap-2 py-3 border-2 border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200 font-semibold rounded-2xl text-sm transition-colors active:scale-[0.98] duration-100"
         >
           <LogOut className="w-4 h-4" />
           Sign out

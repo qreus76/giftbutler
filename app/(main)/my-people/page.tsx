@@ -149,7 +149,7 @@ export default function MyPeoplePage() {
                   {searchResult.avatar ? (
                     <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-amber-400 flex items-center justify-center text-sm font-bold text-stone-900">
+                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
                       {searchResult.name[0]?.toUpperCase()}
                     </div>
                   )}
@@ -216,7 +216,7 @@ export default function MyPeoplePage() {
                     {person.avatar ? (
                       <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-amber-400 flex items-center justify-center text-lg font-bold text-stone-900">
+                      <div className="w-full h-full flex items-center justify-center text-lg font-bold text-stone-900" style={{ background: "linear-gradient(135deg, #E8A000, #FFD166)" }}>
                         {person.name?.[0]?.toUpperCase() || "?"}
                       </div>
                     )}
