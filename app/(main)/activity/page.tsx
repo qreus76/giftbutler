@@ -30,9 +30,9 @@ function timeAgo(dateStr: string): string {
 function getCompletionItems(profile: Profile, hints: Hint[]) {
   const profileUrl = profile.username ? `/for/${profile.username}` : null;
   return [
-    { done: !!profile.name, label: "Add your display name", action: "/dashboard/edit" },
-    { done: !!profile.bio, label: "Write a short bio", action: "/dashboard/edit" },
-    { done: !!profile.birthday, label: "Add your birthday (so people know when to shop!)", action: "/dashboard/edit" },
+    { done: !!profile.name, label: "Add your display name", action: "/profile/edit" },
+    { done: !!profile.bio, label: "Write a short bio", action: "/profile/edit" },
+    { done: !!profile.birthday, label: "Add your birthday (so people know when to shop!)", action: "/profile/edit" },
     { done: hints.filter(h => h.category !== "avoid").length >= 3, label: "Add at least 3 hints", action: profileUrl },
     { done: hints.filter(h => h.category !== "avoid").length >= 8, label: "Add 8+ hints for the best recommendations", action: profileUrl },
   ];
@@ -45,7 +45,7 @@ function hintHealth(count: number): { label: string; color: string } {
   return { label: "Looking great", color: "text-green-500" };
 }
 
-export default function DashboardPage() {
+export default function ActivityPage() {
   const { user } = useUser();
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -169,8 +169,8 @@ export default function DashboardPage() {
     return (
       <main className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center px-4">
-          <p className="text-stone-600 font-medium mb-2">Something went wrong loading your dashboard.</p>
-          <button onClick={() => { setLoadError(false); setLoading(true); loadProfile(); }} className="text-amber-600 font-semibold text-sm hover:text-amber-700">
+          <p className="text-stone-600 font-medium mb-2">Something went wrong loading your activity.</p>
+          <button onClick={() => { setLoadError(false); setLoading(true); loadProfile(); }} className="text-amber-600 font-semibold text-sm hover:text-amber-700 cursor-pointer">
             Try again →
           </button>
         </div>
@@ -407,13 +407,8 @@ export default function DashboardPage() {
 
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-6">
-          <a href="/my-people" className="relative text-xs text-stone-400 hover:text-stone-600 transition-colors">
+          <a href="/my-people" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
             My People
-            {followRequests.length > 0 && (
-              <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                {followRequests.length}
-              </span>
-            )}
           </a>
           <button
             onClick={() => router.push(`/for/${profile?.username}`)}

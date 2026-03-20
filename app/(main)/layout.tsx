@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Users, LayoutDashboard } from "lucide-react";
+import { Users, Bell } from "lucide-react";
 import { FollowRequestProvider, useFollowRequests } from "@/lib/follow-request-context";
 
 function SharedNav() {
@@ -21,7 +21,7 @@ function SharedNav() {
   }, [isLoaded, user]);
 
   const onMyPeople = pathname === "/my-people";
-  const onDashboard = pathname.startsWith("/dashboard");
+  const onActivity = pathname.startsWith("/activity");
 
   return (
     <nav className="border-b border-stone-100 bg-white sticky top-0 z-10">
@@ -33,22 +33,22 @@ function SharedNav() {
               href="/my-people"
               title="My People"
               aria-label="My People"
-              className={`relative p-2 hover:bg-stone-100 rounded-xl transition-colors ${onMyPeople ? "text-amber-600" : "text-stone-400 hover:text-stone-700"}`}
+              className={`p-2 hover:bg-stone-100 rounded-xl transition-colors ${onMyPeople ? "text-amber-600" : "text-stone-400 hover:text-stone-700"}`}
             >
               <Users className="w-5 h-5" />
+            </Link>
+            <Link
+              href="/activity"
+              title="Activity"
+              aria-label="Activity"
+              className={`relative p-2 hover:bg-stone-100 rounded-xl transition-colors ${onActivity ? "text-amber-600" : "text-stone-400 hover:text-stone-700"}`}
+            >
+              <Bell className="w-5 h-5" />
               {followRequests.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {followRequests.length}
                 </span>
               )}
-            </Link>
-            <Link
-              href="/dashboard"
-              title="Dashboard"
-              aria-label="Dashboard"
-              className={`p-2 hover:bg-stone-100 rounded-xl transition-colors ${onDashboard ? "text-amber-600" : "text-stone-400 hover:text-stone-700"}`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
             </Link>
             <Link
               href="/profile/edit"

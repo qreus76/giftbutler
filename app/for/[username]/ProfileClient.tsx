@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Users, Cake, LayoutDashboard, Pencil, MessageSquare } from "lucide-react";
+import { Copy, Share, Users, Cake, Bell, Pencil, MessageSquare } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
@@ -320,14 +320,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* Nav */}
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/dashboard") : "/"} className="text-base font-bold text-stone-900">GiftButler</Link>
+          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-base font-bold text-stone-900">GiftButler</Link>
           {isLoaded && (isOwner || user ? (
             <div className="flex items-center gap-2">
               <Link href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <Users className="w-5 h-5" />
               </Link>
-              <Link href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
-                <LayoutDashboard className="w-5 h-5" />
+              <Link href="/activity" title="Activity" aria-label="Activity" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
+                <Bell className="w-5 h-5" />
               </Link>
               <Link href="/profile/edit" title="Edit profile" aria-label="Edit profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
                 {user?.imageUrl ? (
