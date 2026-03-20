@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Users, Gift, Bell } from "lucide-react";
+import { Users, Gift, Home } from "lucide-react";
 
 interface Props {
   myUsername: string;
@@ -17,9 +17,9 @@ export default function BottomTabBar({ myUsername, followCount = 0 }: Props) {
   if (!isLoaded || !user) return null;
 
   const tabs = [
-    { href: "/my-people", icon: Users, label: "People", active: pathname === "/my-people", badge: 0 },
+    { href: "/activity", icon: Home, label: "Home", active: pathname.startsWith("/activity"), badge: followCount },
     { href: myUsername ? `/for/${myUsername}` : "/activity", icon: Gift, label: "Wishlist", active: myUsername ? pathname === `/for/${myUsername}` : false, badge: 0 },
-    { href: "/activity", icon: Bell, label: "Activity", active: pathname.startsWith("/activity"), badge: followCount },
+    { href: "/my-people", icon: Users, label: "People", active: pathname === "/my-people", badge: 0 },
   ];
 
   return (

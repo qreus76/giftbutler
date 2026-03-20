@@ -234,7 +234,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* Minimal light header */}
       <header className="bg-[#EAEAE0] sticky top-0 z-10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-lg font-bold text-[#111111] tracking-tight">
+          <Link href={user ? "/activity" : "/"} className="text-lg font-bold text-[#111111] tracking-tight">
             GiftButler
           </Link>
           <div className="flex items-center gap-2">
