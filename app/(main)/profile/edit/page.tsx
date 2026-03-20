@@ -48,28 +48,28 @@ export default function EditProfilePage() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+    <main className="min-h-screen bg-[#EAEDED] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#FF9900] border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-[#F0F2F5]">
+    <main className="min-h-screen bg-[#EAEDED]">
       <div className="max-w-xl mx-auto px-3 py-4 space-y-3">
         <button
           onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/activity")}
-          className="flex items-center gap-2 text-[#65676B] hover:text-[#1C1E21] transition-colors"
+          className="flex items-center gap-2 text-[#565959] hover:text-[#0F1111] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Back to profile</span>
         </button>
 
-        <h1 className="text-2xl font-bold text-[#1C1E21] px-1">Edit profile</h1>
+        <h1 className="text-2xl font-bold text-[#0F1111] px-1">Edit profile</h1>
 
         <form onSubmit={handleSave} className="space-y-3">
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#E4E6EB]">
-              <label className="text-xs font-semibold text-[#65676B] uppercase tracking-wide">Display name</label>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
+              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Display name</label>
             </div>
             <div className="px-4 py-3">
               <input
@@ -78,34 +78,34 @@ export default function EditProfilePage() {
                 onChange={e => setName(e.target.value)}
                 placeholder="Your name"
                 maxLength={60}
-                className="w-full text-[#1C1E21] text-sm focus:outline-none placeholder-[#BCC0C4]"
+                className="w-full text-[#0F1111] text-sm focus:outline-none placeholder-[#565959]"
               />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#E4E6EB]">
-              <label className="text-xs font-semibold text-[#65676B] uppercase tracking-wide">Username</label>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
+              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Username</label>
             </div>
             <div className="px-4 py-3">
               <div className="flex items-center gap-1">
-                <span className="text-[#65676B] text-sm">giftbutler.io/for/</span>
+                <span className="text-[#565959] text-sm">giftbutler.io/for/</span>
                 <input
                   type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                  className="flex-1 text-[#1C1E21] text-sm focus:outline-none font-medium"
+                  className="flex-1 text-[#0F1111] text-sm focus:outline-none font-medium"
                 />
               </div>
               {username !== currentUsername && (
-                <p className="text-xs text-amber-600 mt-1.5">⚠ Your old link will stop working after saving.</p>
+                <p className="text-xs text-[#FF9900] mt-1.5">⚠ Your old link will stop working after saving.</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#E4E6EB]">
-              <label className="text-xs font-semibold text-[#65676B] uppercase tracking-wide">Bio <span className="text-[#BCC0C4] normal-case font-normal">(optional)</span></label>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
+              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Bio <span className="text-[#565959] normal-case font-normal">(optional)</span></label>
             </div>
             <div className="px-4 py-3">
               <textarea
@@ -114,14 +114,14 @@ export default function EditProfilePage() {
                 placeholder="A little about you..."
                 rows={3}
                 maxLength={160}
-                className="w-full text-[#1C1E21] text-sm focus:outline-none resize-none placeholder-[#BCC0C4]"
+                className="w-full text-[#0F1111] text-sm focus:outline-none resize-none placeholder-[#565959]"
               />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#E4E6EB]">
-              <label className="text-xs font-semibold text-[#65676B] uppercase tracking-wide">Birthday <span className="text-[#BCC0C4] normal-case font-normal">(optional)</span></label>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#D5D9D9] bg-[#232F3E]">
+              <label className="text-xs font-semibold text-[#AAAAAA] uppercase tracking-wide">Birthday <span className="text-[#565959] normal-case font-normal">(optional)</span></label>
             </div>
             <div className="px-4 py-3">
               <input
@@ -129,7 +129,7 @@ export default function EditProfilePage() {
                 value={birthday}
                 max={new Date().toISOString().split("T")[0]}
                 onChange={e => setBirthday(e.target.value)}
-                className="w-full text-[#1C1E21] text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg px-1"
+                className="w-full text-[#0F1111] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9900] rounded-lg px-1"
               />
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function EditProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-xl transition-colors"
+            className="w-full py-3 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#D5D9D9] disabled:text-[#565959] text-[#0F1111] font-bold rounded-full transition-colors"
           >
             {saved ? "✓ Saved!" : saving ? "Saving..." : "Save changes"}
           </button>
@@ -147,7 +147,7 @@ export default function EditProfilePage() {
 
         <button
           onClick={() => signOut(() => router.push("/"))}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-[#E4E6EB] hover:bg-red-50 hover:border-red-200 text-[#65676B] hover:text-red-500 font-semibold rounded-xl text-sm transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-[#D5D9D9] hover:bg-red-50 hover:border-red-200 text-[#565959] hover:text-red-500 font-semibold rounded-full text-sm transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Sign out

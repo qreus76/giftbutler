@@ -39,9 +39,9 @@ function getCompletionItems(profile: Profile, hints: Hint[]) {
 }
 
 function hintHealth(count: number): { label: string; color: string } {
-  if (count === 0) return { label: "Add hints to get started", color: "text-[#65676B]" };
+  if (count === 0) return { label: "Add hints to get started", color: "text-[#565959]" };
   if (count < 3) return { label: "Add a few more", color: "text-red-500" };
-  if (count < 8) return { label: "Good — add more for better ideas", color: "text-amber-600" };
+  if (count < 8) return { label: "Good — add more for better ideas", color: "text-[#FF9900]" };
   return { label: "Looking great", color: "text-emerald-600" };
 }
 
@@ -126,79 +126,79 @@ export default function ActivityPage() {
   const hint = hintHealth(hints.filter(h => h.category !== "avoid").length);
 
   if (loading) return (
-    <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+    <main className="min-h-screen bg-[#EAEDED] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#FF9900] border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
   if (loadError) return (
-    <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
+    <main className="min-h-screen bg-[#EAEDED] flex items-center justify-center">
       <div className="text-center px-4">
-        <p className="text-[#1C1E21] font-medium mb-2">Something went wrong.</p>
-        <button onClick={() => { setLoadError(false); setLoading(true); loadProfile(); }} className="text-amber-600 font-semibold text-sm">Try again →</button>
+        <p className="text-[#0F1111] font-medium mb-2">Something went wrong.</p>
+        <button onClick={() => { setLoadError(false); setLoading(true); loadProfile(); }} className="text-[#FF9900] font-semibold text-sm">Try again →</button>
       </div>
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-[#F0F2F5]">
+    <main className="min-h-screen bg-[#EAEDED]">
       <div className="max-w-xl mx-auto px-3 py-4 space-y-3">
 
         {/* Profile completion */}
         {completionPct < 100 && nextStep && (
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4 flex items-center gap-3">
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] p-4 flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
-                <div className="flex-1 h-1.5 bg-[#E4E6EB] rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${completionPct}%` }} />
+                <div className="flex-1 h-1.5 bg-[#D5D9D9] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#FF9900] rounded-full transition-all" style={{ width: `${completionPct}%` }} />
                 </div>
-                <span className="text-xs font-semibold text-[#65676B]">{completionPct}%</span>
+                <span className="text-xs font-semibold text-[#565959]">{completionPct}%</span>
               </div>
-              <p className="text-sm text-[#65676B] truncate">Next: <span className="font-semibold text-[#1C1E21]">{nextStep.label}</span></p>
+              <p className="text-sm text-[#565959] truncate">Next: <span className="font-semibold text-[#0F1111]">{nextStep.label}</span></p>
             </div>
             {nextStep.action && (
-              <button onClick={() => router.push(nextStep.action!)} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex-shrink-0">Go →</button>
+              <button onClick={() => router.push(nextStep.action!)} className="text-xs font-bold text-[#FF9900] hover:text-[#E47911] flex-shrink-0">Go →</button>
             )}
           </div>
         )}
 
         {/* Follow requests */}
         {followRequests.length > 0 && (
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-            <div className="px-4 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-amber-600" />
-              <p className="text-sm font-bold text-amber-700">People requests ({followRequests.length})</p>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+            <div className="px-4 py-3 bg-[#FFFBE6] border-b border-[#FFD814]/30 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-[#FF9900]" />
+              <p className="text-sm font-bold text-[#E47911]">People requests ({followRequests.length})</p>
             </div>
-            <div className="divide-y divide-[#E4E6EB]">
+            <div className="divide-y divide-[#D5D9D9]">
               {followRequests.map(req => (
                 <div key={req.requester_id} className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
                       {req.avatar ? <img src={req.avatar} alt={req.name} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-amber-400">{req.name?.[0]?.toUpperCase() || "?"}</div>
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-[#FF9900]">{req.name?.[0]?.toUpperCase() || "?"}</div>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-[#1C1E21]">{req.name || req.username}</p>
-                      <p className="text-xs text-[#65676B]">@{req.username} wants to join your people</p>
+                      <p className="text-sm font-semibold text-[#0F1111]">{req.name || req.username}</p>
+                      <p className="text-xs text-[#565959]">@{req.username} wants to join your people</p>
                     </div>
                   </div>
-                  <p className="text-xs font-semibold text-[#65676B] mb-2">Who are they to you?</p>
+                  <p className="text-xs font-semibold text-[#565959] mb-2">Who are they to you?</p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {LABELS.map(l => (
                       <button key={l} onClick={() => setRequestLabels(prev => ({ ...prev, [req.requester_id]: l }))}
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${requestLabels[req.requester_id] === l ? "bg-amber-400 border-amber-400 text-white" : "bg-white border-[#E4E6EB] text-[#1C1E21] hover:border-amber-400"}`}>
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${requestLabels[req.requester_id] === l ? "bg-[#FF9900] border-[#FF9900] text-white" : "bg-white border-[#D5D9D9] text-[#0F1111] hover:border-[#FF9900]"}`}>
                         {l}
                       </button>
                     ))}
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleFollowRequest(req.requester_id, "accept")} disabled={!requestLabels[req.requester_id]}
-                      className="flex-1 py-2 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-lg text-sm transition-colors">
+                      className="flex-1 py-2 bg-[#FFD814] hover:bg-[#F0C14B] disabled:bg-[#D5D9D9] disabled:text-[#565959] text-[#0F1111] font-bold rounded-full text-sm transition-colors">
                       Accept
                     </button>
                     <button onClick={() => handleFollowRequest(req.requester_id, "reject")}
-                      className="px-4 py-2 bg-[#E4E6EB] hover:bg-[#D8DADF] text-[#1C1E21] font-semibold rounded-lg text-sm transition-colors">
+                      className="px-4 py-2 bg-[#D5D9D9] hover:bg-[#C7CBCB] text-[#0F1111] font-semibold rounded-full text-sm transition-colors">
                       Decline
                     </button>
                   </div>
@@ -210,82 +210,82 @@ export default function ActivityPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4">
-            <div className="flex items-center gap-1 mb-1"><Eye className="w-3.5 h-3.5 text-[#65676B]" /><span className="text-[10px] font-semibold text-[#65676B] uppercase tracking-wide">Views</span></div>
-            <p className="text-2xl font-bold text-[#1C1E21]">{visitCount}</p>
-            <p className="text-xs text-[#65676B]">last 30 days</p>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] p-4">
+            <div className="flex items-center gap-1 mb-1"><Eye className="w-3.5 h-3.5 text-[#565959]" /><span className="text-[10px] font-semibold text-[#565959] uppercase tracking-wide">Views</span></div>
+            <p className="text-2xl font-bold text-[#0F1111]">{visitCount}</p>
+            <p className="text-xs text-[#565959]">last 30 days</p>
           </div>
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4">
-            <div className="mb-1"><span className="text-[10px] font-semibold text-[#65676B] uppercase tracking-wide">Hints</span></div>
-            <p className="text-2xl font-bold text-[#1C1E21]">{hints.length}</p>
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] p-4">
+            <div className="mb-1"><span className="text-[10px] font-semibold text-[#565959] uppercase tracking-wide">Hints</span></div>
+            <p className="text-2xl font-bold text-[#0F1111]">{hints.length}</p>
             <p className={`text-xs ${hint.color}`}>{hint.label}</p>
           </div>
-          <div className={`rounded-xl shadow-card border p-4 ${claimCount > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-[#E4E6EB]"}`}>
-            <div className="flex items-center gap-1 mb-1"><Gift className="w-3.5 h-3.5 text-[#65676B]" /><span className="text-[10px] font-semibold text-[#65676B] uppercase tracking-wide">Gifts</span></div>
-            <p className={`text-2xl font-bold ${claimCount > 0 ? "text-amber-600" : "text-[#1C1E21]"}`}>{claimCount}</p>
-            <p className="text-xs text-[#65676B]">{claimCount > 0 ? "planned!" : "claimed"}</p>
+          <div className={`rounded-xl shadow-card border p-4 ${claimCount > 0 ? "bg-[#FFFBE6] border-[#FFD814]/30" : "bg-white border-[#D5D9D9]"}`}>
+            <div className="flex items-center gap-1 mb-1"><Gift className="w-3.5 h-3.5 text-[#565959]" /><span className="text-[10px] font-semibold text-[#565959] uppercase tracking-wide">Gifts</span></div>
+            <p className={`text-2xl font-bold ${claimCount > 0 ? "text-[#FF9900]" : "text-[#0F1111]"}`}>{claimCount}</p>
+            <p className="text-xs text-[#565959]">{claimCount > 0 ? "planned!" : "claimed"}</p>
           </div>
         </div>
 
         {/* Upcoming birthdays */}
-        <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#E4E6EB] flex items-center gap-2">
-            <Cake className="w-4 h-4 text-[#65676B]" />
-            <p className="text-xs font-semibold text-[#65676B] uppercase tracking-wide">Coming up</p>
+        <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#D5D9D9] flex items-center gap-2">
+            <Cake className="w-4 h-4 text-[#565959]" />
+            <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide">Coming up</p>
           </div>
           {upcomingBirthdays.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <Cake className="w-8 h-8 text-[#E4E6EB] mx-auto mb-2" />
-              <p className="text-[#1C1E21] text-sm font-semibold mb-1">{people.length === 0 ? "No one in your network yet" : "No birthdays in the next 30 days"}</p>
-              <p className="text-[#65676B] text-xs mb-3">{people.length === 0 ? "Add family and friends to see their upcoming birthdays here." : "You're all caught up."}</p>
-              {people.length === 0 && <a href="/my-people" className="inline-block px-4 py-2 bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold rounded-lg text-xs">Add people →</a>}
+              <Cake className="w-8 h-8 text-[#D5D9D9] mx-auto mb-2" />
+              <p className="text-[#0F1111] text-sm font-semibold mb-1">{people.length === 0 ? "No one in your network yet" : "No birthdays in the next 30 days"}</p>
+              <p className="text-[#565959] text-xs mb-3">{people.length === 0 ? "Add family and friends to see their upcoming birthdays here." : "You're all caught up."}</p>
+              {people.length === 0 && <a href="/my-people" className="inline-block px-4 py-2 bg-[#FF9900] hover:bg-[#E47911] text-white font-semibold rounded-full text-xs">Add people →</a>}
             </div>
           ) : (
-            <div className="divide-y divide-[#E4E6EB]">
+            <div className="divide-y divide-[#D5D9D9]">
               {upcomingBirthdays.slice(0, 5).map(person => (
                 <div key={person.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
                     {person.avatar ? <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" /> : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-amber-400">{person.name?.[0]?.toUpperCase() || "?"}</div>
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#FF9900]">{person.name?.[0]?.toUpperCase() || "?"}</div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1C1E21] truncate">{person.name}</p>
-                    <p className={`text-xs font-medium ${person.daysUntilBirthday === 0 ? "text-red-500" : person.daysUntilBirthday! <= 7 ? "text-amber-600" : "text-[#65676B]"}`}>
+                    <p className="text-sm font-semibold text-[#0F1111] truncate">{person.name}</p>
+                    <p className={`text-xs font-medium ${person.daysUntilBirthday === 0 ? "text-red-500" : person.daysUntilBirthday! <= 7 ? "text-[#FF9900]" : "text-[#565959]"}`}>
                       {person.daysUntilBirthday === 0 ? "Today!" : person.daysUntilBirthday === 1 ? "Tomorrow" : `In ${person.daysUntilBirthday} days`}
                     </p>
                   </div>
-                  <a href={`/for/${person.username}`} className="px-3 py-1.5 bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold rounded-lg text-xs transition-colors flex-shrink-0">Gift →</a>
+                  <a href={`/for/${person.username}`} className="px-3 py-1.5 bg-[#FF9900] hover:bg-[#E47911] text-white font-semibold rounded-full text-xs transition-colors flex-shrink-0">Gift →</a>
                 </div>
               ))}
-              {upcomingBirthdays.length > 5 && <div className="px-4 py-3"><a href="/my-people" className="text-xs text-amber-600 font-semibold">See all {upcomingBirthdays.length} →</a></div>}
+              {upcomingBirthdays.length > 5 && <div className="px-4 py-3"><a href="/my-people" className="text-xs text-[#007185] font-semibold">See all {upcomingBirthdays.length} →</a></div>}
             </div>
           )}
         </div>
 
         {/* Recent visitors */}
-        <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#E4E6EB] flex items-center gap-2">
-            <Eye className="w-4 h-4 text-[#65676B]" />
-            <p className="text-xs font-semibold text-[#65676B] uppercase tracking-wide">Recent visitors</p>
+        <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#D5D9D9] flex items-center gap-2">
+            <Eye className="w-4 h-4 text-[#565959]" />
+            <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide">Recent visitors</p>
           </div>
           {recentVisits.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <Eye className="w-8 h-8 text-[#E4E6EB] mx-auto mb-2" />
-              <p className="text-[#1C1E21] text-sm font-semibold mb-1">No visits yet</p>
-              <p className="text-[#65676B] text-xs mb-3">Share your profile link and you&apos;ll see who stops by here.</p>
-              <button onClick={copyLink} className="inline-block px-4 py-2 bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold rounded-lg text-xs">{copied ? "Copied!" : "Share my profile"}</button>
+              <Eye className="w-8 h-8 text-[#D5D9D9] mx-auto mb-2" />
+              <p className="text-[#0F1111] text-sm font-semibold mb-1">No visits yet</p>
+              <p className="text-[#565959] text-xs mb-3">Share your profile link and you&apos;ll see who stops by here.</p>
+              <button onClick={copyLink} className="inline-block px-4 py-2 bg-[#FF9900] hover:bg-[#E47911] text-white font-semibold rounded-full text-xs">{copied ? "Copied!" : "Share my profile"}</button>
             </div>
           ) : (
-            <div className="divide-y divide-[#E4E6EB]">
+            <div className="divide-y divide-[#D5D9D9]">
               {recentVisits.map((v, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-3.5 h-3.5 text-amber-600" />
+                  <div className="w-7 h-7 bg-[#FFF3CD] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-[#FF9900]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#1C1E21] truncate">{formatReferrer(v.referrer)}{formatDevice(v.device_type) ? ` · ${formatDevice(v.device_type)}` : ""}</p>
-                    <p className="text-xs text-[#65676B] flex items-center gap-1"><Clock className="w-3 h-3" />{timeAgo(v.created_at)}</p>
+                    <p className="text-sm font-medium text-[#0F1111] truncate">{formatReferrer(v.referrer)}{formatDevice(v.device_type) ? ` · ${formatDevice(v.device_type)}` : ""}</p>
+                    <p className="text-xs text-[#565959] flex items-center gap-1"><Clock className="w-3 h-3" />{timeAgo(v.created_at)}</p>
                   </div>
                 </div>
               ))}
@@ -295,12 +295,12 @@ export default function ActivityPage() {
 
         {/* Profile link */}
         {profile && (
-          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4 flex items-center justify-between">
+          <div className="bg-white rounded-xl shadow-card border border-[#D5D9D9] p-4 flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-xs text-[#65676B] mb-0.5">Your gift profile</p>
-              <p className="text-[#1C1E21] font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>
+              <p className="text-xs text-[#565959] mb-0.5">Your gift profile</p>
+              <p className="text-[#0F1111] font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>
             </div>
-            <button onClick={copyLink} className="text-xs text-amber-600 font-semibold hover:text-amber-700 flex-shrink-0 ml-2">{copied ? "Copied!" : "Share"}</button>
+            <button onClick={copyLink} className="text-xs text-[#007185] font-semibold hover:text-[#C7511F] flex-shrink-0 ml-2">{copied ? "Copied!" : "Share"}</button>
           </div>
         )}
       </div>

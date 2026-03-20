@@ -36,7 +36,7 @@ export default async function Home() {
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.85) 100%)" }} />
 
         <div className="absolute top-0 left-0 right-0 px-6" style={{ paddingTop: "max(48px, env(safe-area-inset-top, 48px))" }}>
-          <span className="text-xl font-bold text-white tracking-tight">GiftButler</span>
+          <span className="text-xl font-bold text-[#FF9900] tracking-tight">GiftButler</span>
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 px-6" style={{ paddingBottom: "max(40px, env(safe-area-inset-bottom, 40px))" }}>
@@ -47,21 +47,21 @@ export default async function Home() {
             Drop hints. Share your link. Get gifts you actually want.
           </p>
           {profileCount >= 50 && (
-            <p className="text-amber-300 text-xs font-semibold mb-5">{profileCount.toLocaleString()} people have set up their profile</p>
+            <p className="text-[#FF9900] text-xs font-semibold mb-5">{profileCount.toLocaleString()} people have set up their profile</p>
           )}
           {profileCount < 50 && <div className="mb-5" />}
 
           <div className="flex flex-col gap-2.5">
             {isSignedIn ? (
-              <Link href={returnUrl} className="w-full py-3.5 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl text-center text-base transition-colors">
+              <Link href={returnUrl} className="w-full py-3.5 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-center text-base transition-colors">
                 View my profile →
               </Link>
             ) : (
               <>
-                <Link href="/sign-up" className="w-full py-3.5 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl text-center text-base transition-colors">
+                <Link href="/sign-up" className="w-full py-3.5 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-center text-base transition-colors">
                   Create my free profile
                 </Link>
-                <Link href="/sign-in" className="w-full py-3.5 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl text-center text-base transition-colors backdrop-blur-sm">
+                <Link href="/sign-in" className="w-full py-3.5 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-full text-center text-base transition-colors backdrop-blur-sm">
                   Sign in
                 </Link>
               </>
@@ -81,36 +81,36 @@ export default async function Home() {
           <img src="/present_giving.png" alt="Someone giving a gift" className="w-full h-full object-cover absolute inset-0" />
         </div>
 
-        <div className="flex flex-col items-center justify-center px-16 py-16 bg-[#F0F2F5]">
+        <div className="flex flex-col items-center justify-center px-16 py-16 bg-[#EAEDED]">
           <div className="w-full max-w-sm">
-            <h1 className="text-4xl font-bold text-[#F59E0B] mb-2 text-center">GiftButler</h1>
-            <p className="text-[#65676B] text-sm text-center mb-10">No more guessing. Just the right gift.</p>
+            <h1 className="text-4xl font-bold text-[#FF9900] mb-2 text-center">GiftButler</h1>
+            <p className="text-[#565959] text-sm text-center mb-10">No more guessing. Just the right gift.</p>
 
             {profileCount >= 50 && (
-              <p className="text-xs font-semibold text-amber-600 text-center mb-6">{profileCount.toLocaleString()} people have set up their profile</p>
+              <p className="text-xs font-semibold text-[#FF9900] text-center mb-6">{profileCount.toLocaleString()} people have set up their profile</p>
             )}
 
             <div className="flex flex-col gap-3">
               {isSignedIn ? (
-                <Link href={returnUrl} className="w-full py-3 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl text-center text-sm transition-colors">
+                <Link href={returnUrl} className="w-full py-3 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-center text-sm transition-colors">
                   View my profile →
                 </Link>
               ) : (
                 <>
-                  <Link href="/sign-up" className="w-full py-3 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-xl text-center text-sm transition-colors">
+                  <Link href="/sign-up" className="w-full py-3 bg-[#FFD814] hover:bg-[#F0C14B] text-[#0F1111] font-bold rounded-full text-center text-sm transition-colors">
                     Create my free profile
                   </Link>
-                  <Link href="/sign-in" className="w-full py-3 bg-white border border-[#E4E6EB] hover:bg-[#E4E6EB] text-[#1C1E21] font-semibold rounded-xl text-center text-sm transition-colors">
+                  <Link href="/sign-in" className="w-full py-3 bg-white border border-[#D5D9D9] hover:bg-[#D5D9D9] text-[#0F1111] font-semibold rounded-full text-center text-sm transition-colors">
                     Sign in
                   </Link>
                 </>
               )}
             </div>
 
-            <p className="text-center text-xs text-[#65676B] mt-4">Free forever · No credit card</p>
-            <div className="flex items-center justify-center gap-4 mt-12 text-xs text-[#BCC0C4]">
-              <Link href="/privacy" className="hover:text-[#65676B]">Privacy</Link>
-              <Link href="/terms" className="hover:text-[#65676B]">Terms</Link>
+            <p className="text-center text-xs text-[#565959] mt-4">Free forever · No credit card</p>
+            <div className="flex items-center justify-center gap-4 mt-12 text-xs text-[#D5D9D9]">
+              <Link href="/privacy" className="hover:text-[#565959]">Privacy</Link>
+              <Link href="/terms" className="hover:text-[#565959]">Terms</Link>
             </div>
           </div>
         </div>
