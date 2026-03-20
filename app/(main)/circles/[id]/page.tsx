@@ -123,7 +123,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
         {/* Back */}
         <button onClick={() => router.back()} className="flex items-center gap-2 text-[#888888] hover:text-[#111111] transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">My People</span>
+          <span className="text-sm font-medium">Back</span>
         </button>
 
         {/* Header */}
