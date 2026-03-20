@@ -59,10 +59,21 @@ export async function POST(req: NextRequest) {
     avoid: "MUST AVOID",
   };
 
+  // Separate product hints (specific wants) from text hints
+  const productHints = (hints || []).filter(h => h.url);
+  const textOnlyHints = (hints || []).filter(h => !h.url);
+
+  // Build "already saved" exclusion list
+  let specificWantsContext = "";
+  if (productHints.length > 0) {
+    const list = productHints.map(h => `  - ${h.product_title || h.content}`).join("\n");
+    specificWantsContext = `\nALREADY SAVED AS SPECIFIC WANTS (DO NOT recommend these or anything substantially similar — the recipient already has them on their wishlist and wants the exact item, not an alternative):\n${list}\n`;
+  }
+
   let hintsText = "No hints provided yet.";
-  if (hints && hints.length > 0) {
+  if (textOnlyHints.length > 0) {
     const grouped: Record<string, string[]> = {};
-    for (const h of hints) {
+    for (const h of textOnlyHints) {
       if (!grouped[h.category]) grouped[h.category] = [];
       grouped[h.category].push(h.content);
     }
@@ -75,6 +86,8 @@ export async function POST(req: NextRequest) {
     hintsText = sortedEntries
       .map(([cat, items]) => `[${categoryLabels[cat] || cat}]\n${items.map(i => `  - ${i}`).join("\n")}`)
       .join("\n\n");
+  } else if (productHints.length > 0) {
+    hintsText = "No text hints provided — use the specific wants and relationship context to guide suggestions.";
   }
 
   const name = profile.name || username;
@@ -106,6 +119,7 @@ BUDGET: ${budget}${birthdayContext}${occasionContext}
 
 THEIR HINTS:
 ${hintsText}
+${specificWantsContext}
 
 Generate exactly 8 specific, emotionally resonant gift recommendations. Each gift must feel personally connected to this specific person — not generic suggestions that could work for anyone.
 
