@@ -462,7 +462,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Find a gift button */}
         {!showFinder && recommendations.length === 0 && (
           <div className="mb-6">
-            {!isOwner && hintsToShow.length > 0 && (
+            {!isOwner && hintsToShow.length > 0 && recommendations.length === 0 && (() => {
+              try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
+            })() && (
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-3">
                 <p className="text-xs font-semibold text-amber-700 mb-1">✨ How GiftButler works</p>
                 <p className="text-stone-600 text-sm leading-relaxed">
@@ -783,6 +785,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 ? "You're getting there. More hints means the AI can match your actual taste, not just your category."
                 : "Almost at the sweet spot. 8+ hints is where gift ideas start feeling like they came from someone who truly knows you."}
             </p>
+          </div>
+        )}
+
+        {/* Owner profile complete confirmation */}
+        {isOwner && hintsToShow.length >= 8 && (
+          <div className="flex items-center gap-2 px-1 mb-4">
+            <span className="text-green-500 text-sm">✓</span>
+            <p className="text-xs text-stone-400">Your profile is looking great — visitors will get highly personal gift ideas.</p>
           </div>
         )}
 
