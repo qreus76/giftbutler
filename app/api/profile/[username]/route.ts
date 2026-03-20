@@ -75,9 +75,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
         const displayName = escapeHtml(profile.name || username);
         const profileUrl = `${baseUrl}/for/${escapeHtml(username)}`;
-        const dashboardUrl = `${baseUrl}/dashboard`;
-
-        const textBody = `Hi ${profile.name || username},\n\nA visitor just checked out your GiftButler profile at ${profileUrl}.\n\nMake sure your hints are up to date so they find the perfect gift for you.\n\nUpdate your hints: ${dashboardUrl}\n\n---\nGiftButler · To stop these notifications, email privacy@giftbutler.io`;
+        const textBody = `Hi ${profile.name || username},\n\nA visitor just checked out your GiftButler profile at ${profileUrl}.\n\nMake sure your hints are up to date so they find the perfect gift for you.\n\nUpdate your hints: ${profileUrl}\n\n---\nGiftButler · To stop these notifications, email privacy@giftbutler.io`;
 
         await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -97,11 +95,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
                   A visitor just checked out <a href="${profileUrl}" style="color: #d97706; text-decoration: none;">giftbutler.io/for/${username}</a>.
                   Make sure your hints are up to date so they find the perfect gift for you, ${displayName}.
                 </p>
-                <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
+                <a href="${profileUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
                   Update my hints
                 </a>
                 <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0;">
-                  GiftButler · Free forever · <a href="${dashboardUrl}" style="color: #a8a29e;">Manage my profile</a><br/>
+                  GiftButler · Free forever · <a href="${profileUrl}" style="color: #a8a29e;">Manage my profile</a><br/>
                   To stop these notifications, email <a href="mailto:privacy@giftbutler.io" style="color: #a8a29e;">privacy@giftbutler.io</a>
                 </p>
               </div>

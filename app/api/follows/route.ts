@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         if (!receiverEmail) return;
 
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
-        const dashboardUrl = `${baseUrl}/dashboard`;
+        const dashboardUrl = `${baseUrl}/activity`;
         const safeRequesterName = escapeHtml(requesterName);
 
         await fetch("https://api.resend.com/emails", {
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
                 <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">👋 New connection request</h1>
                 <p style="color: #78716c; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
                   <strong style="color: #1c1917;">${safeRequesterName}</strong> wants to add you to their people on GiftButler.
-                  Head to your dashboard to accept or decline.
+                  Head to your activity feed to accept or decline.
                 </p>
                 <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
                   View request →

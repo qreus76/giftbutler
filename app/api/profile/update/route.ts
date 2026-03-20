@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 const RESERVED_USERNAMES = new Set([
-  "api", "dashboard", "explore", "onboarding", "for", "sign-in", "sign-up",
+  "api", "dashboard", "activity", "explore", "onboarding", "for", "sign-in", "sign-up",
   "signin", "signup", "admin", "help", "support", "about", "terms", "privacy",
   "blog", "login", "logout", "account", "settings", "profile", "user", "users",
   "giftbutler", "butler", "gift", "gifts", "not-found", "404", "500",

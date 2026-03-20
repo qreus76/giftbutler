@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
 
       const name = profile.name || profile.username;
       const profileUrl = `${baseUrl}/for/${profile.username}`;
-      const dashboardUrl = `${baseUrl}/dashboard`;
+      const dashboardUrl = `${baseUrl}/activity`;
       const hintCount = hintCountMap.get(profile.id) || 0;
       const lowHints = hintCount < 5;
 
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
                   View my profile →
                 </a>
                 <a href="${dashboardUrl}" style="display: inline-block; background: #1c1917; color: #fff; font-weight: 600; font-size: 14px; padding: 12px 20px; border-radius: 12px; text-decoration: none;">
-                  Dashboard
+                  Activity
                 </a>
               </div>
 

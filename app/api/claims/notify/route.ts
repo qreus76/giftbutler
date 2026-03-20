@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (!email) return NextResponse.json({ success: true });
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
-    const dashboardUrl = `${baseUrl}/dashboard`;
+    const profileUrl = `${baseUrl}/for/${profile.username}`;
     const displayName = escapeHtml(profile.name || profile.username);
     const occasionText = occasion ? ` for your ${escapeHtml(occasion)}` : "";
     const subject = `Someone has a gift on the way for you${occasionText}`;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         from: "GiftButler <notifications@giftbutler.io>",
         to: [email],
         subject,
-        text: `Hi ${profile.name || profile.username},\n\nSomeone is planning a gift for you${occasionText}. We'll keep the details a surprise — but your hints are working!\n\nAdd more hints at: ${dashboardUrl}\n\n---\nGiftButler · To stop these notifications, email privacy@giftbutler.io`,
+        text: `Hi ${profile.name || profile.username},\n\nSomeone is planning a gift for you${occasionText}. We'll keep the details a surprise — but your hints are working!\n\nAdd more hints at: ${profileUrl}\n\n---\nGiftButler · To stop these notifications, email privacy@giftbutler.io`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
             <p style="font-size: 28px; margin: 0 0 4px;">🎁</p>
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
               Hi ${displayName} — someone is planning a gift for you${occasionText}.
               We&apos;ll keep the details a surprise, but your hints are working!
             </p>
-            <a href="${dashboardUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
+            <a href="${profileUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
               Add more hints →
             </a>
             <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0; line-height: 1.6;">

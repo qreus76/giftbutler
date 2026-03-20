@@ -32,6 +32,13 @@ export default async function Home() {
   const isSignedIn = !!userId;
   const profileCount = await getProfileCount();
 
+  let profileUsername: string | null = null;
+  if (userId) {
+    const { data } = await supabaseAdmin.from("profiles").select("username").eq("id", userId).single();
+    profileUsername = data?.username || null;
+  }
+  const returnUrl = profileUsername ? `/for/${profileUsername}` : "/activity";
+
   return (
     <main className="min-h-screen bg-white">
 
@@ -73,9 +80,9 @@ export default async function Home() {
 
           <div className="flex flex-col gap-3">
             {isSignedIn ? (
-              <Link href="/dashboard"
+              <Link href={returnUrl}
                 className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-base transition-colors">
-                Go to my dashboard →
+                View my profile →
               </Link>
             ) : (
               <>
@@ -128,9 +135,9 @@ export default async function Home() {
             {/* CTAs */}
             <div className="flex flex-col gap-3">
               {isSignedIn ? (
-                <Link href="/dashboard"
+                <Link href={returnUrl}
                   className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-center text-sm transition-colors">
-                  Go to my dashboard →
+                  View my profile →
                 </Link>
               ) : (
                 <>
