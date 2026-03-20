@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const clerk = await clerkClient();
     const clerkUser = await clerk.users.getUser(profile.id);
-    if (clerkUser.imageUrl) avatarUrl = clerkUser.imageUrl;
+    if (clerkUser.hasImage) avatarUrl = clerkUser.imageUrl;
   } catch { /* no avatar */ }
 
   return {
@@ -66,7 +66,7 @@ export default async function ProfilePage({ params }: Props) {
   try {
     const clerk = await clerkClient();
     const clerkUser = await clerk.users.getUser(profile.id);
-    avatarUrl = clerkUser.imageUrl || null;
+    avatarUrl = clerkUser.hasImage ? clerkUser.imageUrl : null;
   } catch { /* no photo available */ }
 
   const [hintsRes, claimsRes] = await Promise.all([

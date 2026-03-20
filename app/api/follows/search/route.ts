@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   try {
     const clerk = await clerkClient();
     const clerkUser = await clerk.users.getUser(profile.id);
-    avatar = clerkUser.imageUrl || null;
+    avatar = clerkUser.hasImage ? clerkUser.imageUrl : null;
   } catch { /* not found */ }
 
   // Check existing follow status

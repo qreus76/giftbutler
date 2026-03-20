@@ -28,7 +28,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
           {isLoaded && user && (
             <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#111111] transition-all flex-shrink-0">
-              {user.imageUrl ? (
+              {user.hasImage ? (
                 <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">

@@ -33,7 +33,7 @@ export async function GET() {
       let avatar: string | null = null;
       try {
         const clerkUser = await clerk.users.getUser(follow.requester_id);
-        avatar = clerkUser.imageUrl || null;
+        avatar = clerkUser.hasImage ? clerkUser.imageUrl : null;
       } catch { /* user not found in Clerk */ }
       return {
         requester_id: follow.requester_id,

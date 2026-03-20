@@ -43,7 +43,7 @@ export async function GET() {
       let avatar: string | null = null;
       try {
         const clerkUser = await clerk.users.getUser(otherId);
-        avatar = clerkUser.imageUrl || null;
+        avatar = clerkUser.hasImage ? clerkUser.imageUrl : null;
       } catch { /* not found */ }
 
       const daysUntilBirthday = profile?.birthday ? getDaysUntilBirthday(profile.birthday) : null;
