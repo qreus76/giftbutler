@@ -391,13 +391,13 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             </button>
 
             {isOwner && (
-              <a
+              <Link
                 href="/dashboard/edit"
                 className="px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
               >
                 <Pencil className="w-4 h-4" />
                 Edit profile
-              </a>
+              </Link>
             )}
 
             {/* Follow button — only for signed-in non-owners */}
