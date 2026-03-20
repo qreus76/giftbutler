@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Clock, UserPlus, Cake, Gift, Pencil, Share2, ArrowRight } from "lucide-react";
+import { Eye, UserPlus, Cake, Gift, Pencil, Share2, ArrowRight } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 import { useFollowRequests } from "@/lib/follow-request-context";
 
@@ -47,7 +47,6 @@ export default function ActivityPage() {
   const [hints, setHints] = useState<Hint[]>([]);
   const [visitCount, setVisitCount] = useState(0);
   const [claimCount, setClaimCount] = useState(0);
-  const [recentVisits, setRecentVisits] = useState<{ created_at: string; device_type: string | null; referrer: string | null }[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -66,7 +65,6 @@ export default function ActivityPage() {
       setHints(data.hints);
       setVisitCount(data.visitCount || 0);
       setClaimCount(data.claimCount || 0);
-      setRecentVisits(data.recentVisits || []);
       if (peopleRes.ok) { const pd = await peopleRes.json(); setPeople(pd.people || []); }
     } catch { setLoadError(true); } finally { setLoading(false); }
   }
@@ -78,25 +76,6 @@ export default function ActivityPage() {
       body: JSON.stringify({ requester_id: requesterId, action, label: requestLabels[requesterId] || null }),
     });
     removeRequest(requesterId);
-  }
-
-  function formatReferrer(referrer: string | null): string {
-    if (!referrer) return "Direct visit";
-    try {
-      const host = new URL(referrer).hostname.replace("www.", "");
-      if (host.includes("instagram")) return "From Instagram";
-      if (host.includes("facebook") || host.includes("fb.")) return "From Facebook";
-      if (host.includes("twitter") || host.includes("x.com")) return "From X / Twitter";
-      if (host.includes("tiktok")) return "From TikTok";
-      if (host.includes("giftbutler")) return "From GiftButler";
-      return `From ${host}`;
-    } catch { return "Shared link"; }
-  }
-
-  function formatDevice(device: string | null): string {
-    if (!device) return "";
-    const map: Record<string, string> = { ios: "iPhone", android: "Android", tablet: "Tablet", mobile: "Mobile", desktop: "Desktop" };
-    return map[device] || device;
   }
 
   async function copyLink() {
@@ -315,38 +294,6 @@ export default function ActivityPage() {
           )}
         </div>
 
-        {/* Recent visitors */}
-        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-          <div className="px-4 py-3 flex items-center justify-between border-b border-[#F0F0E8]">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-[#888888]" />
-              <p className="text-sm font-bold text-[#111111]">Recent visitors</p>
-            </div>
-          </div>
-          {recentVisits.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <p className="text-[#111111] text-sm font-semibold mb-1">No visits yet</p>
-              <p className="text-[#888888] text-xs mb-4">Share your profile and you&apos;ll see who stops by here.</p>
-              <button onClick={copyLink} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] text-white font-bold rounded-full text-sm">
-                {copied ? "Copied!" : "Share profile"} <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="divide-y divide-[#F0F0E8]">
-              {recentVisits.map((v, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 bg-[#B8CED0] rounded-full flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-3.5 h-3.5 text-[#111111]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#111111] truncate">{formatReferrer(v.referrer)}{formatDevice(v.device_type) ? ` · ${formatDevice(v.device_type)}` : ""}</p>
-                    <p className="text-xs text-[#888888] flex items-center gap-1"><Clock className="w-3 h-3" />{timeAgo(v.created_at)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
       </div>
     </main>
