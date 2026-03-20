@@ -182,7 +182,7 @@ export default function OnboardingPage() {
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
                     {searchResult.avatar ? <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" /> : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#111111]">{searchResult.name[0]?.toUpperCase()}</div>
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[#2D4A1E] bg-[#C4D4B4]">{searchResult.name[0]?.toUpperCase()}</div>
                     )}
                   </div>
                   <div>

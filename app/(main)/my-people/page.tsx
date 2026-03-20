@@ -126,7 +126,7 @@ export default function MyPeoplePage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                   {searchResult.avatar ? <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" /> : (
-                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#111111]">{searchResult.name[0]?.toUpperCase()}</div>
+                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[#2D4A1E] bg-[#C4D4B4]">{searchResult.name[0]?.toUpperCase()}</div>
                   )}
                 </div>
                 <div>

@@ -224,7 +224,7 @@ export default function ActivityPage() {
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                       {req.avatar ? <img src={req.avatar} alt={req.name} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#111111]">{req.name?.[0]?.toUpperCase() || "?"}</div>
+                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[#2D4A1E] bg-[#C4D4B4]">{req.name?.[0]?.toUpperCase() || "?"}</div>
                       )}
                     </div>
                     <div>

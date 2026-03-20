@@ -246,7 +246,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             {isLoaded && user && (
               <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#111111] transition-all flex-shrink-0">
                 {user.imageUrl ? <img src={user.imageUrl} alt="" className="w-full h-full object-cover" /> : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-[#111111]">{user.firstName?.[0]?.toUpperCase() || "?"}</div>
+                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{user.firstName?.[0]?.toUpperCase() || "?"}</div>
                 )}
               </Link>
             )}
@@ -262,7 +262,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white bg-[#111111]">
+              <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-[#2D4A1E] bg-[#C4D4B4]">
                 {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
               </div>
             )}

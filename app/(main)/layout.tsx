@@ -31,7 +31,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
               {user.imageUrl ? (
                 <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-[#111111]">
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">
                   {user.firstName?.[0]?.toUpperCase() || "?"}
                 </div>
               )}
