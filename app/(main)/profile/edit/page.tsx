@@ -57,7 +57,7 @@ export default function EditProfilePage() {
     <main className="min-h-screen bg-[#EAEAE0]">
       <div className="max-w-xl mx-auto px-4 py-5 space-y-5">
         <button
-          onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/activity")}
+          onClick={() => router.back()}
           className="flex items-center gap-2 text-[#888888] hover:text-[#111111] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
