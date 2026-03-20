@@ -159,7 +159,7 @@ export default function ActivityPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
       </main>
     );
@@ -167,7 +167,7 @@ export default function ActivityPage() {
 
   if (loadError) {
     return (
-      <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center">
         <div className="text-center px-4">
           <p className="text-stone-600 font-medium mb-2">Something went wrong loading your activity.</p>
           <button onClick={() => { setLoadError(false); setLoading(true); loadProfile(); }} className="text-amber-600 font-semibold text-sm hover:text-amber-700 cursor-pointer">
@@ -179,12 +179,12 @@ export default function ActivityPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-[#fef9ef]">
       <div className="max-w-xl mx-auto px-4 py-8">
 
         {/* Profile completion nudge */}
         {completionPct < 100 && nextStep && (
-          <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
+          <div className="bg-white rounded-2xl shadow-card ring-1 ring-amber-200 p-4 mb-4 flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
@@ -209,7 +209,7 @@ export default function ActivityPage() {
 
         {/* Follow requests */}
         {followRequests.length > 0 && (
-          <div className="bg-white border border-amber-200 rounded-2xl p-4 mb-4">
+          <div className="bg-white rounded-2xl shadow-card ring-1 ring-amber-200 p-4 mb-4">
             <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-3 flex items-center gap-1.5">
               <UserPlus className="w-3.5 h-3.5" />
               People requests ({followRequests.length})
@@ -267,7 +267,7 @@ export default function ActivityPage() {
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+          <div className="bg-white rounded-2xl shadow-card p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <Eye className="w-3.5 h-3.5 text-stone-400" />
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Views</span>
@@ -275,14 +275,14 @@ export default function ActivityPage() {
             <p className="text-2xl font-bold text-stone-900">{visitCount}</p>
             <p className="text-xs text-stone-400">last 30 days</p>
           </div>
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+          <div className="bg-white rounded-2xl shadow-card p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Hints</span>
             </div>
             <p className="text-2xl font-bold text-stone-900">{hints.length}</p>
             <p className={`text-xs ${hint.color}`}>{hint.label}</p>
           </div>
-          <div className={`rounded-2xl p-4 border ${claimCount > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-stone-200"}`}>
+          <div className={`rounded-2xl shadow-card p-4 ${claimCount > 0 ? "bg-amber-50" : "bg-white"}`}>
             <div className="flex items-center gap-1.5 mb-1">
               <Gift className="w-3.5 h-3.5 text-stone-400" />
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Gifts</span>
@@ -293,7 +293,7 @@ export default function ActivityPage() {
         </div>
 
         {/* Upcoming birthdays — always visible */}
-        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+        <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
           <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
             <Cake className="w-3.5 h-3.5" />
             Coming up
@@ -352,7 +352,7 @@ export default function ActivityPage() {
         </div>
 
         {/* Recent visitors — always visible */}
-        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+        <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
           <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
             <Eye className="w-3.5 h-3.5" />
             Recent visitors
@@ -394,7 +394,7 @@ export default function ActivityPage() {
 
         {/* Profile link */}
         {profile && (
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-card p-4 mb-4 flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-xs text-stone-400 mb-0.5">Your gift profile</p>
               <p className="text-stone-900 font-medium text-sm truncate">giftbutler.io/for/{profile.username}</p>

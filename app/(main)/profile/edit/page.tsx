@@ -69,23 +69,23 @@ export default function EditProfilePage() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+    <main className="min-h-screen bg-[#fef9ef] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-[#fef9ef]">
       <div className="max-w-xl mx-auto px-4 py-8">
         <button onClick={() => router.push(currentUsername ? `/for/${currentUsername}` : "/activity")} className="flex items-center gap-2 text-stone-400 hover:text-stone-700 mb-6 transition-colors cursor-pointer">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Back to profile</span>
         </button>
 
-        <h1 className="text-xl font-bold text-stone-900 mb-6">Edit profile</h1>
+        <h1 className="text-2xl font-display text-stone-900 mb-6">Edit profile</h1>
 
         <form onSubmit={handleSave} className="flex flex-col gap-4">
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+          <div className="bg-white rounded-2xl shadow-card p-4">
             <label className="text-xs font-semibold text-stone-500 mb-2 block">Display name</label>
             <input
               type="text"
@@ -97,7 +97,7 @@ export default function EditProfilePage() {
             />
           </div>
 
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+          <div className="bg-white rounded-2xl shadow-card p-4">
             <label className="text-xs font-semibold text-stone-500 mb-2 block">Username</label>
             <div className="flex items-center gap-1">
               <span className="text-stone-400 text-sm">giftbutler.io/for/</span>
@@ -113,7 +113,7 @@ export default function EditProfilePage() {
             )}
           </div>
 
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+          <div className="bg-white rounded-2xl shadow-card p-4">
             <label className="text-xs font-semibold text-stone-500 mb-2 block">Bio <span className="text-stone-300 font-normal">(optional)</span></label>
             <textarea
               value={bio}
@@ -125,7 +125,7 @@ export default function EditProfilePage() {
             />
           </div>
 
-          <div className="bg-white border border-stone-200 rounded-2xl p-4">
+          <div className="bg-white rounded-2xl shadow-card p-4">
             <label className="text-xs font-semibold text-stone-500 mb-2 block">Birthday <span className="text-stone-300 font-normal">(optional — helps people know when to shop)</span></label>
             <input
               type="date"

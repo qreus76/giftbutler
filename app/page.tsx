@@ -60,12 +60,12 @@ export default async function Home() {
 
         {/* Logo — top left, respects safe area */}
         <div className="absolute top-0 left-0 right-0 px-6" style={{ paddingTop: "max(48px, env(safe-area-inset-top, 48px))" }}>
-          <span className="text-xl font-black text-white tracking-tight drop-shadow-sm">GiftButler</span>
+          <span className="text-xl font-display text-white drop-shadow-sm">GiftButler</span>
         </div>
 
         {/* Content pinned to bottom, respects safe area */}
         <div className="absolute bottom-0 left-0 right-0 px-6" style={{ paddingBottom: "max(40px, env(safe-area-inset-bottom, 40px))" }}>
-          <h1 className="text-3xl font-black text-white leading-tight mb-2">
+          <h1 className="text-3xl font-display text-white leading-tight mb-2">
             No more guessing.<br />Just the right gift.
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-1">
@@ -118,7 +118,7 @@ export default async function Home() {
           <div className="w-full max-w-sm">
 
             {/* Logo */}
-            <h1 className="text-4xl font-black text-stone-900 tracking-tight mb-2 text-center">
+            <h1 className="text-4xl font-display text-stone-900 mb-2 text-center">
               GiftButler
             </h1>
             <p className="text-stone-400 text-sm text-center mb-10">

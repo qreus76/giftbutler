@@ -24,9 +24,9 @@ function SharedNav() {
   const onActivity = pathname.startsWith("/activity");
 
   return (
-    <nav className="border-b border-stone-100 bg-white sticky top-0 z-10">
+    <nav className="border-b border-amber-100/70 bg-[#fef9ef] sticky top-0 z-10">
       <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href={username ? `/for/${username}` : "/dashboard"} className="text-base font-bold text-stone-900">GiftButler</Link>
+        <Link href={username ? `/for/${username}` : "/dashboard"} className="text-base font-display text-stone-900 tracking-wide">GiftButler</Link>
         {isLoaded && user && (
           <div className="flex items-center gap-2">
             <Link

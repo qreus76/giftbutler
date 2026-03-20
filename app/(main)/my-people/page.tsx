@@ -110,13 +110,13 @@ export default function MyPeoplePage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-[#fef9ef]">
       <div className="max-w-xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-stone-900 mb-1">My People</h1>
+        <h1 className="text-3xl font-display text-stone-900 mb-1">My People</h1>
         <p className="text-stone-400 text-sm mb-6">Your gift network, sorted by upcoming birthday.</p>
 
         {/* Search */}
-        <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-card p-4 mb-6">
           <p className="text-sm font-semibold text-stone-700 mb-3">Find someone by username</p>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
@@ -210,7 +210,7 @@ export default function MyPeoplePage() {
         {!loading && people.length > 0 && (
           <div className="flex flex-col gap-3">
             {people.map(person => (
-              <div key={person.id} className="bg-white border border-stone-200 rounded-2xl p-4">
+              <div key={person.id} className="bg-white rounded-2xl shadow-card p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                     {person.avatar ? (

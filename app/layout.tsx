@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, DM_Serif_Display } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { RotateCcw } from "lucide-react";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"] });
+const dmSerif = DM_Serif_Display({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-dm-serif",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"),
@@ -21,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider
       appearance={{
         variables: {
-          colorPrimary: "#fbbf24",        // amber-400
+          colorPrimary: "#E09500",
           colorText: "#1c1917",           // stone-900
           colorTextSecondary: "#78716c",  // stone-500
           colorBackground: "#fafaf9",     // stone-50
@@ -53,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }}
     >
       <html lang="en">
-        <body className={geist.className}>
+        <body className={`${geist.className} ${dmSerif.variable}`}>
           {/* Landscape orientation warning — mobile only */}
           <div className="rotate-warning fixed inset-0 z-50 bg-stone-900 flex-col items-center justify-center text-center px-8">
             <RotateCcw className="w-12 h-12 text-white mb-4 mx-auto" />

@@ -24,6 +24,13 @@ const GIFT_CATEGORY_LABELS: Record<string, string> = {
   consumable: "Consumables",
 };
 
+const GIFT_CATEGORY_BORDER: Record<string, string> = {
+  product: "border-l-amber-400",
+  experience: "border-l-purple-400",
+  subscription: "border-l-blue-400",
+  consumable: "border-l-green-500",
+};
+
 interface ClaimRecord {
   description: string;
   occasion: string | null;
@@ -316,11 +323,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const displayName = profile.name || username;
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-[#fef9ef]">
       {/* Nav */}
-      <nav className="border-b border-stone-100 bg-white">
+      <nav className="border-b border-amber-100/70 bg-[#fef9ef]">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-base font-bold text-stone-900">GiftButler</Link>
+          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/activity") : "/"} className="text-base font-display text-stone-900 tracking-wide">GiftButler</Link>
           {isLoaded && (isOwner || user ? (
             <div className="flex items-center gap-2">
               <Link href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
@@ -368,7 +375,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Profile header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full mx-auto mb-3 overflow-hidden">
+          <div className="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden ring-4 ring-white shadow-md">
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
             ) : (
@@ -377,13 +384,28 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </div>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">{displayName}</h1>
-          <p className="text-stone-400 text-sm">@{username}</p>
+          <h1 className="text-3xl font-display text-stone-900 leading-tight">{displayName}</h1>
+          <p className="text-stone-400 text-sm mt-1">@{username}</p>
           {profile.bio && <p className="text-stone-600 text-sm mt-2">{profile.bio}</p>}
           <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+            {/* For visitors, Add to my people is the primary action */}
+            {isLoaded && user && !isOwner && followStatus === "none" && !showLabelPicker && (
+              <button
+                onClick={() => setShowLabelPicker(true)}
+                className="px-5 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
+              >
+                + Add to my people
+              </button>
+            )}
+
+            {/* Share — primary for owner, secondary for visitor */}
             <button
               onClick={shareProfile}
-              className="px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
+              className={`px-5 py-2 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2 ${
+                isOwner
+                  ? "bg-amber-400 hover:bg-amber-500 text-stone-900"
+                  : "border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800"
+              }`}
             >
               <Share className="w-4 h-4 sm:hidden" />
               <Copy className="w-4 h-4 hidden sm:block" />
@@ -400,17 +422,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </Link>
             )}
 
-            {/* Follow button — only for signed-in non-owners */}
+            {/* Follow status indicators — only for signed-in non-owners */}
             {isLoaded && user && !isOwner && (
               <>
-                {followStatus === "none" && !showLabelPicker && (
-                  <button
-                    onClick={() => setShowLabelPicker(true)}
-                    className="px-5 py-2 border border-stone-200 hover:border-amber-300 text-stone-600 hover:text-amber-700 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
-                  >
-                    + Add to my people
-                  </button>
-                )}
                 {followStatus === "pending" && (
                   <span className="px-5 py-2 text-stone-400 font-semibold text-sm">
                     Request sent
@@ -427,7 +441,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
           {/* Label picker */}
           {showLabelPicker && (
-            <div className="mt-3 bg-white border border-stone-200 rounded-2xl p-4 text-left">
+            <div className="mt-3 bg-white rounded-2xl shadow-card p-4 text-left">
               <p className="text-sm font-semibold text-stone-700 mb-3">Who is {displayName} to you?</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {LABELS.map(l => (
@@ -490,8 +504,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Gift finder */}
         {showFinder && recommendations.length === 0 && (
-          <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-6">
-            <h2 className="font-bold text-stone-900 mb-4">Find the perfect gift</h2>
+          <div className="bg-white rounded-2xl shadow-card p-5 mb-6">
+            <h2 className="font-display text-xl text-stone-900 mb-4">Find the perfect gift</h2>
             <div className="flex flex-col gap-3 mb-4">
               <div>
                 <label className="text-xs font-semibold text-stone-500 mb-1 block">I&apos;m their</label>
@@ -591,7 +605,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           return (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-stone-900">Gift ideas for {displayName}</h2>
+                <h2 className="font-display text-xl text-stone-900">Gift ideas for {displayName}</h2>
                 <span className="text-xs text-stone-400">{filtered.length} ideas</span>
               </div>
 
@@ -604,8 +618,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                       onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                         categoryFilter === cat
-                          ? "bg-amber-400 text-stone-900"
-                          : "bg-white border border-stone-200 text-stone-500 hover:border-amber-300"
+                          ? "bg-amber-400 text-stone-900 border border-amber-400"
+                          : "bg-stone-100 border border-transparent text-stone-500 hover:bg-stone-200"
                       }`}
                     >
                       {GIFT_CATEGORY_LABELS[cat] || cat}
@@ -619,7 +633,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   const alreadyClaimed = isAlreadyClaimed(rec.title);
                   const iMineThis = myClaims.includes(rec.title);
                   return (
-                    <div key={i} className={`bg-white border rounded-2xl p-4 ${alreadyClaimed && !iMineThis ? "border-green-200 bg-green-50/30" : "border-stone-200"}`}>
+                    <div key={i} className={`bg-white rounded-2xl shadow-card p-4 border-l-4 ${GIFT_CATEGORY_BORDER[rec.category] || "border-l-stone-200"} ${alreadyClaimed && !iMineThis ? "ring-1 ring-green-200 bg-green-50/30" : ""}`}>
                       <div className="flex items-start justify-between gap-3 mb-1.5">
                         <h3 className="font-semibold text-stone-900 text-sm leading-snug">{rec.title}</h3>
                         <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">{rec.priceRange}</span>
@@ -707,7 +721,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* CTA for signed-out visitors — shown after recommendations or gift finder */}
         {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center mb-6">
+          <div className="bg-amber-50 rounded-2xl shadow-card p-4 text-center mb-6">
             <p className="text-stone-700 font-semibold text-sm mb-1">Want your own GiftButler profile?</p>
             <p className="text-stone-400 text-xs mb-3">Free forever. Share your link. Get gifts you actually want.</p>
             <a href="/sign-up" className="inline-block px-5 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-semibold rounded-xl text-sm transition-colors">
@@ -718,7 +732,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Drop a hint — owner only */}
         {isOwner && (
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
+          <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
             <p className="text-sm font-semibold text-stone-700 mb-0.5">Drop a hint</p>
             <p className="text-xs text-stone-400 mb-3">The AI reads all your hints together to suggest gifts people know you&apos;ll love.</p>
             <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
@@ -803,7 +817,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               {isOwner ? "My Hints" : `${displayName}\u2019s hints`}
             </h2>
             {isOwner && hints.length === 0 ? (
-              <div className="bg-white border border-stone-200 rounded-2xl p-6 text-center">
+              <div className="bg-white rounded-2xl shadow-card p-6 text-center">
                 <p className="text-3xl mb-3">🎁</p>
                 <p className="font-bold text-stone-900 mb-2">Your hints = gifts people actually want to give</p>
                 <p className="text-stone-500 text-sm leading-relaxed mb-4 max-w-xs mx-auto">
@@ -816,7 +830,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 {hintsToShow.map((hint) => {
                   const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
                   return (
-                    <div key={hint.id} className="bg-white border border-stone-200 rounded-2xl px-4 py-3 group">
+                    <div key={hint.id} className="bg-white rounded-2xl shadow-card px-4 py-3 group">
                       {isOwner && editingHintId === hint.id ? (
                         <div>
                           <div className="flex gap-1.5 flex-wrap mb-2">
