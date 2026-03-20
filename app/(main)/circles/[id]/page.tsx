@@ -84,11 +84,15 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
     router.push("/my-people");
   }
 
-  function copyInviteLink() {
+  async function shareInviteLink() {
     const url = `${window.location.origin}/join/${circle?.invite_code}`;
-    navigator.clipboard.writeText(url).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (navigator.share && window.innerWidth < 768) {
+      try { await navigator.share({ title: `Join ${circle?.name}`, text: `Join our Gift Circle on GiftButler — $${circle?.budget} budget!`, url }); } catch { /* cancelled */ }
+    } else {
+      navigator.clipboard.writeText(url).catch(() => {});
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   if (loading || !isLoaded) return (
@@ -186,7 +190,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
               <p className="flex-1 text-sm text-[#555555] truncate font-mono">
                 giftbutler.io/join/{circle.invite_code}
               </p>
-              <button onClick={copyInviteLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs flex-shrink-0">
+              <button onClick={shareInviteLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs flex-shrink-0">
                 {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
               </button>
             </div>
@@ -214,7 +218,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
               <p className="flex-1 text-sm text-[#555555] truncate font-mono">
                 giftbutler.io/join/{circle.invite_code}
               </p>
-              <button onClick={copyInviteLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs flex-shrink-0">
+              <button onClick={shareInviteLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs flex-shrink-0">
                 {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
               </button>
             </div>
