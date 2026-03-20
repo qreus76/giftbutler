@@ -23,7 +23,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Minimal light header */}
       <header className="bg-[#EAEAE0] sticky top-0 z-10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/activity" className="text-lg font-bold text-[#111111] tracking-tight">
+          <Link href="/home" className="text-lg font-bold text-[#111111] tracking-tight">
             GiftButler
           </Link>
           {isLoaded && user && (

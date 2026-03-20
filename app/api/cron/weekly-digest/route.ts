@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
 
       const name = profile.name || profile.username;
       const profileUrl = `${baseUrl}/for/${profile.username}`;
-      const dashboardUrl = `${baseUrl}/activity`;
+      const dashboardUrl = `${baseUrl}/home`;
       const hintCount = hintCountMap.get(profile.id) || 0;
       const lowHints = hintCount < 5;
 

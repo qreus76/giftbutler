@@ -17,8 +17,8 @@ export default function BottomTabBar({ myUsername, followCount = 0 }: Props) {
   if (!isLoaded || !user) return null;
 
   const tabs = [
-    { href: "/activity", icon: Home, label: "Home", active: pathname.startsWith("/activity"), badge: followCount },
-    { href: myUsername ? `/for/${myUsername}` : "/activity", icon: Gift, label: "Wishlist", active: myUsername ? pathname === `/for/${myUsername}` : false, badge: 0 },
+    { href: "/home", icon: Home, label: "Home", active: pathname.startsWith("/home"), badge: followCount },
+    { href: myUsername ? `/for/${myUsername}` : "/home", icon: Gift, label: "Wishlist", active: myUsername ? pathname === `/for/${myUsername}` : false, badge: 0 },
     { href: "/my-people", icon: Users, label: "People", active: pathname === "/my-people", badge: 0 },
   ];
 

@@ -25,7 +25,7 @@ export default async function Home() {
     const { data } = await supabaseAdmin.from("profiles").select("username").eq("id", userId).single();
     profileUsername = data?.username || null;
   }
-  const returnUrl = profileUsername ? `/for/${profileUsername}` : "/activity";
+  const returnUrl = profileUsername ? `/for/${profileUsername}` : "/home";
 
   return (
     <main className="min-h-screen bg-white">

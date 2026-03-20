@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         if (!receiverEmail) return;
 
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io";
-        const dashboardUrl = `${baseUrl}/activity`;
+        const dashboardUrl = `${baseUrl}/home`;
         const safeRequesterName = escapeHtml(requesterName);
 
         await fetch("https://api.resend.com/emails", {
