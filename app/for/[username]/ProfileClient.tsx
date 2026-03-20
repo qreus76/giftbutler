@@ -36,6 +36,7 @@ const CATEGORIES = {
   want: { label: "Want", color: "bg-blue-100 text-blue-600" },
   need: { label: "Need", color: "bg-green-100 text-green-600" },
   dream: { label: "Dream", color: "bg-purple-100 text-purple-600" },
+  style: { label: "My Style", color: "bg-violet-100 text-violet-600" },
   avoid: { label: "Please no", color: "bg-red-100 text-red-600" },
 };
 
@@ -46,6 +47,7 @@ const HINT_CATEGORIES = [
   { id: "want", label: "Want", placeholder: "I've been wanting to try a standing desk..." },
   { id: "need", label: "Need", placeholder: "My headphones are finally dying..." },
   { id: "dream", label: "Dream", placeholder: "Someday I'd love to go to Japan..." },
+  { id: "style", label: "My Style", placeholder: "I wear a medium, prefer minimalist design, love earth tones..." },
   { id: "avoid", label: "Please no", placeholder: "No more candles or gift cards please..." },
 ];
 
@@ -737,10 +739,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <div className="flex items-center justify-between px-1">
                 {addError
                   ? <p className="text-red-500 text-xs">{addError}</p>
-                  : <span />
+                  : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid"
+                    ? <p className="text-xs text-stone-400">More detail = better gifts. What kind? What do you already have?</p>
+                    : <span />
                 }
                 {newHint.length > 0 && (
-                  <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
+                  <p className={`text-xs ml-auto flex-shrink-0 ${newHint.length >= 260 ? "text-red-400" : "text-stone-400"}`}>
                     {280 - newHint.length} left
                   </p>
                 )}
@@ -862,6 +866,17 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </div>
             )}
           </div>
+        )}
+
+        {/* Avoid nudge — owner only, no avoid hints yet */}
+        {isOwner && avoidHints.length === 0 && hints.length > 0 && (
+          <button
+            onClick={() => setHintCategory("avoid")}
+            className="w-full mb-4 px-4 py-3 border border-dashed border-red-200 rounded-2xl text-left hover:bg-red-50 transition-colors group"
+          >
+            <p className="text-sm font-semibold text-red-500 group-hover:text-red-600">+ What should people NOT get you?</p>
+            <p className="text-xs text-red-400 mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
+          </button>
         )}
 
         {/* Avoid section */}

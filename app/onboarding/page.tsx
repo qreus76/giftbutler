@@ -17,33 +17,33 @@ interface SearchResult {
 
 const QUIZ_STEPS = [
   {
-    id: "weekend",
-    question: "Your perfect Sunday looks like...",
+    id: "selfbuy",
+    question: "What's one thing you've been putting off buying for yourself?",
     options: [
-      { label: "Outside — hiking, biking, exploring", value: "I love spending time outdoors — hiking, cycling, and exploring nature" },
-      { label: "In the kitchen cooking something new", value: "I love cooking and trying new recipes in the kitchen" },
-      { label: "Gaming or watching something great", value: "I enjoy gaming and watching great shows and movies" },
-      { label: "Creating — art, music, writing", value: "I love creative pursuits like art, music, or writing" },
+      { label: "New gear for a hobby I keep neglecting", value: "I've been putting off buying new gear for a hobby I love but don't invest in enough" },
+      { label: "An upgrade for something I use every day", value: "I'd love to upgrade something I use every day but can't justify splurging on" },
+      { label: "Something for my home or workspace", value: "I've been meaning to improve my home or workspace but keep putting it off" },
+      { label: "An experience I keep saying I'll treat myself to", value: "I keep saying I'll treat myself to a special experience or outing but never actually do it" },
     ],
   },
   {
-    id: "describe",
-    question: "Your friends would describe you as...",
+    id: "unwind",
+    question: "How do you like to unwind?",
     options: [
-      { label: "The adventurous one", value: "adventurous and always up for something new" },
-      { label: "The homebody who makes it cozy", value: "a homebody who loves creating a cozy comfortable space" },
-      { label: "The tech enthusiast", value: "a tech enthusiast who loves gadgets and the latest gear" },
-      { label: "The wellness-focused one", value: "wellness-focused and into fitness, health, and self-care" },
+      { label: "Reading, podcasts, or learning something new", value: "I love unwinding with books, podcasts, and learning — I'm always curious about something" },
+      { label: "Getting outside — walks, hikes, fresh air", value: "Getting outside for walks, hikes, or any kind of fresh air is how I recharge" },
+      { label: "Cooking, baking, or exploring new food", value: "I love unwinding by cooking, baking, or discovering new food and drink experiences" },
+      { label: "Films, gaming, or anything immersive", value: "I unwind with films, gaming, or anything immersive and entertaining" },
     ],
   },
   {
-    id: "spending",
-    question: "If you had $100 to spend on yourself right now...",
+    id: "perfect",
+    question: "What makes a gift feel perfect to you?",
     options: [
-      { label: "New gear for a hobby", value: "I would buy new gear or equipment for one of my hobbies" },
-      { label: "A great meal or experience", value: "I would spend it on a great meal out or a fun experience" },
-      { label: "Something for my space", value: "I would buy something to upgrade my home or workspace" },
-      { label: "Books, courses, or learning", value: "I would invest it in books, courses, or learning something new" },
+      { label: "It connects to a hobby or passion of mine", value: "The best gifts connect to one of my hobbies or passions — it shows someone truly paid attention" },
+      { label: "It makes my daily life easier or better", value: "I love practical gifts that genuinely improve my everyday life" },
+      { label: "It's something I'd never buy myself", value: "The best gifts are things I'd never splurge on myself but secretly really want" },
+      { label: "It's a shared experience — not just a thing", value: "I value experiences over things — the best gift is something we can enjoy together" },
     ],
   },
 ];

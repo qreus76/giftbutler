@@ -48,9 +48,34 @@ export async function POST(req: NextRequest) {
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false });
 
-  const hintsText = hints && hints.length > 0
-    ? hints.map((h) => `- [${h.category}] ${h.content}`).join("\n")
-    : "No hints provided yet.";
+  const categoryLabels: Record<string, string> = {
+    general: "Into lately",
+    love: "Loves",
+    like: "Likes",
+    want: "Wants",
+    need: "Needs",
+    dream: "Dreams of",
+    style: "Style & Preferences",
+    avoid: "MUST AVOID",
+  };
+
+  let hintsText = "No hints provided yet.";
+  if (hints && hints.length > 0) {
+    const grouped: Record<string, string[]> = {};
+    for (const h of hints) {
+      if (!grouped[h.category]) grouped[h.category] = [];
+      grouped[h.category].push(h.content);
+    }
+    // Put avoid last so it's prominent
+    const order = ["style", "love", "want", "dream", "general", "like", "need", "avoid"];
+    const sortedEntries = Object.entries(grouped).sort(([a], [b]) => {
+      const ai = order.indexOf(a), bi = order.indexOf(b);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+    hintsText = sortedEntries
+      .map(([cat, items]) => `[${categoryLabels[cat] || cat}]\n${items.map(i => `  - ${i}`).join("\n")}`)
+      .join("\n\n");
+  }
 
   const name = profile.name || username;
   const occasionText = occasion ? ` for their ${occasion}` : "";
@@ -65,17 +90,21 @@ export async function POST(req: NextRequest) {
     if (next <= today) next = new Date(today.getFullYear() + 1, month, day);
     const daysUntil = Math.ceil((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (daysUntil <= 60) {
-      birthdayContext = `\nBIRTHDAY: ${daysUntil === 0 ? "Today!" : `In ${daysUntil} days`} — factor urgency/relevance into recommendations.`;
+      birthdayContext = `\nBIRTHDAY: ${daysUntil === 0 ? "Today!" : `In ${daysUntil} days`} — lean into birthday-appropriate gifts.`;
     }
   }
+
+  const occasionContext = occasion
+    ? `\nOCCASION: ${occasion.toUpperCase()} — tailor every recommendation to feel right for this specific occasion, not just generic gift ideas.`
+    : "";
 
   const prompt = `You are GiftButler, an expert gift recommendation AI. Your goal is to find gifts so personal and specific that the recipient will feel truly seen and understood.
 
 RECIPIENT: ${name}
 RELATIONSHIP TO BUYER: ${relationship}
-BUDGET: ${budget}${birthdayContext}
+BUDGET: ${budget}${birthdayContext}${occasionContext}
 
-THEIR HINTS (things they've shared about their life, interests, and wishes):
+THEIR HINTS:
 ${hintsText}
 
 Generate exactly 8 specific, emotionally resonant gift recommendations. Each gift must feel personally connected to this specific person — not generic suggestions that could work for anyone.
@@ -95,9 +124,10 @@ Rules:
 - Be HYPER-SPECIFIC (not "golf club" but "Callaway Rogue ST Max Driver", not "book" but the actual title and author)
 - Every recommendation must trace back to a specific hint they shared
 - The "why" must feel warm and personal — like it came from someone who truly knows them
-- Mix categories across the 8 — don't give 8 physical products
+- Mix gift categories across the 8 — don't give 8 physical products
 - Stay within budget — priceRange must fit within ${budget}
-- CRITICAL: Avoid anything in their "avoid" hints — this is non-negotiable
+- Style & Preferences hints are GOLD — use them to make sure every recommendation matches their aesthetic, size, or taste
+- CRITICAL: Anything under [MUST AVOID] is absolutely off-limits — do not recommend it, do not suggest anything adjacent to it
 - category must be exactly one of: product, experience, subscription, consumable
 - If no hints are provided, make thoughtful suggestions based on the relationship and what makes that relationship special`;
 
