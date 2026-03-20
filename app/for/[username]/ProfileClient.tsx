@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Cake, Pencil, X, ArrowRight } from "lucide-react";
+import { Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2 } from "lucide-react";
 import BottomTabBar from "@/app/components/BottomTabBar";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint } from "@/lib/supabase";
@@ -94,6 +94,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [editCategory, setEditCategory] = useState("general");
   const [hintSaving, setHintSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [hintMode, setHintMode] = useState<"text" | "link">("text");
+  const [hintUrl, setHintUrl] = useState("");
+  const [enriching, setEnriching] = useState(false);
+  const [enrichError, setEnrichError] = useState("");
+  const [enrichedProduct, setEnrichedProduct] = useState<{ title: string; image: string | null; price: string | null } | null>(null);
 
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
@@ -218,15 +223,48 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     try { const res = await fetch(`/api/hints/${id}`, { method: "DELETE" }); if (!res.ok) setHints(prev); } catch { setHints(prev); }
   }
 
+  async function enrichUrl() {
+    if (!hintUrl.trim()) return;
+    setEnriching(true); setEnrichError(""); setEnrichedProduct(null);
+    try {
+      const res = await fetch("/api/hints/enrich", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: hintUrl.trim() }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not read that page");
+      setEnrichedProduct(data);
+    } catch (e: unknown) {
+      setEnrichError(e instanceof Error ? e.message : "Could not read that page — try a different link");
+    } finally { setEnriching(false); }
+  }
+
+  async function addLinkHint() {
+    if (!enrichedProduct || !hintUrl.trim()) return;
+    setAdding(true); setAddError("");
+    try {
+      const res = await fetch("/api/hints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: enrichedProduct.title, category: "want", url: hintUrl.trim(), product_title: enrichedProduct.title, product_image: enrichedProduct.image, product_price: enrichedProduct.price }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add");
+      setHints([data, ...hints]);
+      setHintUrl(""); setEnrichedProduct(null); setHintMode("text");
+    } catch (e: unknown) {
+      setAddError(e instanceof Error ? e.message : "Failed to add — try again");
+    } finally { setAdding(false); }
+  }
+
   function isAlreadyClaimed(title: string): boolean {
     return existingClaims.some(c => c.description === title.toLowerCase() && (!c.occasion || !occasion || c.occasion === occasion));
   }
 
   const hintsToShow = hints.filter(h => h.category !== "avoid");
   const avoidHints = hints.filter(h => h.category === "avoid");
+  const productHints = hintsToShow.filter(h => h.url);
+  const textHints = hintsToShow.filter(h => !h.url);
   const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
   const displayName = profile.name || username;
-  const showFixedCTA = !isOwner && recommendations.length === 0 && !showFinder;
+  const showFixedCTA = !isOwner && recommendations.length === 0 && !showFinder && textHints.length > 0;
 
   return (
     <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
@@ -277,8 +315,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             <h1 className="text-2xl font-bold text-[#111111] leading-tight">{displayName}</h1>
             <p className="text-[#888888] text-sm">@{username}</p>
             {profile.bio && <p className="text-[#555555] text-sm mt-1.5 leading-relaxed">{profile.bio}</p>}
-            {hintsToShow.length > 0 && (
-              <p className="text-xs text-[#888888] mt-1">{hintsToShow.length} hints</p>
+            {(productHints.length > 0 || textHints.length > 0) && (
+              <p className="text-xs text-[#888888] mt-1">
+                {productHints.length > 0 && `${productHints.length} specific want${productHints.length !== 1 ? "s" : ""}`}
+                {productHints.length > 0 && textHints.length > 0 && " · "}
+                {textHints.length > 0 && `${textHints.length} hint${textHints.length !== 1 ? "s" : ""}`}
+              </p>
             )}
           </div>
         </div>
@@ -363,14 +405,54 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* ── CONTENT ── */}
       <div className="max-w-xl mx-auto px-4 space-y-4">
 
+        {/* Specific wants — always visible, never filtered */}
+        {!isOwner && productHints.length > 0 && (
+          <div>
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3">🎁 What {displayName} wants</p>
+            <div className="flex flex-col gap-3">
+              {productHints.map(hint => {
+                const claimKey = hint.product_title || hint.content;
+                const alreadyClaimed = isAlreadyClaimed(claimKey);
+                const iMineThis = myClaims.includes(claimKey);
+                return (
+                  <div key={hint.id} className={`bg-white rounded-2xl shadow-card overflow-hidden ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
+                    <div className="flex gap-3 p-4">
+                      {hint.product_image && (
+                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
+                          <img src={hint.product_image} alt={hint.product_title || ""} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[#111111] text-sm leading-snug mb-1 line-clamp-2">{hint.product_title || hint.content}</p>
+                        {hint.product_price && <p className="text-base font-bold text-[#111111] mb-1">{hint.product_price}</p>}
+                        {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
+                      </div>
+                    </div>
+                    <div className="px-4 pb-4 flex gap-2">
+                      <a href={hint.url!} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+                        View item <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button onClick={() => claimGift(claimKey)} disabled={iMineThis || alreadyClaimed || claiming === claimKey}
+                        className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
+                        {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I&apos;m on it"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Education banner */}
-        {!isOwner && hintsToShow.length > 0 && recommendations.length === 0 && !showFinder && (() => {
+        {!isOwner && textHints.length > 0 && recommendations.length === 0 && !showFinder && (() => {
           try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
         })() && (
           <div className="bg-[#B8CED0] rounded-2xl p-4">
             <p className="text-xs font-bold text-[#1A3D42] mb-1">✨ GiftButler AI</p>
             <p className="text-[#1A3D42] text-sm leading-relaxed">
-              {displayName} dropped {hintsToShow.length} hints about their interests. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
+              {displayName} dropped {textHints.length} gift idea{textHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
             </p>
           </div>
         )}
@@ -530,68 +612,160 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Drop a hint (owner) */}
         {isOwner && (
           <div className="bg-white rounded-2xl shadow-card p-5">
-            <p className="text-base font-bold text-[#111111] mb-0.5">Drop a hint</p>
-            <p className="text-xs text-[#888888] mb-4">The AI reads all your hints together to find gifts people know you&apos;ll love.</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
-              {HINT_CATEGORIES.map(c => (
-                <button key={c.id} onClick={() => setHintCategory(c.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                  {c.label}
-                </button>
-              ))}
+            <p className="text-base font-bold text-[#111111] mb-3">Add to your wishlist</p>
+
+            {/* Mode tabs */}
+            <div className="flex bg-[#F5F5F0] rounded-xl p-1 gap-1 mb-4">
+              <button onClick={() => { setHintMode("text"); setEnrichError(""); setEnrichedProduct(null); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "text" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
+                Describe it
+              </button>
+              <button onClick={() => { setHintMode("link"); setAddError(""); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "link" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
+                <Link2 className="w-3.5 h-3.5" /> Paste a link
+              </button>
             </div>
-            <form onSubmit={addHint} className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <input value={newHint} onChange={e => setNewHint(e.target.value)} maxLength={280}
-                  placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
-                  className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
-                <button type="submit" disabled={!newHint.trim() || adding}
-                  className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
-                  {adding ? "..." : "Add"}
-                </button>
+
+            {hintMode === "text" && (
+              <>
+                <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+                  {HINT_CATEGORIES.map(c => (
+                    <button key={c.id} onClick={() => setHintCategory(c.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+                <form onSubmit={addHint} className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input value={newHint} onChange={e => setNewHint(e.target.value)} maxLength={280}
+                      placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
+                      className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
+                    <button type="submit" disabled={!newHint.trim() || adding}
+                      className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
+                      {adding ? "..." : "Add"}
+                    </button>
+                  </div>
+                  <div className="flex justify-between px-1">
+                    {addError ? <p className="text-red-600 text-xs">{addError}</p> : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid" ? <p className="text-xs text-[#888888]">More detail = better gifts</p> : <span />}
+                    {newHint.length > 0 && <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</p>}
+                  </div>
+                </form>
+              </>
+            )}
+
+            {hintMode === "link" && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs text-[#888888]">Find something on Amazon, Target, Etsy — anywhere. Paste the link here and we&apos;ll save it.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={hintUrl}
+                    onChange={e => { setHintUrl(e.target.value); setEnrichedProduct(null); setEnrichError(""); }}
+                    onKeyDown={e => e.key === "Enter" && enrichUrl()}
+                    placeholder="https://amazon.com/..."
+                    className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                  />
+                  <button onClick={enrichUrl} disabled={!hintUrl.trim() || enriching}
+                    className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
+                    {enriching ? "..." : "Look up"}
+                  </button>
+                </div>
+                {enrichError && <p className="text-red-500 text-xs">{enrichError}</p>}
+                {enrichedProduct && (
+                  <div className="bg-[#F5F5F0] rounded-xl p-3 flex gap-3">
+                    {enrichedProduct.image && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white">
+                        <img src={enrichedProduct.image} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#111111] leading-snug line-clamp-2">{enrichedProduct.title}</p>
+                      {enrichedProduct.price && <p className="text-sm font-bold text-[#111111] mt-1">{enrichedProduct.price}</p>}
+                    </div>
+                  </div>
+                )}
+                {addError && <p className="text-red-500 text-xs">{addError}</p>}
+                {enrichedProduct && (
+                  <button onClick={addLinkHint} disabled={adding}
+                    className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                    {adding ? "Saving..." : "Save to wishlist"}
+                  </button>
+                )}
               </div>
-              <div className="flex justify-between px-1">
-                {addError ? <p className="text-red-600 text-xs">{addError}</p> : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid" ? <p className="text-xs text-[#888888]">More detail = better gifts</p> : <span />}
-                {newHint.length > 0 && <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</p>}
-              </div>
-            </form>
+            )}
           </div>
         )}
 
         {/* Progress nudge */}
-        {isOwner && hintsToShow.length >= 1 && hintsToShow.length < 8 && (
+        {isOwner && textHints.length >= 1 && textHints.length < 8 && (
           <div className="bg-[#C4D4B4] rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-[#2D4A1E]">{hintsToShow.length < 3 ? "Getting started" : hintsToShow.length < 5 ? "Building nicely" : "Almost there"}</p>
-              <span className="text-xs font-bold text-[#2D4A1E]">{hintsToShow.length}/8</span>
+              <p className="text-xs font-bold text-[#2D4A1E]">{textHints.length < 3 ? "Getting started" : textHints.length < 5 ? "Building nicely" : "Almost there"}</p>
+              <span className="text-xs font-bold text-[#2D4A1E]">{textHints.length}/8</span>
             </div>
             <div className="w-full h-1.5 bg-white/40 rounded-full mb-2 overflow-hidden">
-              <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((hintsToShow.length / 8) * 100)}%` }} />
+              <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((textHints.length / 8) * 100)}%` }} />
             </div>
             <p className="text-xs text-[#2D4A1E]/80">
-              {hintsToShow.length < 3 ? "Add more hints — the AI needs context to go beyond generic suggestions." : "8+ hints is where gift ideas start feeling truly personal."}
+              {textHints.length < 3 ? "Add hints — the AI needs context to go beyond generic suggestions." : "8+ hints is where gift ideas start feeling truly personal."}
             </p>
           </div>
         )}
 
-        {/* Hints list */}
-        {(isOwner || hintsToShow.length > 0) && (
+        {/* Specific wants (owner view) */}
+        {isOwner && productHints.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
+              <p className="text-sm font-bold text-[#111111]">Specific wants</p>
+              <span className="text-xs text-[#888888]">{productHints.length}</span>
+            </div>
+            <div className="divide-y divide-[#F0F0E8]">
+              {productHints.map(hint => (
+                <div key={hint.id} className="p-4 flex items-center gap-3 group">
+                  {hint.product_image && (
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
+                      <img src={hint.product_image} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#111111] line-clamp-1">{hint.product_title || hint.content}</p>
+                    {hint.product_price && <p className="text-xs font-bold text-[#888888]">{hint.product_price}</p>}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    {confirmDeleteId === hint.id ? (
+                      <>
+                        <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                        <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                      </>
+                    ) : (
+                      <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Hints list (text hints) */}
+        {(isOwner || textHints.length > 0) && (
           <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
               <p className="text-sm font-bold text-[#111111]">
-                {isOwner ? "My Hints" : `${displayName}'s hints`}
+                {isOwner ? "Gift ideas" : `${displayName}'s hints`}
               </p>
-              {hintsToShow.length > 0 && <span className="text-xs text-[#888888]">{hintsToShow.length}</span>}
+              {textHints.length > 0 && <span className="text-xs text-[#888888]">{textHints.length}</span>}
             </div>
-            {isOwner && hints.length === 0 ? (
+            {isOwner && textHints.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="text-2xl mb-2">🎁</p>
-                <p className="font-bold text-[#111111] text-sm mb-1">Your hints = gifts people want to give</p>
+                <p className="text-2xl mb-2">💡</p>
+                <p className="font-bold text-[#111111] text-sm mb-1">Drop hints for AI-powered suggestions</p>
                 <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
               </div>
             ) : (
               <div className="divide-y divide-[#F0F0E8]">
-                {hintsToShow.map(hint => {
+                {textHints.map(hint => {
                   const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
                   return (
                     <div key={hint.id} className="px-4 py-3.5 group">

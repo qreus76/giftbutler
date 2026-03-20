@@ -28,4 +28,8 @@ export type Hint = {
   content: string;
   category: string;
   created_at: string;
+  url?: string | null;
+  product_title?: string | null;
+  product_image?: string | null;
+  product_price?: string | null;
 };

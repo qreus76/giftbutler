@@ -1,0 +1,89 @@
+import { auth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
+
+function extractMeta(html: string, property: string): string | null {
+  // Try property="..." content="..."
+  let m = html.match(new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"));
+  if (m) return m[1];
+  // Try content="..." property="..."
+  m = html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, "i"));
+  if (m) return m[1];
+  // Try name="..." content="..."
+  m = html.match(new RegExp(`<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"));
+  if (m) return m[1];
+  return null;
+}
+
+function extractTitle(html: string): string | null {
+  const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return m ? m[1].trim() : null;
+}
+
+function cleanTitle(title: string): string {
+  // Remove common store suffixes like " - Amazon.com", " | Target", " : Walmart.com"
+  return title.replace(/\s*[-|:]\s*(amazon\.com|amazon|target|walmart\.com|walmart|etsy|best buy|ebay|nordstrom|macys|zappos)[^-|:]*$/i, "").trim();
+}
+
+export async function POST(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let url: string;
+  try {
+    const body = await req.json();
+    url = body.url?.trim();
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  if (!url) return NextResponse.json({ error: "URL required" }, { status: 400 });
+
+  // Basic URL validation
+  try { new URL(url); } catch {
+    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return NextResponse.json({ error: "Could not load that page" }, { status: 400 });
+
+    const html = await res.text();
+
+    const ogTitle = extractMeta(html, "og:title");
+    const ogImage = extractMeta(html, "og:image");
+    const ogPrice =
+      extractMeta(html, "og:price:amount") ||
+      extractMeta(html, "product:price:amount") ||
+      extractMeta(html, "twitter:data1") ||
+      null;
+
+    const rawTitle = ogTitle || extractTitle(html) || "Unknown product";
+    const title = cleanTitle(rawTitle);
+
+    // Format price
+    let price: string | null = null;
+    if (ogPrice) {
+      const num = parseFloat(ogPrice.replace(/[^0-9.]/g, ""));
+      if (!isNaN(num)) price = `$${num.toFixed(2)}`;
+    }
+
+    return NextResponse.json({ title, image: ogImage || null, price });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      return NextResponse.json({ error: "That page took too long to load" }, { status: 408 });
+    }
+    return NextResponse.json({ error: "Could not read that page — try a different link" }, { status: 400 });
+  }
+}
