@@ -764,6 +764,28 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         )}
 
+        {/* Owner hints progress nudge — above hint list so goal is set before they read */}
+        {isOwner && hintsToShow.length >= 1 && hintsToShow.length < 8 && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-amber-800">
+                {hintsToShow.length < 3 ? "Great start — keep going" : hintsToShow.length < 5 ? "Building nicely" : "Almost there"}
+              </p>
+              <span className="text-xs font-bold text-amber-700">{hintsToShow.length} / 8</span>
+            </div>
+            <div className="w-full h-1.5 bg-amber-200 rounded-full mb-2 overflow-hidden">
+              <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${Math.round((hintsToShow.length / 8) * 100)}%` }} />
+            </div>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              {hintsToShow.length < 3
+                ? "Add a few more hints — the AI needs context to move beyond generic suggestions."
+                : hintsToShow.length < 5
+                ? "You're getting there. More hints means the AI can match your actual taste, not just your category."
+                : "Almost at the sweet spot. 8+ hints is where gift ideas start feeling like they came from someone who truly knows you."}
+            </p>
+          </div>
+        )}
+
         {/* Hints feed */}
         {(isOwner || hintsToShow.length > 0) && (
           <div className="mb-6">
@@ -879,28 +901,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 })}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Owner hints progress nudge */}
-        {isOwner && hintsToShow.length >= 1 && hintsToShow.length < 8 && (
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-amber-800">
-                {hintsToShow.length < 3 ? "Great start — keep going" : hintsToShow.length < 5 ? "Building nicely" : "Almost there"}
-              </p>
-              <span className="text-xs font-bold text-amber-700">{hintsToShow.length} / 8</span>
-            </div>
-            <div className="w-full h-1.5 bg-amber-200 rounded-full mb-2 overflow-hidden">
-              <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${Math.round((hintsToShow.length / 8) * 100)}%` }} />
-            </div>
-            <p className="text-xs text-amber-700 leading-relaxed">
-              {hintsToShow.length < 3
-                ? "Add a few more hints — the AI needs context to move beyond generic suggestions."
-                : hintsToShow.length < 5
-                ? "You're getting there. More hints means the AI can match your actual taste, not just your category."
-                : "Almost at the sweet spot. 8+ hints is where gift ideas start feeling like they came from someone who truly knows you."}
-            </p>
           </div>
         )}
 
