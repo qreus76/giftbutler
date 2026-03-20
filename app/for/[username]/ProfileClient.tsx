@@ -239,9 +239,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </Link>
           <div className="flex items-center gap-2">
             {isLoaded && !user && (
-              <Link href="/sign-up" className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-                Sign up
-              </Link>
+              <>
+                <Link href="/sign-in" className="px-4 py-1.5 text-[#888888] hover:text-[#111111] font-semibold text-sm transition-colors">
+                  Sign in
+                </Link>
+                <Link href="/sign-up" className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                  Sign up
+                </Link>
+              </>
             )}
             {isLoaded && user && (
               <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#111111] transition-all flex-shrink-0">
