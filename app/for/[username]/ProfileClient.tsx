@@ -462,13 +462,23 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Find a gift button */}
         {!showFinder && recommendations.length === 0 && (
           <div className="mb-6">
+            {!isOwner && hintsToShow.length > 0 && (
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-3">
+                <p className="text-xs font-semibold text-amber-700 mb-1">✨ How GiftButler works</p>
+                <p className="text-stone-600 text-sm leading-relaxed">
+                  {displayName} dropped hints about their life, taste, and wishes. Our AI reads all of them together — not just one — and suggests gifts they&apos;d genuinely love. Personal, not generic.
+                </p>
+              </div>
+            )}
             <button
               onClick={() => setShowFinder(true)}
               className="w-full py-4 bg-amber-400 hover:bg-amber-500 text-stone-900 font-bold rounded-2xl text-base transition-colors shadow-sm"
             >
-              Find the perfect gift for {displayName} →
+              {hintsToShow.length > 0
+                ? `Get AI gift ideas based on ${displayName}'s hints →`
+                : `Find a gift for ${displayName} →`}
             </button>
-            {hintsToShow.length === 0 && (
+            {hintsToShow.length === 0 && !isOwner && (
               <p className="text-center text-xs text-stone-400 mt-2">
                 {displayName} hasn&apos;t added hints yet — we&apos;ll suggest based on your relationship and budget.
               </p>
@@ -707,7 +717,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Drop a hint — owner only */}
         {isOwner && (
           <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4">
-            <p className="text-sm font-semibold text-stone-700 mb-3">Drop a hint</p>
+            <p className="text-sm font-semibold text-stone-700 mb-0.5">Drop a hint</p>
+            <p className="text-xs text-stone-400 mb-3">The AI reads all your hints together to suggest gifts people know you&apos;ll love.</p>
             <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
               {HINT_CATEGORIES.map((c) => (
                 <button
@@ -760,10 +771,13 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               {isOwner ? "My Hints" : `${displayName}\u2019s hints`}
             </h2>
             {isOwner && hints.length === 0 ? (
-              <div className="text-center py-10 text-stone-400">
-                <MessageSquare className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-                <p className="font-medium text-stone-600 mb-1">No hints yet</p>
-                <p className="text-sm">Add your first hint above — what have you been into lately?</p>
+              <div className="bg-white border border-stone-200 rounded-2xl p-6 text-center">
+                <p className="text-3xl mb-3">🎁</p>
+                <p className="font-bold text-stone-900 mb-2">Your hints = gifts people actually want to give</p>
+                <p className="text-stone-500 text-sm leading-relaxed mb-4 max-w-xs mx-auto">
+                  When someone visits your profile, the AI reads all your hints together and suggests gifts you&apos;d genuinely love — not a generic Amazon search. The more you share, the more personal the ideas.
+                </p>
+                <p className="text-xs text-stone-400">Start above — what have you been into lately?</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -865,6 +879,28 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Owner hints progress nudge */}
+        {isOwner && hintsToShow.length >= 1 && hintsToShow.length < 8 && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-amber-800">
+                {hintsToShow.length < 3 ? "Great start — keep going" : hintsToShow.length < 5 ? "Building nicely" : "Almost there"}
+              </p>
+              <span className="text-xs font-bold text-amber-700">{hintsToShow.length} / 8</span>
+            </div>
+            <div className="w-full h-1.5 bg-amber-200 rounded-full mb-2 overflow-hidden">
+              <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${Math.round((hintsToShow.length / 8) * 100)}%` }} />
+            </div>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              {hintsToShow.length < 3
+                ? "Add a few more hints — the AI needs context to move beyond generic suggestions."
+                : hintsToShow.length < 5
+                ? "You're getting there. More hints means the AI can match your actual taste, not just your category."
+                : "Almost at the sweet spot. 8+ hints is where gift ideas start feeling like they came from someone who truly knows you."}
+            </p>
           </div>
         )}
 
