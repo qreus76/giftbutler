@@ -63,7 +63,6 @@ export default function OnboardingPage() {
   const [findingPeople, setFindingPeople] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
@@ -73,12 +72,10 @@ export default function OnboardingPage() {
   const [sendingRequest, setSendingRequest] = useState(false);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const isQuiz = step < QUIZ_STEPS.length;
   const currentQuiz = QUIZ_STEPS[step];
   const [customAnswer, setCustomAnswer] = useState("");
   const [showCustom, setShowCustom] = useState(false);
-
   const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"}/for/${username}`;
 
   function handleAnswer(value: string) {
@@ -86,11 +83,8 @@ export default function OnboardingPage() {
     setAnswers(newAnswers);
     setShowCustom(false);
     setCustomAnswer("");
-    if (step < QUIZ_STEPS.length - 1) {
-      setStep(step + 1);
-    } else {
-      setStep(QUIZ_STEPS.length);
-    }
+    if (step < QUIZ_STEPS.length - 1) setStep(step + 1);
+    else setStep(QUIZ_STEPS.length);
   }
 
   function handleCustomSubmit() {
@@ -103,11 +97,7 @@ export default function OnboardingPage() {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim().toLowerCase(), answers }),
-      });
+      const res = await fetch("/api/onboarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username.trim().toLowerCase(), answers }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setDone(true);
@@ -139,11 +129,7 @@ export default function OnboardingPage() {
   async function sendFollowRequest(searchUsername: string) {
     if (!selectedLabel) return;
     setSendingRequest(true);
-    await fetch("/api/follows", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: searchUsername, label: selectedLabel }),
-    });
+    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: searchUsername, label: selectedLabel }) });
     setSentRequests(prev => [...prev, searchUsername]);
     setSearchResult(null);
     setSearchQuery("");
@@ -152,17 +138,10 @@ export default function OnboardingPage() {
   }
 
   async function copyLink() {
-    const isMobile = window.innerWidth < 768;
-    if (navigator.share && isMobile) {
-      try {
-        await navigator.share({
-          title: "My GiftButler profile",
-          text: "Here's what I actually want — no more guessing!",
-          url: profileUrl,
-        });
-      } catch { /* user cancelled */ }
+    if (navigator.share && window.innerWidth < 768) {
+      try { await navigator.share({ title: "My GiftButler profile", text: "Here's what I actually want — no more guessing!", url: profileUrl }); } catch { /* cancelled */ }
     } else {
-      navigator.clipboard.writeText(profileUrl).catch(() => { alert("Unable to copy — please copy manually."); });
+      navigator.clipboard.writeText(profileUrl).catch(() => alert("Unable to copy."));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -170,98 +149,64 @@ export default function OnboardingPage() {
 
   async function saveBirthday() {
     setSavingBirthday(true);
-    if (birthdayInput) {
-      await fetch("/api/profile/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birthday: birthdayInput }),
-      });
-    }
+    if (birthdayInput) await fetch("/api/profile/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ birthday: birthdayInput }) });
     setSavingBirthday(false);
     setBirthdayDone(true);
   }
 
-  // Find your people screen
   if (done && findingPeople) {
     return (
-      <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <Users className="w-12 h-12 text-[#E5D9CC] mx-auto mb-3" />
-            <h2 className="text-2xl font-display text-[#1A1410] mb-1">Find your people</h2>
-            <p className="text-[#7A6A5E] text-sm">Search by username to send a connection request.</p>
+            <Users className="w-12 h-12 text-[#E4E6EB] mx-auto mb-3" />
+            <h2 className="text-2xl font-bold text-[#1C1E21] mb-1">Find your people</h2>
+            <p className="text-[#65676B] text-sm">Search by username to send a connection request.</p>
           </div>
-
           {sentRequests.length > 0 && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 mb-4">
-              <p className="text-[#2D6A4F] text-sm font-semibold">✓ {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-3">
+              <p className="text-emerald-700 text-sm font-semibold">✓ {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
             </div>
           )}
-
-          <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
+          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4 mb-3">
             <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6A5E]" />
-              <input
-                value={searchQuery}
-                onChange={e => handleSearchInput(e.target.value)}
-                placeholder="Enter their username..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#E5D9CC] text-sm text-[#1A1410] placeholder-[#7A6A5E] focus:outline-none focus:ring-2 focus:ring-[#6B2437]"
-                autoFocus
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#65676B]" />
+              <input value={searchQuery} onChange={e => handleSearchInput(e.target.value)} placeholder="Enter their username..." autoFocus
+                className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E4E6EB] text-sm text-[#1C1E21] placeholder-[#BCC0C4] focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
-
-            {searching && <p className="text-xs text-[#7A6A5E]">Searching...</p>}
-            {searchNotFound && !searching && (
-              <p className="text-xs text-[#7A6A5E]">No profile found with that username.</p>
-            )}
-            {searchIsSelf && !searching && (
-              <p className="text-xs text-[#7A6A5E]">That&apos;s you! Search for someone else.</p>
-            )}
-
+            {searching && <p className="text-xs text-[#65676B]">Searching...</p>}
+            {searchNotFound && !searching && <p className="text-xs text-[#65676B]">No profile found with that username.</p>}
+            {searchIsSelf && !searching && <p className="text-xs text-[#65676B]">That&apos;s you! Search for someone else.</p>}
             {searchResult && !searching && (
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                    {searchResult.avatar ? (
-                      <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
-                        {searchResult.name[0]?.toUpperCase()}
-                      </div>
+                    {searchResult.avatar ? <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" /> : (
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-amber-400">{searchResult.name[0]?.toUpperCase()}</div>
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-[#1A1410] text-sm">{searchResult.name}</p>
-                    <p className="text-xs text-[#7A6A5E]">@{searchResult.username}</p>
+                    <p className="font-semibold text-[#1C1E21] text-sm">{searchResult.name}</p>
+                    <p className="text-xs text-[#65676B]">@{searchResult.username}</p>
                   </div>
                 </div>
-                <p className="text-xs font-semibold text-[#7A6A5E] mb-2">Who are they to you?</p>
+                <p className="text-xs font-semibold text-[#65676B] mb-2">Who are they to you?</p>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {LABELS.map(l => (
-                    <button
-                      key={l}
-                      onClick={() => setSelectedLabel(l)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-[#6B2437] bg-[#F5E8EC] text-[#6B2437]" : "border-[#E5D9CC] text-[#7A6A5E] hover:border-[#6B2437]"}`}
-                    >
+                    <button key={l} onClick={() => setSelectedLabel(l)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-amber-400 border-amber-400 text-white" : "bg-white border-[#E4E6EB] text-[#1C1E21] hover:border-amber-400"}`}>
                       {l}
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => sendFollowRequest(searchResult.username)}
-                  disabled={!selectedLabel || sendingRequest}
-                  className="w-full py-2.5 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-xl text-sm transition-colors"
-                >
+                <button onClick={() => sendFollowRequest(searchResult.username)} disabled={!selectedLabel || sendingRequest}
+                  className="w-full py-2.5 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-lg text-sm transition-colors">
                   {sendingRequest ? "Sending..." : "Send request"}
                 </button>
               </div>
             )}
           </div>
-
-          <button
-            onClick={() => router.push(`/for/${username}`)}
-            className="w-full py-3.5 bg-[#6B2437] hover:bg-[#4A1828] text-white font-bold rounded-2xl transition-colors"
-          >
+          <button onClick={() => router.push(`/for/${username}`)} className="w-full py-3 bg-[#1C1E21] hover:bg-black text-white font-bold rounded-xl transition-colors">
             Go to my profile →
           </button>
         </div>
@@ -269,93 +214,61 @@ export default function OnboardingPage() {
     );
   }
 
-  // Birthday step
   if (done && !birthdayDone) {
     return (
-      <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-[#F5E8EC] rounded-full flex items-center justify-center mx-auto mb-4">
-            <Cake className="w-8 h-8 text-[#6B2437]" />
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Cake className="w-8 h-8 text-amber-500" />
           </div>
-          <h2 className="text-2xl font-display text-[#1A1410] mb-2">When&apos;s your birthday?</h2>
-          <p className="text-[#7A6A5E] text-sm mb-8">
-            We&apos;ll remind you to share your profile before your birthday — so the people who matter know exactly what to get you.
-          </p>
-          <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
-            <input
-              type="date"
-              value={birthdayInput}
-              max={new Date().toISOString().split("T")[0]}
-              onChange={e => setBirthdayInput(e.target.value)}
-              className="w-full text-[#1A1410] text-sm focus:outline-none focus:ring-2 focus:ring-[#6B2437] rounded-lg px-1 py-1"
-            />
+          <h2 className="text-2xl font-bold text-[#1C1E21] mb-2">When&apos;s your birthday?</h2>
+          <p className="text-[#65676B] text-sm mb-8">We&apos;ll remind you to share your profile before your birthday.</p>
+          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4 mb-4">
+            <input type="date" value={birthdayInput} max={new Date().toISOString().split("T")[0]} onChange={e => setBirthdayInput(e.target.value)}
+              className="w-full text-[#1C1E21] text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg px-1 py-1" />
           </div>
-          <button
-            onClick={saveBirthday}
-            disabled={savingBirthday || !birthdayInput}
-            className="w-full py-3.5 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-2xl transition-colors mb-3"
-          >
+          <button onClick={saveBirthday} disabled={savingBirthday || !birthdayInput}
+            className="w-full py-3 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-xl transition-colors mb-3">
             {savingBirthday ? "Saving..." : "Save my birthday →"}
           </button>
-          <button
-            onClick={() => setBirthdayDone(true)}
-            className="text-xs text-[#7A6A5E] hover:text-[#1A1410] underline"
-          >
-            Skip for now
-          </button>
+          <button onClick={() => setBirthdayDone(true)} className="text-sm text-[#65676B] hover:text-[#1C1E21] underline">Skip for now</button>
         </div>
       </main>
     );
   }
 
-  // Profile live screen
   if (done) {
     const shareMessages = [
       `My birthday is coming up — here's what I actually want: ${profileUrl}`,
       `Tired of getting asked "what do you want?" — here's my answer: ${profileUrl}`,
     ];
-
     return (
-      <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-display text-[#1A1410] mb-2">Your profile is live!</h2>
-          <p className="text-[#7A6A5E] text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
-          <p className="text-xs text-[#7A6A5E] mb-8">We added a few hints from your answers. You can edit or replace them from your profile anytime.</p>
-
-          <div className="bg-white rounded-2xl shadow-card p-4 mb-4 flex items-center justify-between gap-3">
-            <p className="text-[#1A1410] font-medium text-sm truncate">giftbutler.io/for/{username}</p>
-            <button
-              onClick={copyLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-semibold rounded-xl text-xs transition-colors flex-shrink-0"
-            >
+          <h2 className="text-2xl font-bold text-[#1C1E21] mb-2">Your profile is live!</h2>
+          <p className="text-[#65676B] text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
+          <p className="text-xs text-[#65676B] mb-6">We added a few hints from your answers. Edit them from your profile anytime.</p>
+          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4 mb-3 flex items-center justify-between gap-3">
+            <p className="text-[#1C1E21] font-medium text-sm truncate">giftbutler.io/for/{username}</p>
+            <button onClick={copyLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold rounded-lg text-xs flex-shrink-0">
               {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy link</>}
             </button>
           </div>
-
-          <div className="flex flex-col gap-2 mb-6">
+          <div className="flex flex-col gap-2 mb-5">
             {shareMessages.map((msg, i) => (
-              <button
-                key={i}
-                onClick={() => { navigator.clipboard.writeText(msg).catch(() => { alert("Unable to copy — please copy manually."); }); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
-                className="text-left bg-white border border-[#E5D9CC] rounded-xl px-4 py-3 hover:border-[#6B2437] transition-colors group"
-              >
-                <p className="text-[#7A6A5E] text-xs leading-relaxed">{msg}</p>
-                <p className="text-[#6B2437] text-xs font-semibold mt-1.5 group-hover:text-[#4A1828]">{copiedMsgIndex === i ? "✓ Copied!" : "Copy this message →"}</p>
+              <button key={i}
+                onClick={() => { navigator.clipboard.writeText(msg).catch(() => alert("Unable to copy.")); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
+                className="text-left bg-white border border-[#E4E6EB] rounded-xl px-4 py-3 hover:border-amber-400 transition-colors">
+                <p className="text-[#65676B] text-xs leading-relaxed">{msg}</p>
+                <p className="text-amber-600 text-xs font-semibold mt-1.5">{copiedMsgIndex === i ? "✓ Copied!" : "Copy this message →"}</p>
               </button>
             ))}
           </div>
-
-          <button
-            onClick={() => setFindingPeople(true)}
-            className="w-full py-3.5 bg-[#6B2437] hover:bg-[#4A1828] text-white font-bold rounded-2xl transition-colors mb-3"
-          >
+          <button onClick={() => setFindingPeople(true)} className="w-full py-3 bg-[#1C1E21] hover:bg-black text-white font-bold rounded-xl transition-colors mb-3">
             Find my people →
           </button>
-          <button
-            onClick={() => router.push(`/for/${username}`)}
-            className="text-xs text-[#7A6A5E] hover:text-[#1A1410] underline"
-          >
+          <button onClick={() => router.push(`/for/${username}`)} className="text-sm text-[#65676B] hover:text-[#1C1E21] underline">
             Skip — go to my profile
           </button>
         </div>
@@ -364,60 +277,43 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAF4EC] flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#F0F2F5] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Progress bar */}
+        {/* Progress */}
         <div className="flex gap-1.5 mb-8">
           {[...QUIZ_STEPS, { id: "username" }].map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-[#6B2437]" : "bg-[#E5D9CC]"}`} />
+            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-amber-400" : "bg-[#E4E6EB]"}`} />
           ))}
         </div>
 
         {isQuiz ? (
           <div>
-            <p className="text-xs font-semibold text-[#6B2437] uppercase tracking-wide mb-2">Quick question {step + 1} of {QUIZ_STEPS.length}</p>
-            <h2 className="text-2xl font-display text-[#1A1410] mb-6">{currentQuiz.question}</h2>
-            <div className="flex flex-col gap-3">
-              {currentQuiz.options.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleAnswer(opt.value)}
-                  className="w-full text-left px-5 py-4 bg-white border-2 border-[#E5D9CC] hover:border-[#6B2437] hover:bg-[#F5E8EC] rounded-2xl text-[#1A1410] font-medium transition-all active:scale-[0.98] active:border-[#6B2437] active:bg-[#F5E8EC] duration-100"
-                >
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-2">Question {step + 1} of {QUIZ_STEPS.length}</p>
+            <h2 className="text-2xl font-bold text-[#1C1E21] mb-6">{currentQuiz.question}</h2>
+            <div className="flex flex-col gap-2">
+              {currentQuiz.options.map(opt => (
+                <button key={opt.value} onClick={() => handleAnswer(opt.value)}
+                  className="w-full text-left px-4 py-4 bg-white border-2 border-[#E4E6EB] hover:border-amber-400 hover:bg-amber-50 rounded-xl text-[#1C1E21] font-medium text-sm transition-all active:scale-[0.98] duration-100">
                   {opt.label}
                 </button>
               ))}
-
               {!showCustom ? (
-                <button
-                  onClick={() => setShowCustom(true)}
-                  className="w-full text-left px-5 py-4 bg-white border-2 border-dotted border-[#E5D9CC] hover:border-[#6B2437] hover:bg-[#F5E8EC] rounded-2xl text-[#7A6A5E] font-medium transition-all active:scale-[0.98] duration-100"
-                >
+                <button onClick={() => setShowCustom(true)}
+                  className="w-full text-left px-4 py-4 bg-white border-2 border-dashed border-[#E4E6EB] hover:border-amber-400 hover:bg-amber-50 rounded-xl text-[#65676B] font-medium text-sm transition-all duration-100">
                   Something else — type your own
                 </button>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={customAnswer}
-                    onChange={(e) => setCustomAnswer(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleCustomSubmit()}
+                  <input autoFocus type="text" value={customAnswer} onChange={e => setCustomAnswer(e.target.value)} onKeyDown={e => e.key === "Enter" && handleCustomSubmit()}
                     placeholder="Type your answer..."
-                    className="w-full px-5 py-4 bg-white border-2 border-[#6B2437] rounded-2xl text-[#1A1410] font-medium focus:outline-none"
-                  />
+                    className="w-full px-4 py-4 bg-white border-2 border-amber-400 rounded-xl text-[#1C1E21] font-medium text-sm focus:outline-none" />
                   <div className="flex gap-2">
-                    <button
-                      onClick={handleCustomSubmit}
-                      disabled={!customAnswer.trim()}
-                      className="flex-1 py-3 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-semibold rounded-xl transition-colors"
-                    >
+                    <button onClick={handleCustomSubmit} disabled={!customAnswer.trim()}
+                      className="flex-1 py-3 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-xl transition-colors">
                       Continue →
                     </button>
-                    <button
-                      onClick={() => { setShowCustom(false); setCustomAnswer(""); }}
-                      className="px-4 py-3 border border-[#E5D9CC] text-[#7A6A5E] font-semibold rounded-xl hover:bg-[#EFE6DA] transition-colors"
-                    >
+                    <button onClick={() => { setShowCustom(false); setCustomAnswer(""); }}
+                      className="px-4 py-3 bg-[#E4E6EB] hover:bg-[#D8DADF] text-[#1C1E21] font-semibold rounded-xl transition-colors">
                       Cancel
                     </button>
                   </div>
@@ -427,26 +323,17 @@ export default function OnboardingPage() {
           </div>
         ) : (
           <div>
-            <p className="text-xs font-semibold text-[#6B2437] uppercase tracking-wide mb-2">Almost done</p>
-            <h2 className="text-2xl font-display text-[#1A1410] mb-2">Choose your username</h2>
-            <p className="text-[#7A6A5E] text-sm mb-6">Your profile will live at <span className="text-[#1A1410] font-medium">giftbutler.io/for/[username]</span></p>
-            <div className="flex items-center gap-2 bg-white border-2 border-[#E5D9CC] rounded-2xl px-4 py-3 mb-3 focus-within:border-[#6B2437] transition-colors">
-              <span className="text-[#7A6A5E] text-sm">giftbutler.io/for/</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                placeholder="yourname"
-                className="flex-1 text-[#1A1410] font-medium text-sm focus:outline-none"
-                autoFocus
-              />
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-2">Almost done</p>
+            <h2 className="text-2xl font-bold text-[#1C1E21] mb-2">Choose your username</h2>
+            <p className="text-[#65676B] text-sm mb-5">Your profile will live at <span className="text-[#1C1E21] font-semibold">giftbutler.io/for/[username]</span></p>
+            <div className="flex items-center gap-2 bg-white border-2 border-[#E4E6EB] focus-within:border-amber-400 rounded-xl px-4 py-3 mb-3 transition-colors">
+              <span className="text-[#65676B] text-sm">giftbutler.io/for/</span>
+              <input type="text" value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="yourname" autoFocus
+                className="flex-1 text-[#1C1E21] font-semibold text-sm focus:outline-none" />
             </div>
-            {error && <p className="text-[#922B21] text-sm mb-3">{error}</p>}
-            <button
-              onClick={handleFinish}
-              disabled={!username.trim() || saving}
-              className="w-full py-4 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-2xl transition-colors"
-            >
+            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            <button onClick={handleFinish} disabled={!username.trim() || saving}
+              className="w-full py-3.5 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-xl transition-colors">
               {saving ? "Setting up your profile..." : "Create my profile →"}
             </button>
           </div>

@@ -26,34 +26,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider
       appearance={{
         variables: {
-          colorPrimary: "#6B2437",
-          colorText: "#1A1410",
-          colorTextSecondary: "#7A6A5E",
-          colorBackground: "#FAF4EC",
+          colorPrimary: "#F59E0B",
+          colorText: "#1C1E21",
+          colorTextSecondary: "#65676B",
+          colorBackground: "#ffffff",
           colorInputBackground: "#ffffff",
-          colorInputText: "#1A1410",
-          borderRadius: "0.75rem",
-          fontFamily: "var(--font-geist-sans), sans-serif",
+          colorInputText: "#1C1E21",
+          borderRadius: "0.5rem",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         },
         elements: {
-          card: "shadow-card border border-[#E5D9CC]",
-          headerTitle: "text-[#1A1410] font-bold",
-          headerSubtitle: "text-[#7A6A5E]",
+          card: "shadow-card border border-[#E4E6EB]",
+          headerTitle: "text-[#1C1E21] font-bold",
+          headerSubtitle: "text-[#65676B]",
           socialButtonsBlockButton: {
-            className: "border-[#E5D9CC] hover:bg-[#EFE6DA] text-[#1A1410] font-semibold rounded-xl",
+            className: "border-[#E4E6EB] hover:bg-[#F0F2F5] text-[#1C1E21] font-semibold rounded-lg",
             style: { padding: "12px 16px" },
           },
           formButtonPrimary: {
-            className: "bg-[#C08A3C] hover:bg-[#A87A32] text-white font-bold rounded-xl shadow-none",
+            className: "bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold rounded-lg shadow-none",
             style: { padding: "12px 24px" },
           },
           formFieldInput: {
-            className: "border-[#E5D9CC] rounded-xl focus:ring-[#C08A3C]",
+            className: "border-[#E4E6EB] rounded-lg focus:ring-[#F59E0B]",
             style: { padding: "10px 16px" },
           },
-          footerActionLink: "text-[#6B2437] hover:text-[#4A1828] font-semibold",
-          identityPreviewEditButton: "text-[#6B2437]",
-          formResendCodeLink: "text-[#6B2437]",
+          footerActionLink: "text-[#F59E0B] hover:text-[#D97706] font-semibold",
+          identityPreviewEditButton: "text-[#F59E0B]",
+          formResendCodeLink: "text-[#F59E0B]",
         },
       }}
     >

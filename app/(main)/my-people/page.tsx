@@ -27,16 +27,16 @@ const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother
 
 function birthdayText(days: number | null): string {
   if (days === null) return "Birthday unknown";
-  if (days === 0) return "Birthday is today!";
-  if (days === 1) return "Birthday is tomorrow!";
+  if (days === 0) return "Birthday today!";
+  if (days === 1) return "Birthday tomorrow!";
   return `Birthday in ${days} days`;
 }
 
-function birthdayUrgency(days: number | null): string {
-  if (days === null) return "text-[#7A6A5E]";
-  if (days <= 7) return "text-[#922B21] font-semibold";
-  if (days <= 30) return "text-[#C08A3C] font-semibold";
-  return "text-[#7A6A5E]";
+function birthdayColor(days: number | null): string {
+  if (days === null) return "text-[#65676B]";
+  if (days <= 7) return "text-red-500 font-semibold";
+  if (days <= 30) return "text-amber-600 font-semibold";
+  return "text-[#65676B]";
 }
 
 export default function MyPeoplePage() {
@@ -46,7 +46,6 @@ export default function MyPeoplePage() {
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
@@ -59,10 +58,7 @@ export default function MyPeoplePage() {
   useEffect(() => {
     if (!isLoaded) return;
     if (!user) { router.push("/sign-in"); return; }
-    fetch("/api/follows/network")
-      .then(r => r.json())
-      .then(d => setPeople(d.people || []))
-      .finally(() => setLoading(false));
+    fetch("/api/follows/network").then(r => r.json()).then(d => setPeople(d.people || [])).finally(() => setLoading(false));
   }, [isLoaded, user, router]);
 
   function handleSearchInput(val: string) {
@@ -87,11 +83,7 @@ export default function MyPeoplePage() {
   async function sendFollowRequest(username: string) {
     if (!selectedLabel) return;
     setSendingRequest(true);
-    await fetch("/api/follows", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, label: selectedLabel }),
-    });
+    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
     setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
     setSendingRequest(false);
   }
@@ -99,87 +91,64 @@ export default function MyPeoplePage() {
   async function removeConnection(username: string) {
     setRemoving(username);
     setConfirmRemove(null);
-    await fetch("/api/follows", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username }),
-    });
+    await fetch("/api/follows", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username }) });
     setPeople(prev => prev.filter(p => p.username !== username));
     setRemoving(null);
   }
 
   return (
-    <main className="min-h-screen bg-[#FAF4EC]">
-      <div className="max-w-xl mx-auto px-4 py-6">
-        <h1 className="text-3xl font-display text-[#1A1410] mb-1">My People</h1>
-        <p className="text-[#7A6A5E] text-sm mb-6">Your gift network, sorted by upcoming birthday.</p>
+    <main className="min-h-screen bg-[#F0F2F5]">
+      <div className="max-w-xl mx-auto px-3 py-4 space-y-3">
+        <div className="px-1">
+          <h1 className="text-2xl font-bold text-[#1C1E21]">My People</h1>
+          <p className="text-[#65676B] text-sm">Your gift network, sorted by upcoming birthday.</p>
+        </div>
 
         {/* Search */}
-        <div className="bg-white rounded-2xl shadow-card p-4 mb-6">
-          <p className="text-sm font-semibold text-[#1A1410] mb-3">Find someone by username</p>
+        <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] p-4">
+          <p className="text-sm font-bold text-[#1C1E21] mb-3">Find someone by username</p>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6A5E]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#65676B]" />
             <input
               value={searchQuery}
               onChange={e => handleSearchInput(e.target.value)}
               placeholder="Enter their username..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#E5D9CC] text-sm text-[#1A1410] placeholder-[#7A6A5E] focus:outline-none focus:ring-2 focus:ring-[#6B2437]"
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E4E6EB] text-sm text-[#1C1E21] placeholder-[#BCC0C4] focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
-          {searching && (
-            <p className="text-xs text-[#7A6A5E] mt-3">Searching...</p>
-          )}
-          {searchNotFound && !searching && (
-            <p className="text-xs text-[#7A6A5E] mt-3">No profile found with that username.</p>
-          )}
-          {searchIsSelf && !searching && (
-            <p className="text-xs text-[#7A6A5E] mt-3">That&apos;s you! Search for someone else.</p>
-          )}
+          {searching && <p className="text-xs text-[#65676B] mt-2">Searching...</p>}
+          {searchNotFound && !searching && <p className="text-xs text-[#65676B] mt-2">No profile found with that username.</p>}
+          {searchIsSelf && !searching && <p className="text-xs text-[#65676B] mt-2">That&apos;s you! Search for someone else.</p>}
 
           {searchResult && !searching && (
-            <div className="mt-3">
+            <div className="mt-3 pt-3 border-t border-[#E4E6EB]">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  {searchResult.avatar ? (
-                    <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
-                      {searchResult.name[0]?.toUpperCase()}
-                    </div>
+                  {searchResult.avatar ? <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" /> : (
+                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-amber-400">{searchResult.name[0]?.toUpperCase()}</div>
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold text-[#1A1410] text-sm">{searchResult.name}</p>
-                  <p className="text-xs text-[#7A6A5E]">@{searchResult.username}</p>
+                  <p className="font-semibold text-[#1C1E21] text-sm">{searchResult.name}</p>
+                  <p className="text-xs text-[#65676B]">@{searchResult.username}</p>
                 </div>
               </div>
-
-              {searchResult.followStatus === "accepted" && (
-                <p className="text-xs text-[#2D6A4F] font-semibold">✓ Already in your people</p>
-              )}
-              {searchResult.followStatus === "pending" && (
-                <p className="text-xs text-[#7A6A5E] font-semibold">Request already sent</p>
-              )}
+              {searchResult.followStatus === "accepted" && <p className="text-xs text-emerald-600 font-semibold">✓ Already in your people</p>}
+              {searchResult.followStatus === "pending" && <p className="text-xs text-[#65676B] font-semibold">Request already sent</p>}
               {searchResult.followStatus === "none" && (
                 <>
-                  <p className="text-xs font-semibold text-[#7A6A5E] mb-2">Who are they to you?</p>
+                  <p className="text-xs font-semibold text-[#65676B] mb-2">Who are they to you?</p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {LABELS.map(l => (
-                      <button
-                        key={l}
-                        onClick={() => setSelectedLabel(l)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "border-[#6B2437] bg-[#F5E8EC] text-[#6B2437]" : "border-[#E5D9CC] text-[#7A6A5E] hover:border-[#6B2437]"}`}
-                      >
+                      <button key={l} onClick={() => setSelectedLabel(l)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-amber-400 border-amber-400 text-white" : "bg-white border-[#E4E6EB] text-[#1C1E21] hover:border-amber-400"}`}>
                         {l}
                       </button>
                     ))}
                   </div>
-                  <button
-                    onClick={() => sendFollowRequest(searchResult.username)}
-                    disabled={!selectedLabel || sendingRequest}
-                    className="w-full py-2.5 bg-[#C08A3C] hover:bg-[#A87A32] disabled:bg-[#E5D9CC] disabled:text-[#7A6A5E] text-white font-bold rounded-xl text-sm transition-colors"
-                  >
+                  <button onClick={() => sendFollowRequest(searchResult.username)} disabled={!selectedLabel || sendingRequest}
+                    className="w-full py-2 bg-[#F59E0B] hover:bg-[#D97706] disabled:bg-[#E4E6EB] disabled:text-[#BCC0C4] text-white font-bold rounded-lg text-sm transition-colors">
                     {sendingRequest ? "Sending..." : "Send request"}
                   </button>
                 </>
@@ -189,81 +158,60 @@ export default function MyPeoplePage() {
         </div>
 
         {loading && (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#C08A3C] border-t-transparent rounded-full animate-spin" />
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
         {!loading && people.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-12 h-12 text-[#E5D9CC] mx-auto mb-4" />
-            <p className="font-semibold text-[#1A1410] mb-2">No one here yet</p>
-            <p className="text-[#7A6A5E] text-sm">Search for family and friends by username above to get started.</p>
+          <div className="text-center py-12 bg-white rounded-xl shadow-card border border-[#E4E6EB]">
+            <Users className="w-12 h-12 text-[#E4E6EB] mx-auto mb-3" />
+            <p className="font-semibold text-[#1C1E21] mb-1">No one here yet</p>
+            <p className="text-[#65676B] text-sm">Search for family and friends above to get started.</p>
           </div>
         )}
 
         {!loading && people.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {people.map(person => (
-              <div key={person.id} className="bg-white rounded-2xl shadow-card p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                    {person.avatar ? (
-                      <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white" style={{ background: "linear-gradient(135deg, #6B2437, #8B3050)" }}>
-                        {person.name?.[0]?.toUpperCase() || "?"}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-[#1A1410]">{person.name}</p>
-                      {person.myLabel && (
-                        <span className="text-xs text-[#7A6A5E] font-medium">· {person.myLabel}</span>
+          <div className="bg-white rounded-xl shadow-card border border-[#E4E6EB] overflow-hidden">
+            <div className="divide-y divide-[#E4E6EB]">
+              {people.map(person => (
+                <div key={person.id} className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      {person.avatar ? <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white bg-amber-400">{person.name?.[0]?.toUpperCase() || "?"}</div>
                       )}
                     </div>
-                    <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayUrgency(person.daysUntilBirthday)}`}>
-                      <Cake className="w-3.5 h-3.5 flex-shrink-0" />
-                      {birthdayText(person.daysUntilBirthday)}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-semibold text-[#1C1E21]">{person.name}</p>
+                        {person.myLabel && <span className="text-xs text-[#65676B]">· {person.myLabel}</span>}
+                      </div>
+                      <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayColor(person.daysUntilBirthday)}`}>
+                        <Cake className="w-3.5 h-3.5 flex-shrink-0" />
+                        {birthdayText(person.daysUntilBirthday)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a href={`/for/${person.username}`} className="flex-1 py-2 bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold rounded-lg text-xs text-center transition-colors">
+                      Find them a gift →
+                    </a>
+                    {confirmRemove === person.username ? (
+                      <>
+                        <button onClick={() => removeConnection(person.username)} disabled={removing === person.username}
+                          className="px-3 py-2 bg-red-500 text-white font-semibold rounded-lg text-xs">
+                          {removing === person.username ? "..." : "Remove"}
+                        </button>
+                        <button onClick={() => setConfirmRemove(null)} className="px-3 py-2 bg-[#E4E6EB] text-[#1C1E21] font-semibold rounded-lg text-xs">Cancel</button>
+                      </>
+                    ) : (
+                      <button onClick={() => setConfirmRemove(person.username)} className="px-3 py-2 bg-[#E4E6EB] hover:bg-[#D8DADF] text-[#65676B] font-semibold rounded-lg text-xs transition-colors">Remove</button>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex gap-2 mt-3">
-                  <a
-                    href={`/for/${person.username}`}
-                    className="flex-1 py-2 bg-[#C08A3C] hover:bg-[#A87A32] text-white font-semibold rounded-xl text-xs text-center transition-colors"
-                  >
-                    Find them a gift →
-                  </a>
-                  {confirmRemove === person.username ? (
-                    <>
-                      <button
-                        onClick={() => removeConnection(person.username)}
-                        disabled={removing === person.username}
-                        className="px-3 py-2 bg-[#922B21] text-white font-semibold rounded-xl text-xs transition-colors"
-                      >
-                        {removing === person.username ? "..." : "Remove"}
-                      </button>
-                      <button
-                        onClick={() => setConfirmRemove(null)}
-                        className="px-3 py-2 border border-[#E5D9CC] text-[#7A6A5E] font-semibold rounded-xl text-xs hover:bg-[#EFE6DA] transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmRemove(person.username)}
-                      className="px-3 py-2 border border-[#E5D9CC] text-[#7A6A5E] hover:text-[#922B21] hover:border-red-200 font-semibold rounded-xl text-xs transition-colors"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
