@@ -685,8 +685,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
       {/* Fixed bottom CTA */}
       {showFixedCTA && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-sm border-t border-[#E8E8E0] px-4"
-          style={{ paddingBottom: "env(safe-area-inset-bottom, 12px)", paddingTop: "12px" }}>
+        <div className="fixed left-0 right-0 z-10 bg-white/90 backdrop-blur-sm border-t border-[#E8E8E0] px-4"
+          style={{ bottom: user ? "56px" : "0px", paddingBottom: user ? "12px" : "env(safe-area-inset-bottom, 12px)", paddingTop: "12px" }}>
           <div className="max-w-xl mx-auto">
             <button onClick={() => setShowFinder(true)}
               className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-base transition-colors flex items-center justify-center gap-2">
