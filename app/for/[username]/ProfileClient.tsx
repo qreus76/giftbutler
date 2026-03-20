@@ -320,7 +320,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* Nav */}
       <nav className="border-b border-stone-100 bg-white">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href={user ? "/my-people" : "/"} className="text-base font-bold text-stone-900">GiftButler</Link>
+          <Link href={user ? (myUsername ? `/for/${myUsername}` : "/dashboard") : "/"} className="text-base font-bold text-stone-900">GiftButler</Link>
           {isLoaded && (isOwner || user ? (
             <div className="flex items-center gap-2">
               <Link href="/my-people" title="My People" aria-label="My People" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
@@ -329,7 +329,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <Link href="/dashboard" title="Dashboard" aria-label="Dashboard" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors">
                 <LayoutDashboard className="w-5 h-5" />
               </Link>
-              <Link href={myUsername ? `/for/${myUsername}` : "/dashboard"} title="My profile" aria-label="My profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
+              <Link href="/profile/edit" title="Edit profile" aria-label="Edit profile" className={`w-8 h-8 rounded-full overflow-hidden ring-2 transition-all flex-shrink-0 ${isOwner ? "ring-amber-400" : "ring-transparent hover:ring-amber-400"}`}>
                 {user?.imageUrl ? (
                   <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -392,7 +392,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
             {isOwner && (
               <Link
-                href="/dashboard/edit"
+                href="/profile/edit"
                 className="px-5 py-2 border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-800 font-semibold rounded-xl text-sm transition-colors inline-flex items-center gap-2"
               >
                 <Pencil className="w-4 h-4" />

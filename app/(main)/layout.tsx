@@ -26,7 +26,7 @@ function SharedNav() {
   return (
     <nav className="border-b border-stone-100 bg-white sticky top-0 z-10">
       <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/my-people" className="text-base font-bold text-stone-900">GiftButler</Link>
+        <Link href={username ? `/for/${username}` : "/dashboard"} className="text-base font-bold text-stone-900">GiftButler</Link>
         {isLoaded && user && (
           <div className="flex items-center gap-2">
             <Link
@@ -51,9 +51,9 @@ function SharedNav() {
               <LayoutDashboard className="w-5 h-5" />
             </Link>
             <Link
-              href={username ? `/for/${username}` : "/dashboard"}
-              title="My profile"
-              aria-label="My profile"
+              href="/profile/edit"
+              title="Edit profile"
+              aria-label="Edit profile"
               className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-amber-400 transition-all flex-shrink-0"
             >
               {user?.imageUrl ? (
