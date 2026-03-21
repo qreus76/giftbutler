@@ -25,12 +25,7 @@ export default async function Home() {
   const isSignedIn = !!userId;
   const profileCount = await getProfileCount();
 
-  let profileUsername: string | null = null;
-  if (userId) {
-    const { data } = await supabaseAdmin.from("profiles").select("username").eq("id", userId).single();
-    profileUsername = data?.username || null;
-  }
-  const returnUrl = profileUsername ? `/for/${profileUsername}` : "/home";
+  const returnUrl = "/home";
 
   return (
     <main className="min-h-screen bg-white">
@@ -59,7 +54,7 @@ export default async function Home() {
           <div className="flex flex-col gap-2.5">
             {isSignedIn ? (
               <Link href={returnUrl} className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-center text-base transition-colors">
-                View my profile →
+                Open GiftButler →
               </Link>
             ) : (
               <>
@@ -98,7 +93,7 @@ export default async function Home() {
             <div className="flex flex-col gap-3">
               {isSignedIn ? (
                 <Link href={returnUrl} className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-center text-sm transition-colors">
-                  View my profile →
+                  Open GiftButler →
                 </Link>
               ) : (
                 <>
