@@ -84,6 +84,8 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [shareCopied, setShareCopied] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showAllRecs, setShowAllRecs] = useState(false);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  const [msgVisible, setMsgVisible] = useState(true);
   const [notifyPromptTitle, setNotifyPromptTitle] = useState<string | null>(null);
   const [notifySent, setNotifySent] = useState<Set<string>>(new Set());
   const [myUsername, setMyUsername] = useState("");
@@ -138,6 +140,25 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       window.scrollTo(0, scrollY);
     };
   }, [addingOccasion]);
+
+  const LOADING_MESSAGES = [
+    `Reading ${displayName}'s hints...`,
+    "Understanding their personality...",
+    "Thinking through what they'd love...",
+    "Crossing off the generic stuff...",
+    "Matching gifts to their interests...",
+    "Curating something special...",
+    "Putting it all together...",
+  ];
+
+  useEffect(() => {
+    if (!generating) { setLoadingMsgIdx(0); setMsgVisible(true); return; }
+    const interval = setInterval(() => {
+      setMsgVisible(false);
+      setTimeout(() => { setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length); setMsgVisible(true); }, 300);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [generating]);
 
   async function addOccasion() {
     if (!newOccasionName.trim()) return;
@@ -595,8 +616,42 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         )}
 
-        {/* Gift Finder */}
-        {showFinder && recommendations.length === 0 && (
+        {/* Gift Finder — loading state */}
+        {showFinder && recommendations.length === 0 && generating && (
+          <div className="bg-white rounded-2xl shadow-card p-8 text-center overflow-hidden">
+            {/* Pulsating glow rings */}
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full bg-[#ECC8AE] animate-ping opacity-20" />
+              <div className="absolute inset-2 rounded-full bg-[#ECC8AE] animate-ping opacity-30" style={{ animationDelay: "0.4s", animationDuration: "1.2s" }} />
+              <div className="relative w-24 h-24 rounded-full bg-[#ECC8AE] flex items-center justify-center">
+                <Sparkles className="w-10 h-10 text-[#5C3118]" />
+              </div>
+            </div>
+
+            {/* Cycling message */}
+            <p
+              className="text-base font-bold text-[#111111] mb-1 transition-opacity duration-300"
+              style={{ opacity: msgVisible ? 1 : 0 }}
+            >
+              {LOADING_MESSAGES[loadingMsgIdx]}
+            </p>
+            <p className="text-xs text-[#888888] mb-6">GiftButler AI is reading all their hints at once</p>
+
+            {/* Bouncing dots */}
+            <div className="flex justify-center gap-2">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="w-2.5 h-2.5 rounded-full bg-[#ECC8AE] animate-bounce"
+                  style={{ animationDelay: `${i * 160}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Gift Finder — form */}
+        {showFinder && recommendations.length === 0 && !generating && (
           <div ref={finderRef} className="bg-white rounded-2xl shadow-card p-5">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
@@ -658,14 +713,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </div>
             </div>
             {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
-            <button onClick={generateGifts} disabled={!relationship || !budget || generating}
+            <button onClick={generateGifts} disabled={!relationship || !budget}
               className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2">
-              {generating ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
-                  Finding the perfect gift...
-                </>
-              ) : generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
+              {generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
             </button>
           </div>
         )}
