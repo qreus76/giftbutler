@@ -134,16 +134,18 @@ export default function MyPeoplePage() {
   async function sendFollowRequest(username: string) {
     if (!selectedLabel) return;
     setSendingRequest(true);
-    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
-    setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
+    const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
+    if (res.ok) setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
     setSendingRequest(false);
   }
 
   async function removeConnection(username: string) {
+    const prev = people;
     setRemoving(username);
     setConfirmRemove(null);
-    await fetch("/api/follows", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username }) });
-    setPeople(prev => prev.filter(p => p.username !== username));
+    setPeople(p => p.filter(p => p.username !== username));
+    const res = await fetch("/api/follows", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username }) });
+    if (!res.ok) setPeople(prev);
     setRemoving(null);
   }
 

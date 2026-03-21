@@ -3,6 +3,19 @@ import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const MAX_HINT_LENGTH = 280;
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || "giftbutler09-20";
+
+function injectAffiliateTag(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "");
+    if (host === "amazon.com" || host.endsWith(".amazon.com") || host === "amzn.to" || host === "amzn.com") {
+      parsed.searchParams.set("tag", AFFILIATE_TAG);
+      return parsed.toString();
+    }
+  } catch {}
+  return url;
+}
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -26,7 +39,7 @@ export async function POST(req: NextRequest) {
       user_id: userId,
       content: content.trim(),
       category: safeCategory,
-      url: url || null,
+      url: url ? injectAffiliateTag(url) : null,
       product_title: product_title || null,
       product_image: product_image || null,
       product_price: product_price || null,
