@@ -1,16 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { LayoutDashboard, BarChart2, Users, Activity, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import AdminNav from "./components/AdminNav";
 
 const ADMIN_IDS = (process.env.ADMIN_USER_IDS || "").split(",").map(id => id.trim()).filter(Boolean);
-
-const NAV = [
-  { href: "/admin",            label: "Overview",  icon: LayoutDashboard },
-  { href: "/admin/analytics",  label: "Analytics", icon: BarChart2 },
-  { href: "/admin/users",      label: "Users",     icon: Users },
-  { href: "/admin/health",     label: "Health",    icon: Activity },
-];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -32,19 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Back to app
             </Link>
           </div>
-          {/* Nav tabs — horizontally scrollable on mobile */}
-          <nav className="flex gap-1 overflow-x-auto pb-px -mb-px scrollbar-none">
-            {NAV.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-1.5 px-3 py-3 text-sm font-semibold text-[#888888] hover:text-[#111111] border-b-2 border-transparent hover:border-[#111111] transition-colors whitespace-nowrap"
-              >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                {label}
-              </Link>
-            ))}
-          </nav>
+          <AdminNav />
         </div>
       </header>
 
