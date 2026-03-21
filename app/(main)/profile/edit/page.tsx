@@ -181,7 +181,7 @@ export default function EditProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors text-base"
+            className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors text-base mt-4"
           >
             {saved ? <span className="flex items-center justify-center gap-1.5"><Check className="w-4 h-4" /> Saved!</span> : saving ? "Saving..." : "Save changes"}
           </button>
