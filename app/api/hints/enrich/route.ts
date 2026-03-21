@@ -35,9 +35,6 @@ function extractAsin(url: string): string | null {
   return null;
 }
 
-function amazonImageUrl(asin: string): string {
-  return `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SL500_.jpg`;
-}
 
 function extractTitle(html: string): string | null {
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -94,15 +91,16 @@ export async function POST(req: NextRequest) {
 
     const ogTitle = extractMeta(html, "og:title");
 
-    // For Amazon URLs, extract ASIN and resolve to a direct CDN image URL
-    let ogImage = extractMeta(html, "og:image");
+    // Amazon blocks server-side image fetching — skip image for Amazon URLs
+    let ogImage: string | null = null;
     try {
       const finalHostname = new URL(finalUrl).hostname;
-      if (isAmazonHost(finalHostname)) {
-        const asin = extractAsin(finalUrl);
-        if (asin) ogImage = amazonImageUrl(asin);
+      if (!isAmazonHost(finalHostname)) {
+        ogImage = extractMeta(html, "og:image");
       }
-    } catch { /* keep ogImage as-is */ }
+    } catch {
+      ogImage = extractMeta(html, "og:image");
+    }
     const ogPrice =
       extractMeta(html, "og:price:amount") ||
       extractMeta(html, "product:price:amount") ||
