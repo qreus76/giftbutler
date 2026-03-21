@@ -388,7 +388,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
       {editing && (
         <>
           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setEditing(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[85svh] overflow-y-auto md:max-w-lg md:mx-auto md:left-1/2 md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:rounded-3xl">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[85svh] overflow-y-auto md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg md:rounded-3xl md:max-h-[90vh]">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-[#111111]">Edit circle</h2>
               <button onClick={() => setEditing(false)} className="p-1.5 text-[#888888] hover:text-[#111111]">
