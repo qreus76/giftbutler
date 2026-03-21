@@ -961,14 +961,22 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                     <p className="text-sm font-semibold text-[#111111] line-clamp-1">{hint.product_title || hint.content}</p>
                     {hint.product_price && <p className="text-xs font-bold text-[#888888]">{hint.product_price}</p>}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {confirmDeleteId === hint.id ? (
                       <>
                         <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
                         <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
                       </>
                     ) : (
-                      <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                      <>
+                        {hint.url && (
+                          <a href={hint.url} target="_blank" rel="noopener noreferrer"
+                            className="px-2.5 py-1 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] text-xs font-semibold rounded-full transition-colors flex items-center gap-1">
+                            View <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                      </>
                     )}
                   </div>
                 </div>
