@@ -183,6 +183,7 @@ export default function ProfileClient({
   const [discoveryGenerating, setDiscoveryGenerating] = useState(false);
   const [discoveryError, setDiscoveryError] = useState("");
   const [savedDiscoveryRecs, setSavedDiscoveryRecs] = useState<Set<number>>(new Set());
+  const [discoveryRecTargetList, setDiscoveryRecTargetList] = useState<Record<number, string>>({});
 
   // Edit hints
   const [editingHintId, setEditingHintId] = useState<string | null>(null);
@@ -190,6 +191,7 @@ export default function ProfileClient({
   const [editCategory, setEditCategory] = useState("general");
   const [hintSaving, setHintSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editHintOccasionId, setEditHintOccasionId] = useState<string>("hints");
 
   // Occasions
   const [addingOccasion, setAddingOccasion] = useState(false);
@@ -286,6 +288,22 @@ export default function ProfileClient({
       window.scrollTo(0, scrollY);
     };
   }, [addingOccasion]);
+
+  useEffect(() => {
+    if (!editingOccasionId) return;
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [editingOccasionId]);
 
   useEffect(() => {
     if (!generating) { setLoadingMsgIdx(0); setMsgVisible(true); return; }
@@ -393,7 +411,7 @@ export default function ProfileClient({
 
   async function generateSelfDiscovery() {
     if (!discoveryBudget) return;
-    setDiscoveryGenerating(true); setDiscoveryError(""); setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set());
+    setDiscoveryGenerating(true); setDiscoveryError(""); setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); setDiscoveryRecTargetList({});
     try {
       const res = await fetch("/api/recommend", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -408,7 +426,8 @@ export default function ProfileClient({
   }
 
   async function saveDiscoveryRec(rec: GiftRecommendation, idx: number) {
-    const occId = selectedAddList !== "hints" ? selectedAddList : null;
+    const targetList = discoveryRecTargetList[idx] ?? selectedAddList;
+    const occId = targetList !== "hints" ? targetList : null;
     const res = await fetch("/api/hints", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: rec.title, category: "want", url: rec.searchUrl, product_title: rec.title, product_price: rec.priceRange, occasion_id: occId }),
@@ -466,7 +485,7 @@ export default function ProfileClient({
     if (!newHint.trim()) return;
     setAdding(true); setAddError("");
     try {
-      const occId = selectedAddList !== "hints" ? selectedAddList : null;
+      const occId = hintCategory === "avoid" ? null : (selectedAddList !== "hints" ? selectedAddList : null);
       const res = await fetch("/api/hints", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newHint.trim(), category: hintCategory, occasion_id: occId }),
@@ -479,17 +498,23 @@ export default function ProfileClient({
     } finally { setAdding(false); }
   }
 
-  function startEditHint(hint: Hint) { setEditingHintId(hint.id); setEditContent(hint.content); setEditCategory(hint.category); }
-  function cancelEditHint() { setEditingHintId(null); setEditContent(""); setEditCategory("general"); }
+  function startEditHint(hint: Hint) {
+    setEditingHintId(hint.id);
+    setEditContent(hint.content);
+    setEditCategory(hint.category);
+    setEditHintOccasionId(hint.occasion_id ?? "hints");
+  }
+  function cancelEditHint() { setEditingHintId(null); setEditContent(""); setEditCategory("general"); setEditHintOccasionId("hints"); }
 
   async function saveHint(id: string) {
     if (!editContent.trim()) return;
     setHintSaving(true);
     const prev = hints;
-    setHints(hints.map(h => h.id === id ? { ...h, content: editContent.trim(), category: editCategory } : h));
+    const newOccId = editHintOccasionId === "hints" ? null : editHintOccasionId;
+    setHints(hints.map(h => h.id === id ? { ...h, content: editContent.trim(), category: editCategory, occasion_id: newOccId } : h));
     setEditingHintId(null);
     try {
-      const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editContent.trim(), category: editCategory }) });
+      const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editContent.trim(), category: editCategory, occasion_id: newOccId }) });
       if (!res.ok) setHints(prev);
     } catch { setHints(prev); } finally { setHintSaving(false); }
   }
@@ -742,6 +767,21 @@ export default function ProfileClient({
             </div>
             <textarea value={editContent} onChange={e => setEditContent(e.target.value)} maxLength={280} autoFocus rows={2}
               className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] focus:outline-none resize-none mb-2" />
+            {editCategory !== "avoid" && occasions.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap mb-2">
+                <span className="text-xs text-[#888888] self-center flex-shrink-0">List:</span>
+                <button onClick={() => setEditHintOccasionId("hints")}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editHintOccasionId === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                  Hints
+                </button>
+                {occasions.map(o => (
+                  <button key={o.id} onClick={() => setEditHintOccasionId(o.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editHintOccasionId === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                    {o.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 <button onClick={() => saveHint(hint.id)} disabled={!editContent.trim() || hintSaving}
@@ -832,7 +872,7 @@ export default function ProfileClient({
               </div>
             ) : (
               <button
-                onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                onClick={() => { setOccasion("Birthday"); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
                 <Cake className="w-3.5 h-3.5" />
                 {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
@@ -849,7 +889,7 @@ export default function ProfileClient({
               const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
               return (
                 <button key={occ.id}
-                  onClick={() => { setOccasion(occ.name); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                  onClick={() => { setOccasion(occ.name); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
                   <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{occ.name}</span>
@@ -935,8 +975,13 @@ export default function ProfileClient({
             <div className="bg-white rounded-2xl shadow-card p-5">
               <p className="text-base font-bold text-[#111111] mb-3">Add to your wishlist</p>
 
-              {/* List picker */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-none">
+              {/* List picker — hidden for avoid category */}
+              {hintCategory === "avoid" && (
+                <p className="text-xs text-[#888888] mb-3 flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> &quot;Please no&quot; hints always go to your general Hints list
+                </p>
+              )}
+              <div className={`flex gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-none ${hintCategory === "avoid" ? "opacity-40 pointer-events-none" : ""}`}>
                 <button
                   onClick={() => setSelectedAddList("hints")}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${selectedAddList === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
@@ -1066,6 +1111,16 @@ export default function ProfileClient({
                     <input value={discoveryOccasion} onChange={e => setDiscoveryOccasion(e.target.value)}
                       placeholder="For any occasion, or specify one..."
                       className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
+                    {!discoveryOccasion && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {["Birthday", "Christmas", "Mother's Day", "Father's Day", "Anniversary", "Just Because", ...occasions.map(o => o.name)].map(s => (
+                          <button key={s} type="button" onClick={() => setDiscoveryOccasion(s)}
+                            className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {discoveryError && <p className="text-red-600 text-xs">{discoveryError}</p>}
                   {discoveryGenerating && (
@@ -1096,18 +1151,27 @@ export default function ProfileClient({
                           <p className="font-semibold text-[#111111] text-sm leading-snug">{rec.title}</p>
                           <p className="text-xs text-[#888888] mt-0.5">{rec.priceRange} · {rec.category}</p>
                           <p className="text-xs text-[#888888] mt-1 leading-relaxed">{rec.why}</p>
-                          <div className="flex gap-2 mt-2.5">
+                          <div className="flex gap-2 mt-2.5 flex-wrap">
                             <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E0E0D8] hover:border-[#111111] text-[#111111] text-xs font-semibold rounded-full transition-colors">
                               Shop <ExternalLink className="w-3 h-3" />
                             </a>
                             {savedDiscoveryRecs.has(i) ? (
-                              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Saved to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}</p>
+                              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 self-center"><Check className="w-3 h-3" /> Saved</p>
                             ) : (
-                              <button onClick={() => saveDiscoveryRec(rec, i)}
-                                className="px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-full transition-colors">
-                                Save to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}
-                              </button>
+                              <div className="flex gap-1.5 items-center">
+                                <select
+                                  value={discoveryRecTargetList[i] ?? selectedAddList}
+                                  onChange={e => setDiscoveryRecTargetList(prev => ({ ...prev, [i]: e.target.value }))}
+                                  className="px-2.5 py-1.5 rounded-full text-xs font-semibold bg-[#F0F0E8] text-[#111111] border-0 focus:outline-none focus:ring-2 focus:ring-[#111111]">
+                                  <option value="hints">Hints</option>
+                                  {occasions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                                </select>
+                                <button onClick={() => saveDiscoveryRec(rec, i)}
+                                  className="px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-full transition-colors">
+                                  Save
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1290,11 +1354,16 @@ export default function ProfileClient({
                       </div>
                     )}
                   </div>
+                  <button
+                    onClick={() => { setOccasion(occ.name); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                    className="mt-3 w-full py-2.5 bg-[#ECC8AE] hover:bg-[#E4B89C] text-[#5C3118] font-bold rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" /> Find a {occ.name} gift with AI
+                  </button>
                 </div>
               );
             })}
 
-            {/* Product hints in general list (visible to non-connected visitors if hints are public) */}
+            {/* Product hints in general list */}
             {generalProductHints.length > 0 && (
               <div>
                 <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> What {displayName} wants</p>
@@ -1304,8 +1373,8 @@ export default function ProfileClient({
               </div>
             )}
 
-            {/* Hints section for visitors */}
-            {generalTextHints.length > 0 && (
+            {/* Hints section for visitors — teaser shown when there are any visible hints */}
+            {(generalTextHints.length > 0 || (generalProductHints.length > 0 && generalTextHints.length === 0)) && (
               <div>
                 {recommendations.length === 0 && !showFinder && (() => {
                   try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
@@ -1313,23 +1382,31 @@ export default function ProfileClient({
                   <div className="bg-[#B8CED0] rounded-2xl p-4 mb-3">
                     <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
                     <p className="text-[#1A3D42] text-sm leading-relaxed">
-                      {displayName} dropped {generalTextHints.length} gift hint{generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
+                      {generalTextHints.length > 0
+                        ? `${displayName} dropped ${generalTextHints.length} gift hint${generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they'd genuinely love.`
+                        : `${displayName} saved specific items they want. Use our AI to find more ideas based on their taste.`}
                     </p>
                   </div>
                 )}
-                <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-                  <div className="px-4 py-3.5 border-b border-[#F0F0E8]">
-                    <p className="text-sm font-bold text-[#111111]">{displayName}&apos;s hints</p>
+                {generalTextHints.length > 0 && (
+                  <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                    <div className="px-4 py-3.5 border-b border-[#F0F0E8]">
+                      <p className="text-sm font-bold text-[#111111]">{displayName}&apos;s hints</p>
+                    </div>
+                    {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
                   </div>
-                  {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
-                </div>
+                )}
               </div>
             )}
 
             {/* Empty state — nothing visible */}
             {isLoaded && hintsToShow.length === 0 && occasions.length === 0 && (
               <div className="bg-white rounded-2xl shadow-card p-6 text-center">
-                <p className="font-semibold text-[#111111] mb-1">{displayName} hasn&apos;t added any hints yet</p>
+                <p className="font-semibold text-[#111111] mb-1">
+                  {!isConnected && initialProfile.hints_visibility !== "public"
+                    ? `${displayName}'s hints are private`
+                    : `${displayName} hasn't added any hints yet`}
+                </p>
                 {!isConnected && initialProfile.hints_visibility !== "public" ? (
                   <>
                     <p className="text-[#888888] text-sm mb-4">Connect with {displayName} to unlock their personal hints and get more personalized gift ideas.</p>
@@ -1348,7 +1425,7 @@ export default function ProfileClient({
                       </Link>
                     )}
                     <p className="text-[#AAAAAA] text-xs mt-4">You can still find a gift — just without the personal touch.</p>
-                    <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                    <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors mt-2">
                       Find a gift anyway <ArrowRight className="w-4 h-4" />
                     </button>
@@ -1356,7 +1433,7 @@ export default function ProfileClient({
                 ) : (
                   <>
                     <p className="text-[#888888] text-sm mb-4">You can still find gift ideas — just without the personal touch.</p>
-                    <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                    <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                       Find a gift anyway <ArrowRight className="w-4 h-4" />
                     </button>
@@ -1558,7 +1635,7 @@ export default function ProfileClient({
         <div className="fixed left-0 right-0 z-10 bg-white/90 backdrop-blur-sm border-t border-[#E8E8E0] px-4"
           style={{ bottom: user ? "56px" : "0px", paddingBottom: user ? "12px" : "env(safe-area-inset-bottom, 12px)", paddingTop: "12px" }}>
           <div className="max-w-xl mx-auto">
-            <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+            <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
               className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-base transition-colors flex items-center justify-center gap-2">
               {hintsToShow.length > 0 ? `Find ${displayName} a gift` : `Find a gift for ${displayName}`}
               <ArrowRight className="w-4 h-4" />
