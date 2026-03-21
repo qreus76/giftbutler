@@ -48,12 +48,13 @@ export async function GET(req: NextRequest) {
   let sent = 0;
 
   for (const birthdayPerson of birthdayProfiles) {
-    // Find all accepted followers of this person
+    // Find everyone who has this person in their list:
+    // - accepted connections (both directions)
+    // - pending where birthday person is the receiver (requester added them, should still get reminded)
     const { data: followers } = await supabaseAdmin
       .from("follows")
-      .select("requester_id, requester_label, receiver_id, receiver_label")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${birthdayPerson.id},receiver_id.eq.${birthdayPerson.id}`);
+      .select("requester_id, requester_label, receiver_id, receiver_label, status")
+      .or(`and(status.eq.accepted,or(requester_id.eq.${birthdayPerson.id},receiver_id.eq.${birthdayPerson.id})),and(status.eq.pending,receiver_id.eq.${birthdayPerson.id})`);
 
     if (!followers || followers.length === 0) continue;
 
@@ -61,8 +62,10 @@ export async function GET(req: NextRequest) {
     const profileUrl = `${baseUrl}/for/${birthdayPerson.username}`;
 
     for (const follow of followers) {
-      // The follower is the OTHER person (not the birthday person)
-      const followerId = follow.requester_id === birthdayPerson.id ? follow.receiver_id : follow.requester_id;
+      // For accepted: notify the other person. For pending: notify the requester.
+      const followerId = follow.status === "pending"
+        ? follow.requester_id
+        : (follow.requester_id === birthdayPerson.id ? follow.receiver_id : follow.requester_id);
       const myLabel = follow.requester_id === followerId ? follow.requester_label : follow.receiver_label;
 
       // Don't remind the birthday person about their own birthday

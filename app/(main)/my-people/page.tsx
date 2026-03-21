@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays, Shuffle, AtSign, Check } from "lucide-react";
+import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays, Shuffle, AtSign, Check, Clock } from "lucide-react";
 
 interface Person {
   id: string;
@@ -13,6 +13,7 @@ interface Person {
   birthday: string | null;
   daysUntilBirthday: number | null;
   myLabel: string | null;
+  status: "accepted" | "pending";
 }
 
 interface UpcomingOccasion {
@@ -134,7 +135,23 @@ export default function MyPeoplePage() {
     if (!selectedLabel) return;
     setSendingRequest(true);
     const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
-    if (res.ok) setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
+    if (res.ok) {
+      setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
+      // Optimistically add to people list as pending
+      if (searchResult) {
+        const newPerson: Person = {
+          id: searchResult.id,
+          username: searchResult.username,
+          name: searchResult.name,
+          avatar: searchResult.avatar,
+          birthday: null,
+          daysUntilBirthday: null,
+          myLabel: selectedLabel,
+          status: "pending",
+        };
+        setPeople(prev => [...prev, newPerson]);
+      }
+    }
     setSendingRequest(false);
   }
 
@@ -270,9 +287,14 @@ export default function MyPeoplePage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-semibold text-[#111111]">{person.name}</p>
                           {person.myLabel && <span className="text-xs text-[#888888]">· {person.myLabel}</span>}
+                          {person.status === "pending" && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#888888] bg-[#F0F0E8] px-2 py-0.5 rounded-full">
+                              <Clock className="w-3 h-3" /> Pending
+                            </span>
+                          )}
                         </div>
                         <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayColor(person.daysUntilBirthday)}`}>
                           <Cake className="w-3.5 h-3.5 flex-shrink-0" />
@@ -287,8 +309,8 @@ export default function MyPeoplePage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <a href={`/for/${person.username}`} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-sm transition-colors">
-                        Find a gift <ArrowRight className="w-3.5 h-3.5" />
+                      <a href={`/for/${person.username}`} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 font-semibold rounded-full text-sm transition-colors ${person.status === "pending" ? "bg-[#F0F0E8] text-[#AAAAAA] pointer-events-none" : "bg-[#111111] hover:bg-[#333333] text-white"}`}>
+                        {person.status === "pending" ? "Awaiting confirmation" : <>{`Find a gift`} <ArrowRight className="w-3.5 h-3.5" /></>}
                       </a>
                       {confirmRemove === person.username ? (
                         <>

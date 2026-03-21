@@ -3,27 +3,27 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
 
-// GET /api/follows/network — get all accepted connections with profile + birthday info
+// GET /api/follows/network — get all accepted connections + pending outgoing follows
 export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Get all accepted follows in either direction
+  // Accepted: both directions. Pending: only where I'm the requester (I added them).
   const { data: follows, error } = await supabaseAdmin
     .from("follows")
     .select("requester_id, receiver_id, requester_label, receiver_label, status")
-    .eq("status", "accepted")
-    .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`);
+    .or(`and(status.eq.accepted,or(requester_id.eq.${userId},receiver_id.eq.${userId})),and(status.eq.pending,requester_id.eq.${userId})`);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!follows || follows.length === 0) return NextResponse.json({ people: [] });
 
-  // For each follow, get the other person's id and my label for them
+  // For each follow, get the other person's id, my label, and connection status
   const connections = follows.map(f => {
     const iRequested = f.requester_id === userId;
     return {
       otherId: iRequested ? f.receiver_id : f.requester_id,
       myLabel: iRequested ? f.requester_label : f.receiver_label,
+      status: f.status as "accepted" | "pending",
     };
   });
 
@@ -38,7 +38,7 @@ export async function GET() {
   // Get avatars from Clerk
   const clerk = await clerkClient();
   const people = await Promise.all(
-    connections.map(async ({ otherId, myLabel }) => {
+    connections.map(async ({ otherId, myLabel, status }) => {
       const profile = profiles?.find(p => p.id === otherId);
       let avatar: string | null = null;
       try {
@@ -56,6 +56,7 @@ export async function GET() {
         birthday: profile?.birthday || null,
         daysUntilBirthday,
         myLabel,
+        status,
       };
     })
   );
