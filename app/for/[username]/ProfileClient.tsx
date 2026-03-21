@@ -216,10 +216,23 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
         const { recommendations: recs, relationship: rel, budget: bud, occasion: occ } = JSON.parse(saved);
-        if (recs?.length) { setRecommendations(recs); setRelationship(rel || ""); setBudget(bud || ""); setOccasion(occ || ""); }
+        if (rel) setRelationship(rel);
+        if (bud) setBudget(bud);
+        if (occ) setOccasion(occ);
+        if (recs?.length) setRecommendations(recs);
       }
     } catch { /* unavailable */ }
   }, [STORAGE_KEY]);
+
+  // Persist form prefs so the finder is pre-filled on return visits
+  useEffect(() => {
+    if (!relationship && !budget) return;
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      const existing = saved ? JSON.parse(saved) : {};
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, relationship, budget }));
+    } catch { /* unavailable */ }
+  }, [relationship, budget, STORAGE_KEY]);
 
   // Load myClaims from API for persistence across sessions
   useEffect(() => {
