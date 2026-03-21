@@ -68,6 +68,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
   const STORAGE_KEY = `gb_recs_${username}`;
   const relationshipRef = useRef<HTMLSelectElement>(null);
+  const finderRef = useRef<HTMLDivElement>(null);
 
   const [showFinder, setShowFinder] = useState(false);
   const [relationship, setRelationship] = useState("");
@@ -596,7 +597,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
         {/* Gift Finder */}
         {showFinder && recommendations.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-card p-5">
+          <div ref={finderRef} className="bg-white rounded-2xl shadow-card p-5">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
               <button onClick={() => setShowFinder(false)} className="p-1.5 bg-[#F0F0E8] rounded-full text-[#888888] hover:text-[#111111]"><X className="w-4 h-4" /></button>
@@ -742,7 +743,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                     See all {filtered.length} results
                   </button>
                 )}
-                <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => relationshipRef.current?.focus(), 400); }}
+                <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => { finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); relationshipRef.current?.focus(); }, 100); }}
                   className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
                   Refine search
                 </button>
