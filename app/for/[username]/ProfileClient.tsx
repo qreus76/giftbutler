@@ -507,7 +507,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             })}
             {isOwner && (
               <button onClick={() => setAddingOccasion(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-dashed border-[#E0E0D8] hover:border-[#ECC8AE] rounded-full text-xs font-semibold text-[#888888] hover:text-[#5C3118] transition-colors">
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
                 <Plus className="w-3.5 h-3.5" />
                 Add occasion
               </button>
@@ -1073,6 +1073,15 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </div>
             )}
           </div>
+        )}
+
+        {/* Occasion nudge — shown to owners with 3+ hints but no occasions */}
+        {isOwner && occasions.length === 0 && textHints.length >= 3 && (
+          <button onClick={() => setAddingOccasion(true)}
+            className="w-full px-4 py-3.5 bg-[#ECC8AE] rounded-2xl text-left hover:bg-[#E4B89C] transition-colors">
+            <p className="text-sm font-semibold text-[#5C3118] flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> Add an occasion</p>
+            <p className="text-xs text-[#5C3118]/70 mt-0.5">Birthday? Christmas? Visitors can tap it to find the perfect gift for that moment.</p>
+          </button>
         )}
 
         {/* Avoid nudge */}
