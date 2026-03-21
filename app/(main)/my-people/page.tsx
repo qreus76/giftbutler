@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays } from "lucide-react";
+import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays, Shuffle, AtSign } from "lucide-react";
 
 interface Person {
   id: string;
@@ -80,9 +80,11 @@ export default function MyPeoplePage() {
   const [circles, setCircles] = useState<Circle[]>([]);
   const [circlesLoading, setCirclesLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [circleType, setCircleType] = useState<"exchange" | "occasion">("exchange");
   const [circleName, setCircleName] = useState("");
   const [circleBudget, setCircleBudget] = useState("");
   const [circleDate, setCircleDate] = useState("");
+  const [circleRecipientUsername, setCircleRecipientUsername] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
@@ -152,7 +154,7 @@ export default function MyPeoplePage() {
     const res = await fetch("/api/circles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: circleName, budget: circleBudget, eventDate: circleDate || null }),
+      body: JSON.stringify({ name: circleName, budget: circleBudget, eventDate: circleDate || null, circleType, recipientUsername: circleRecipientUsername || null }),
     });
     const data = await res.json();
     setCreating(false);
@@ -322,10 +324,26 @@ export default function MyPeoplePage() {
               <div className="bg-white rounded-2xl shadow-card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="font-bold text-[#111111]">New Gift Circle</p>
-                  <button onClick={() => { setShowCreateForm(false); setCreateError(""); }} className="p-1.5 text-[#888888] hover:text-[#111111]">
+                  <button onClick={() => { setShowCreateForm(false); setCreateError(""); setCircleType("exchange"); setCircleRecipientUsername(""); }} className="p-1.5 text-[#888888] hover:text-[#111111]">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+
+                {/* Type selection */}
+                <div className="grid grid-cols-2 gap-2.5 mb-5">
+                  {([
+                    { type: "exchange" as const, icon: <Shuffle className="w-5 h-5 mb-2" />, label: "Gift Exchange", sub: "Secret Santa — everyone draws a name" },
+                    { type: "occasion" as const, icon: <CalendarDays className="w-5 h-5 mb-2" />, label: "Group Occasion", sub: "Baby shower, wedding — everyone shops for one person" },
+                  ] as const).map(({ type, icon, label, sub }) => (
+                    <button key={type} onClick={() => setCircleType(type)}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all ${circleType === type ? "border-[#111111] bg-[#111111]" : "border-[#E0E0D8] bg-[#F5F5F0] hover:border-[#888888]"}`}>
+                      <div className={circleType === type ? "text-white" : "text-[#111111]"}>{icon}</div>
+                      <p className={`text-sm font-bold leading-snug ${circleType === type ? "text-white" : "text-[#111111]"}`}>{label}</p>
+                      <p className={`text-xs mt-1 leading-snug ${circleType === type ? "text-white/70" : "text-[#888888]"}`}>{sub}</p>
+                    </button>
+                  ))}
+                </div>
+
                 <form onSubmit={handleCreateCircle} className="space-y-3">
                   <div>
                     <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">Circle name</label>
@@ -333,11 +351,31 @@ export default function MyPeoplePage() {
                       type="text"
                       value={circleName}
                       onChange={e => setCircleName(e.target.value)}
-                      placeholder="e.g. Sarah's Baby Shower, Smith Family Christmas"
+                      placeholder={circleType === "occasion" ? "e.g. Sarah's Baby Shower, Jake's Graduation" : "e.g. Smith Family Christmas"}
                       maxLength={60}
                       className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                     />
                   </div>
+
+                  {circleType === "occasion" && (
+                    <div>
+                      <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">
+                        Their GiftButler username <span className="text-[#CCCCCC] normal-case font-normal">(optional)</span>
+                      </label>
+                      <div className="relative">
+                        <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
+                        <input
+                          type="text"
+                          value={circleRecipientUsername}
+                          onChange={e => setCircleRecipientUsername(e.target.value.replace(/^@/, "").toLowerCase())}
+                          placeholder="username"
+                          className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                        />
+                      </div>
+                      <p className="text-xs text-[#AAAAAA] mt-1">Links their wishlist so members can see what they want.</p>
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">Budget per person ($)</label>
                     <div className="relative">
@@ -363,7 +401,7 @@ export default function MyPeoplePage() {
                         type="date"
                         value={circleDate}
                         onChange={e => setCircleDate(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none"
                       />
                     </div>
                   </div>
@@ -373,7 +411,7 @@ export default function MyPeoplePage() {
                     disabled={creating || !circleName.trim() || !circleBudget}
                     className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors"
                   >
-                    {creating ? "Creating..." : "Create Gift Circle"}
+                    {creating ? "Creating..." : `Create ${circleType === "occasion" ? "Group Occasion" : "Gift Exchange"}`}
                   </button>
                 </form>
               </div>

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const { data: circle } = await supabaseAdmin
     .from("gift_circles")
-    .select("id, name, budget, event_date, status, organizer_id")
+    .select("id, name, budget, event_date, status, organizer_id, circle_type, recipient_username")
     .eq("invite_code", code)
     .single();
 

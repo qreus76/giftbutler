@@ -44,11 +44,12 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { name, budget, eventDate } = await req.json();
+  const { name, budget, eventDate, circleType, recipientUsername } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "Name is required" }, { status: 400 });
   if (!budget || Number(budget) < 1) return NextResponse.json({ error: "Budget is required" }, { status: 400 });
 
   const inviteCode = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+  const type = circleType === "occasion" ? "occasion" : "exchange";
 
   const { data: circle, error } = await supabaseAdmin
     .from("gift_circles")
@@ -59,6 +60,8 @@ export async function POST(req: NextRequest) {
       organizer_id: userId,
       status: "open",
       invite_code: inviteCode,
+      circle_type: type,
+      recipient_username: type === "occasion" ? (recipientUsername?.trim() || null) : null,
     })
     .select()
     .single();

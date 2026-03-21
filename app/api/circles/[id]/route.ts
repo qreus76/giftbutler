@@ -75,6 +75,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
 
+  // Fetch recipient profile for occasion circles
+  let recipient = null;
+  if (circle.circle_type === "occasion" && circle.recipient_username) {
+    const { data: rp } = await supabaseAdmin
+      .from("profiles").select("id, username, name, avatar_url")
+      .eq("username", circle.recipient_username).single();
+    if (rp) {
+      let recipientAvatar = rp.avatar_url || null;
+      try {
+        const cu = await clerk.users.getUser(rp.id);
+        if (cu.hasImage) recipientAvatar = cu.imageUrl;
+      } catch {}
+      recipient = { id: rp.id, username: rp.username, name: rp.name, avatar: recipientAvatar };
+    }
+  }
+
   return NextResponse.json({
     circle: {
       ...circle,
@@ -83,6 +99,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
     members: enrichedMembers,
     assignedTo,
+    recipient,
   });
 }
 

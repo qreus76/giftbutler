@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { ArrowLeft, Copy, Check, Gift, Shuffle, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, Check, Gift, Shuffle, Share2, CalendarDays } from "lucide-react";
 import { use } from "react";
 
 interface CircleDetail {
@@ -16,6 +16,8 @@ interface CircleDetail {
   invite_code: string;
   isOrganizer: boolean;
   memberCount: number;
+  circle_type: string;
+  recipient_username: string | null;
 }
 
 interface Member {
@@ -32,6 +34,13 @@ interface AssignedTo {
   avatar: string | null;
 }
 
+interface Recipient {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string | null;
+}
+
 export default function CirclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, isLoaded } = useUser();
@@ -39,6 +48,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   const [circle, setCircle] = useState<CircleDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [assignedTo, setAssignedTo] = useState<AssignedTo | null>(null);
+  const [recipient, setRecipient] = useState<Recipient | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [drawing, setDrawing] = useState(false);
@@ -60,6 +70,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
         setCircle(d.circle);
         setMembers(d.members);
         setAssignedTo(d.assignedTo);
+        setRecipient(d.recipient || null);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -113,8 +124,9 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
     </main>
   );
 
+  const isExchange = circle.circle_type !== "occasion";
   const isOpen = circle.status === "open";
-  const isDrawn = circle.status === "drawn";
+  const isDrawn = circle.status === "drawn" && isExchange;
   const eventDate = circle.event_date
     ? new Date(circle.event_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
@@ -134,9 +146,15 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-[#111111]">{circle.name}</h1>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${isOpen ? "bg-[#C4D4B4] text-[#2D4A1E]" : "bg-[#ECC8AE] text-[#5C3118]"}`}>
-                {isOpen ? "Open" : "Names drawn"}
-              </span>
+              {isExchange ? (
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${isOpen ? "bg-[#C4D4B4] text-[#2D4A1E]" : "bg-[#ECC8AE] text-[#5C3118]"}`}>
+                  {isOpen ? "Open" : "Names drawn"}
+                </span>
+              ) : (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#B8CED0] text-[#1A3D42]">
+                  Group Occasion
+                </span>
+              )}
             </div>
             <p className="text-[#888888] text-sm">
               ${circle.budget} budget · {circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}
@@ -185,6 +203,50 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
           </div>
         )}
 
+        {/* Occasion: Celebrating card */}
+        {!isExchange && recipient && (
+          <div className="bg-[#B8CED0] rounded-2xl p-5">
+            <p className="text-xs font-bold text-[#1A3D42] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <CalendarDays className="w-3.5 h-3.5" /> Celebrating
+            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
+                {recipient.avatar
+                  ? <img src={recipient.avatar} alt={recipient.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-xl font-bold text-[#1A3D42] bg-[#8FAFB3]">{recipient.name[0]?.toUpperCase()}</div>
+                }
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-[#111111]">{recipient.name}</p>
+                <p className="text-sm text-[#1A3D42]">@{recipient.username}</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Link
+                href={`/for/${recipient.username}`}
+                className="w-full py-3 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors"
+              >
+                View their wishlist →
+              </Link>
+              <Link
+                href={`/for/${recipient.username}?gift=true`}
+                className="w-full py-3 bg-white hover:bg-[#F5F5F0] text-[#111111] font-semibold rounded-full text-sm text-center transition-colors"
+              >
+                Get gift ideas with AI
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!isExchange && !recipient && (
+          <div className="bg-[#F5F5F0] rounded-2xl p-5">
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-1 flex items-center gap-1.5">
+              <CalendarDays className="w-3.5 h-3.5" /> Group Occasion
+            </p>
+            <p className="text-sm text-[#888888]">Everyone is contributing to a group gift. Coordinate with the organizer on what to get.</p>
+          </div>
+        )}
+
         {/* Organizer actions (open) */}
         {isOpen && circle.isOrganizer && (
           <div className="bg-white rounded-2xl shadow-card p-5 space-y-3">
@@ -198,18 +260,20 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
               </button>
             </div>
 
-            <div className="pt-1">
-              {drawError && <p className="text-red-500 text-xs mb-2">{drawError}</p>}
-              <button
-                onClick={handleDraw}
-                disabled={drawing || circle.memberCount < 2}
-                className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2"
-              >
-                <Shuffle className="w-4 h-4" />
-                {drawing ? "Drawing names..." : circle.memberCount < 2 ? "Need at least 2 members" : "Draw names"}
-              </button>
-              <p className="text-xs text-[#888888] text-center mt-2">Everyone will be emailed their assignment. This can&apos;t be undone.</p>
-            </div>
+            {isExchange && (
+              <div className="pt-1">
+                {drawError && <p className="text-red-500 text-xs mb-2">{drawError}</p>}
+                <button
+                  onClick={handleDraw}
+                  disabled={drawing || circle.memberCount < 2}
+                  className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <Shuffle className="w-4 h-4" />
+                  {drawing ? "Drawing names..." : circle.memberCount < 2 ? "Need at least 2 members" : "Draw names"}
+                </button>
+                <p className="text-xs text-[#888888] text-center mt-2">Everyone will be emailed their assignment. This can&apos;t be undone.</p>
+              </div>
+            )}
           </div>
         )}
 
