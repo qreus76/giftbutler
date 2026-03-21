@@ -108,6 +108,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [newOccasionDate, setNewOccasionDate] = useState("");
   const [savingOccasion, setSavingOccasion] = useState(false);
   const [occasionError, setOccasionError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
@@ -153,7 +154,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     const prev = occasions;
     setOccasions(occasions.filter(o => o.id !== id));
     const res = await fetch(`/api/occasions/${id}`, { method: "DELETE" });
-    if (!res.ok) setOccasions(prev);
+    if (!res.ok) { setOccasions(prev); setActionError("Couldn't remove occasion — try again"); setTimeout(() => setActionError(""), 3000); }
   }
 
   async function shareProfile() {
@@ -259,7 +260,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, gift_description: title }),
     });
-    if (!res.ok) { setMyClaims(prevMyClaims); setExistingClaims(prevExistingClaims); }
+    if (!res.ok) { setMyClaims(prevMyClaims); setExistingClaims(prevExistingClaims); setActionError("Couldn't release claim — try again"); setTimeout(() => setActionError(""), 3000); }
   }
 
   async function sendNotify() {
@@ -301,7 +302,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   async function deleteHint(id: string) {
     const prev = hints;
     setHints(hints.filter(h => h.id !== id)); setConfirmDeleteId(null);
-    try { const res = await fetch(`/api/hints/${id}`, { method: "DELETE" }); if (!res.ok) setHints(prev); } catch { setHints(prev); }
+    try {
+      const res = await fetch(`/api/hints/${id}`, { method: "DELETE" });
+      if (!res.ok) { setHints(prev); setActionError("Couldn't delete hint — try again"); setTimeout(() => setActionError(""), 3000); }
+    } catch { setHints(prev); setActionError("Couldn't delete hint — try again"); setTimeout(() => setActionError(""), 3000); }
   }
 
   async function enrichUrl() {
@@ -349,6 +353,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
   return (
     <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
+      {actionError && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">
+          {actionError}
+        </div>
+      )}
 
       {/* Minimal light header */}
       <header className="bg-[#EAEAE0] sticky top-0 z-10">
@@ -768,7 +777,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "text" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
                 Describe it
               </button>
-              <button onClick={() => { setHintMode("link"); setAddError(""); }}
+              <button onClick={() => { setHintMode("link"); setAddError(""); setNewHint(""); }}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "link" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
                 <Link2 className="w-3.5 h-3.5" /> Paste a link
               </button>

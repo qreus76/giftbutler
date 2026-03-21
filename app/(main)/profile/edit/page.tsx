@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { ArrowLeft, LogOut, Check } from "lucide-react";
+import { ArrowLeft, LogOut, Check, AlertTriangle } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -105,7 +105,7 @@ export default function EditProfilePage() {
                 />
               </div>
               {username !== currentUsername && (
-                <p className="text-xs text-[#C4824A] mt-1.5">⚠ Your old link will stop working after saving.</p>
+                <p className="text-xs text-[#C4824A] mt-1.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3 flex-shrink-0" /> Your old link will stop working after saving.</p>
               )}
             </div>
           </div>

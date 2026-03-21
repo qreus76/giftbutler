@@ -253,7 +253,7 @@ export default function MyPeoplePage() {
             {!loading && people.length === 0 && (
               <div className="text-center py-12 bg-white rounded-2xl shadow-card">
                 <Users className="w-12 h-12 text-[#CCCCCC] mx-auto mb-3" />
-                <p className="font-semibold text-[#111111] mb-1">No one here yet</p>
+                <p className="font-semibold text-[#111111] mb-1">No one in your network yet</p>
                 <p className="text-[#888888] text-sm">Search above to add family and friends.</p>
               </div>
             )}

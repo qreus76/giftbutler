@@ -103,7 +103,9 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
     if (navigator.share && window.innerWidth < 768) {
       try { await navigator.share({ title: `Join ${circle?.name}`, text: `Join our Gift Circle on GiftButler — $${circle?.budget} budget!`, url }); } catch { /* cancelled */ }
     } else {
-      navigator.clipboard.writeText(url).catch(() => {});
+      navigator.clipboard.writeText(url).catch(() => {
+        window.prompt("Copy this link:", url);
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
