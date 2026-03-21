@@ -13,17 +13,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
 
-  const { content, category } = body;
+  const { content, category, occasion_id } = body;
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
   if (content.trim().length > MAX_HINT_LENGTH) {
     return NextResponse.json({ error: `Hints must be ${MAX_HINT_LENGTH} characters or less` }, { status: 400 });
   }
 
   const safeCategory = VALID_CATEGORIES.includes(category) ? category : "general";
+  const updates: Record<string, string | null> = { content: content.trim(), category: safeCategory };
+  if (typeof occasion_id !== "undefined") updates.occasion_id = occasion_id || null;
 
   const { data, error } = await supabaseAdmin
     .from("hints")
-    .update({ content: content.trim(), category: safeCategory })
+    .update(updates)
     .eq("id", id)
     .eq("user_id", userId)
     .select()

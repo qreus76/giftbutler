@@ -21,6 +21,8 @@ export type Profile = {
   birthday: string | null;
   created_at: string;
   is_private: boolean;
+  username_changed_at: string | null;
+  hints_visibility: 'public' | 'connections' | 'private';
 };
 
 export type Occasion = {
@@ -29,6 +31,7 @@ export type Occasion = {
   name: string;
   date: string | null;
   created_at: string;
+  visibility: 'public' | 'connections' | 'private';
 };
 
 export type Hint = {
@@ -37,6 +40,7 @@ export type Hint = {
   content: string;
   category: string;
   created_at: string;
+  occasion_id?: string | null;
   url?: string | null;
   product_title?: string | null;
   product_image?: string | null;

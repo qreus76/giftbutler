@@ -86,54 +86,46 @@ export default async function ProfilePage({ params }: Props) {
     avatarUrl = clerkUser.hasImage ? clerkUser.imageUrl : null;
   } catch { /* no photo available */ }
 
-  // Privacy gate
-  if (profile.is_private) {
-    const { userId } = await auth();
+  // Determine viewer's relationship to this profile
+  const { userId } = await auth();
+  type ViewerRelationship = "owner" | "connections" | "pending" | "none";
+  let viewerRelationship: ViewerRelationship = "none";
 
-    // Owner always sees their own profile
-    if (userId !== profile.id) {
-      const hintCountRes = await supabase
-        .from("hints")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", profile.id);
-      const hintCount = hintCountRes.count ?? 0;
-      const displayName = profile.name || profile.username;
+  if (userId === profile.id) {
+    viewerRelationship = "owner";
+  } else if (userId) {
+    const { data: follow } = await supabaseAdmin
+      .from("follows")
+      .select("status")
+      .or(`and(requester_id.eq.${userId},receiver_id.eq.${profile.id}),and(requester_id.eq.${profile.id},receiver_id.eq.${userId})`)
+      .single();
 
-      // Check connection status
-      let connectionStatus: "unauthenticated" | "none" | "pending" = "unauthenticated";
-      if (userId) {
-        const { data: follow } = await supabaseAdmin
-          .from("follows")
-          .select("status")
-          .or(`and(requester_id.eq.${userId},receiver_id.eq.${profile.id}),and(requester_id.eq.${profile.id},receiver_id.eq.${userId})`)
-          .single();
+    if (follow?.status === "accepted") viewerRelationship = "connections";
+    else if (follow?.status === "pending") viewerRelationship = "pending";
+  }
 
-        if (follow?.status === "accepted") {
-          // Accepted connection — fall through to show full profile
-          connectionStatus = "accepted" as never;
-        } else if (follow?.status === "pending") {
-          connectionStatus = "pending";
-        } else {
-          connectionStatus = "none";
-        }
-      }
+  // Privacy gate — locked profiles block all non-connections
+  if (profile.is_private && viewerRelationship !== "owner" && viewerRelationship !== "connections") {
+    const hintCountRes = await supabase
+      .from("hints")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id);
+    const hintCount = hintCountRes.count ?? 0;
+    const displayName = profile.name || profile.username;
 
-      if (connectionStatus !== ("accepted" as never)) {
-        return (
-          <LockedProfile
-            displayName={displayName}
-            username={profile.username}
-            avatarUrl={avatarUrl}
-            hintCount={hintCount}
-            connectionStatus={connectionStatus}
-          />
-        );
-      }
-    }
+    return (
+      <LockedProfile
+        displayName={displayName}
+        username={profile.username}
+        avatarUrl={avatarUrl}
+        hintCount={hintCount}
+        connectionStatus={userId ? (viewerRelationship === "pending" ? "pending" : "none") : "unauthenticated"}
+      />
+    );
   }
 
   const [hintsRes, claimsRes, occasionsRes] = await Promise.all([
-    supabase
+    supabaseAdmin
       .from("hints")
       .select("*")
       .eq("user_id", profile.id)
@@ -142,12 +134,39 @@ export default async function ProfilePage({ params }: Props) {
       .from("claims")
       .select("gift_description, occasion")
       .eq("recipient_user_id", profile.id),
-    supabase
+    supabaseAdmin
       .from("occasions")
       .select("*")
       .eq("user_id", profile.id)
       .order("date", { ascending: true, nullsFirst: false }),
   ]);
+
+  // Filter occasions by viewer's access level
+  const canSeeConnections = viewerRelationship === "owner" || viewerRelationship === "connections";
+  const allOccasions = occasionsRes.data || [];
+  const visibleOccasions = viewerRelationship === "owner"
+    ? allOccasions
+    : allOccasions.filter(occ => {
+        if (occ.visibility === "public") return true;
+        if (occ.visibility === "connections") return canSeeConnections;
+        return false; // private
+      });
+
+  // Filter hints by their list's visibility
+  const hintsVisibility = profile.hints_visibility || "public";
+  const canSeeHints = viewerRelationship === "owner"
+    || hintsVisibility === "public"
+    || (hintsVisibility === "connections" && canSeeConnections);
+  const visibleOccasionIds = new Set(visibleOccasions.map(o => o.id));
+
+  const allHints = hintsRes.data || [];
+  const visibleHints = viewerRelationship === "owner"
+    ? allHints
+    : allHints.filter(hint => {
+        const occId = hint.occasion_id ?? null;
+        if (occId) return visibleOccasionIds.has(occId);
+        return canSeeHints;
+      });
 
   const claims = (claimsRes.data || []).map(c => ({
     description: c.gift_description.toLowerCase(),
@@ -158,10 +177,11 @@ export default async function ProfilePage({ params }: Props) {
     <ProfileClient
       username={username}
       initialProfile={profile}
-      initialHints={hintsRes.data || []}
+      initialHints={visibleHints}
       initialClaims={claims}
-      initialOccasions={occasionsRes.data || []}
+      initialOccasions={visibleOccasions}
       avatarUrl={avatarUrl}
+      viewerRelationship={viewerRelationship}
     />
   );
 }

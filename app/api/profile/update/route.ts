@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
-  const { name, bio, birthday, username, is_private } = body;
+  const { name, bio, birthday, username, is_private, hints_visibility } = body;
 
   if (name && name.trim().length > 60) {
     return NextResponse.json({ error: "Name must be 60 characters or less" }, { status: 400 });
@@ -33,11 +33,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const VALID_HINTS_VIS = ["public", "connections", "private"];
   const updates: Record<string, string | null | boolean> = {
     name: name || null,
     bio: bio || null,
     birthday: birthday?.trim() || null,
     ...(typeof is_private === "boolean" && { is_private }),
+    ...(VALID_HINTS_VIS.includes(hints_visibility) && { hints_visibility }),
   };
 
   // Handle username change

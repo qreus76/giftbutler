@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
-  const { content, category, url, product_title, product_image, product_price } = body;
+  const { content, category, url, product_title, product_image, product_price, occasion_id } = body;
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 
   if (content.trim().length > MAX_HINT_LENGTH) {
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       product_title: product_title || null,
       product_image: product_image || null,
       product_price: product_price || null,
+      occasion_id: occasion_id || null,
     })
     .select()
     .single();

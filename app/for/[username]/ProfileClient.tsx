@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2, Gift, Sparkles, Lightbulb, CalendarDays, Plus, Check } from "lucide-react";
+import {
+  Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2,
+  Gift, Sparkles, Lightbulb, CalendarDays, Plus, Check,
+  Globe, Lock, Users,
+} from "lucide-react";
 import BottomTabBar from "@/app/components/BottomTabBar";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint, Occasion } from "@/lib/supabase";
@@ -50,6 +54,16 @@ const HINT_CATEGORIES = [
 
 const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother","Sister","Grandfather","Grandmother","Grandson","Granddaughter","Uncle","Aunt","Nephew","Niece","Cousin","Best Friend","Friend","Colleague","Other"];
 
+const VISIBILITY_CONFIG = {
+  public:      { icon: Globe,  label: "Public",     color: "text-[#888888]",  bg: "bg-[#F5F5F0]" },
+  connections: { icon: Users,  label: "My people",  color: "text-[#2D4A1E]",  bg: "bg-[#C4D4B4]/40" },
+  private:     { icon: Lock,   label: "Only me",    color: "text-[#111111]",  bg: "bg-[#EAEAE0]" },
+};
+
+type VisibilityLevel = "public" | "connections" | "private";
+
+const VISIBILITY_CYCLE: VisibilityLevel[] = ["public", "connections", "private"];
+
 interface Props {
   username: string;
   initialProfile: Profile;
@@ -57,19 +71,29 @@ interface Props {
   initialClaims: ClaimRecord[];
   initialOccasions: Occasion[];
   avatarUrl: string | null;
+  viewerRelationship: "owner" | "connections" | "pending" | "none";
 }
 
-export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, initialOccasions, avatarUrl }: Props) {
+export default function ProfileClient({
+  username, initialProfile, initialHints, initialClaims, initialOccasions,
+  avatarUrl, viewerRelationship,
+}: Props) {
   const { user, isLoaded } = useUser();
-  const isOwner = isLoaded && !!user && user.id === initialProfile.id;
+  const isOwner = viewerRelationship === "owner";
+  const isConnected = viewerRelationship === "connections";
 
   const [profile] = useState<Profile>(initialProfile);
   const [hints, setHints] = useState<Hint[]>(initialHints);
+  const [occasions, setOccasions] = useState<Occasion[]>(initialOccasions);
+  const [hintsVisibility, setHintsVisibility] = useState<VisibilityLevel>(
+    (initialProfile.hints_visibility as VisibilityLevel) || "connections"
+  );
 
   const STORAGE_KEY = `gb_recs_${username}`;
   const relationshipRef = useRef<HTMLSelectElement>(null);
   const finderRef = useRef<HTMLDivElement>(null);
 
+  // Gift finder state
   const [showFinder, setShowFinder] = useState(false);
   const [relationship, setRelationship] = useState("");
   const [budget, setBudget] = useState("");
@@ -77,46 +101,83 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
   const [recommendations, setRecommendations] = useState<GiftRecommendation[]>([]);
-  const [myClaims, setMyClaims] = useState<string[]>([]);
-  const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
-  const [claiming, setClaiming] = useState<string | null>(null);
-  const [confirmUnclaim, setConfirmUnclaim] = useState<string | null>(null);
-  const [shareCopied, setShareCopied] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showAllRecs, setShowAllRecs] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [msgVisible, setMsgVisible] = useState(true);
+
+  // Claims
+  const [myClaims, setMyClaims] = useState<string[]>([]);
+  const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
+  const [claiming, setClaiming] = useState<string | null>(null);
+  const [confirmUnclaim, setConfirmUnclaim] = useState<string | null>(null);
   const [notifyPromptTitle, setNotifyPromptTitle] = useState<string | null>(null);
   const [notifySent, setNotifySent] = useState<Set<string>>(new Set());
+
+  // Share
+  const [shareCopied, setShareCopied] = useState(false);
   const [myUsername, setMyUsername] = useState("");
 
+  // Add hint form
   const [newHint, setNewHint] = useState("");
   const [hintCategory, setHintCategory] = useState("general");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
+  const [hintMode, setHintMode] = useState<"text" | "link" | "discover">("text");
+  const [hintUrl, setHintUrl] = useState("");
+  const [enriching, setEnriching] = useState(false);
+  const [enrichError, setEnrichError] = useState("");
+  const [enrichedProduct, setEnrichedProduct] = useState<{ title: string; image: string | null; price: string | null } | null>(null);
+  const [selectedAddList, setSelectedAddList] = useState<string>("hints"); // 'hints' or occasion.id
+
+  // Self-discovery
+  const [discoveryBudget, setDiscoveryBudget] = useState("");
+  const [discoveryOccasion, setDiscoveryOccasion] = useState("");
+  const [discoveryRecs, setDiscoveryRecs] = useState<GiftRecommendation[]>([]);
+  const [discoveryGenerating, setDiscoveryGenerating] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState("");
+  const [savedDiscoveryRecs, setSavedDiscoveryRecs] = useState<Set<number>>(new Set());
+
+  // Edit hints
   const [editingHintId, setEditingHintId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editCategory, setEditCategory] = useState("general");
   const [hintSaving, setHintSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [hintMode, setHintMode] = useState<"text" | "link">("text");
-  const [hintUrl, setHintUrl] = useState("");
-  const [enriching, setEnriching] = useState(false);
-  const [enrichError, setEnrichError] = useState("");
-  const [enrichedProduct, setEnrichedProduct] = useState<{ title: string; image: string | null; price: string | null } | null>(null);
 
-  const [occasions, setOccasions] = useState<Occasion[]>(initialOccasions);
+  // Occasions
   const [addingOccasion, setAddingOccasion] = useState(false);
   const [newOccasionName, setNewOccasionName] = useState("");
   const [newOccasionDate, setNewOccasionDate] = useState("");
+  const [newOccasionVisibility, setNewOccasionVisibility] = useState<VisibilityLevel>("public");
   const [savingOccasion, setSavingOccasion] = useState(false);
   const [occasionError, setOccasionError] = useState("");
-  const [actionError, setActionError] = useState("");
+  const [confirmDeleteOccasion, setConfirmDeleteOccasion] = useState<string | null>(null);
 
+  // Follow
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [followLoading, setFollowLoading] = useState(false);
+
+  // Errors
+  const [actionError, setActionError] = useState("");
+
+  // ── Derived ──────────────────────────────────────────────────────────────────
+  const hintsToShow = hints.filter(h => h.category !== "avoid");
+  const avoidHints  = hints.filter(h => h.category === "avoid");
+
+  const hintsForList = (occasionId: string | null): Hint[] =>
+    hints.filter(h => h.category !== "avoid" && (h.occasion_id ?? null) === occasionId);
+
+  const generalHints       = hintsForList(null);
+  const generalTextHints   = generalHints.filter(h => !h.url);
+  const generalProductHints = generalHints.filter(h => h.url);
+
+  const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
+  const displayName = profile.name || username;
+
+  const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder;
 
   function getDaysUntilDate(dateStr: string): number {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -124,7 +185,30 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 
-  // Lock body scroll while sheet is open (prevents background scroll + iOS bounce)
+  const LOADING_MESSAGES = [
+    `Reading ${displayName}'s hints...`,
+    "Understanding their personality...",
+    "Thinking through what they'd love...",
+    "Crossing off the generic stuff...",
+    "Matching gifts to their interests...",
+    "Curating something special...",
+    "Putting it all together...",
+    `Getting to know ${displayName} a little better...`,
+    "Scanning for the unexpected but perfect option...",
+    "Thinking beyond the obvious...",
+    "Filtering out what everyone else would buy...",
+    "Finding something they'd actually be excited about...",
+    "Connecting the dots between their hints...",
+    "Weighing quality over quantity...",
+    "Thinking about what would make them smile...",
+    "Considering their lifestyle and interests...",
+    "Looking for that 'how did you know?' moment...",
+    "Making sure it fits the occasion...",
+    "Double-checking it's within budget...",
+    "Almost ready to reveal the picks...",
+  ];
+
+  // ── Effects ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!addingOccasion) return;
     const scrollY = window.scrollY;
@@ -143,7 +227,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
   useEffect(() => {
     if (!generating) { setLoadingMsgIdx(0); setMsgVisible(true); return; }
-    // Start at a random offset so repeat searches feel different
     setLoadingMsgIdx(Math.floor(Math.random() * LOADING_MESSAGES.length));
     const interval = setInterval(() => {
       setMsgVisible(false);
@@ -152,43 +235,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     return () => clearInterval(interval);
   }, [generating]);
 
-  async function addOccasion() {
-    if (!newOccasionName.trim()) return;
-    setSavingOccasion(true); setOccasionError("");
-    try {
-      const res = await fetch("/api/occasions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newOccasionName.trim(), date: newOccasionDate || null }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setOccasions(prev => [...prev, data]);
-      setNewOccasionName(""); setNewOccasionDate(""); setAddingOccasion(false);
-    } catch { setOccasionError("Failed to save — try again"); } finally { setSavingOccasion(false); }
-  }
-
-  async function deleteOccasion(id: string) {
-    const prev = occasions;
-    setOccasions(occasions.filter(o => o.id !== id));
-    const res = await fetch(`/api/occasions/${id}`, { method: "DELETE" });
-    if (!res.ok) { setOccasions(prev); setActionError("Couldn't remove occasion — try again"); setTimeout(() => setActionError(""), 3000); }
-  }
-
-  async function shareProfile() {
-    const url = `${window.location.origin}/for/${username}`;
-    const shareText = isOwner ? `Check out my gift profile on GiftButler!` : `Check out ${displayName}'s gift profile on GiftButler!`;
-    if (navigator.share && navigator.maxTouchPoints > 0) {
-      try { await navigator.share({ title: `${displayName}'s Gift Profile`, text: shareText, url }); } catch { /* cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(url);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
-    }
-  }
-
   useEffect(() => {
     if (!isLoaded) return;
     if (!isOwner) fetch(`/api/profile/${username}?ref=${encodeURIComponent(document.referrer || "")}`);
-    // Store referral for new sign-ups coming through this profile
     if (isLoaded && !user) {
-      try { localStorage.setItem("gb_referral", username); } catch { /* storage unavailable */ }
+      try { localStorage.setItem("gb_referral", username); } catch { /* unavailable */ }
     }
   }, [username, isOwner, isLoaded]);
 
@@ -202,15 +253,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     }
   }, [username, isLoaded, user, isOwner]);
 
-  async function sendFollowRequest() {
-    if (!selectedLabel) return;
-    setFollowLoading(true);
-    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
-    setFollowStatus("pending");
-    setShowLabelPicker(false);
-    setFollowLoading(false);
-  }
-
+  // Restore finder preferences from sessionStorage
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -224,7 +267,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     } catch { /* unavailable */ }
   }, [STORAGE_KEY]);
 
-  // Persist form prefs so the finder is pre-filled on return visits
   useEffect(() => {
     if (!relationship && !budget) return;
     try {
@@ -234,7 +276,6 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     } catch { /* unavailable */ }
   }, [relationship, budget, STORAGE_KEY]);
 
-  // Load myClaims from API for persistence across sessions
   useEffect(() => {
     if (!isLoaded || !user || isOwner) return;
     fetch(`/api/claims?username=${username}`)
@@ -243,11 +284,15 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       .catch(() => {});
   }, [isLoaded, user, isOwner, username]);
 
+  // ── API functions ─────────────────────────────────────────────────────────────
   async function generateGifts() {
     if (!relationship || !budget) return;
     setGenerating(true); setGenerateError(""); setRecommendations([]); setCategoryFilter("all"); setShowAllRecs(false);
     try {
-      const res = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, relationship, budget, occasion }) });
+      const res = await fetch("/api/recommend", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, relationship, budget, occasion }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");
       if (!data.recommendations?.length) throw new Error("No recommendations returned");
@@ -257,6 +302,35 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     } catch (e: unknown) {
       setGenerateError(e instanceof Error ? e.message : "Something went wrong — please try again");
     } finally { setGenerating(false); }
+  }
+
+  async function generateSelfDiscovery() {
+    if (!discoveryBudget) return;
+    setDiscoveryGenerating(true); setDiscoveryError(""); setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set());
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, budget: discoveryBudget, occasion: discoveryOccasion || undefined, is_self_discovery: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
+      setDiscoveryRecs(data.recommendations || []);
+    } catch (e: unknown) {
+      setDiscoveryError(e instanceof Error ? e.message : "Something went wrong");
+    } finally { setDiscoveryGenerating(false); }
+  }
+
+  async function saveDiscoveryRec(rec: GiftRecommendation, idx: number) {
+    const occId = selectedAddList !== "hints" ? selectedAddList : null;
+    const res = await fetch("/api/hints", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: rec.title, category: "want", url: rec.searchUrl, product_title: rec.title, product_price: rec.priceRange, occasion_id: occId }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setHints(prev => [data, ...prev]);
+      setSavedDiscoveryRecs(prev => new Set(prev).add(idx));
+    }
   }
 
   function claimGift(title: string) {
@@ -287,8 +361,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       if (saved) { const data = JSON.parse(saved); sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, myClaims: newMyClaims })); }
     } catch { /* unavailable */ }
     const res = await fetch("/api/claims", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipient_username: username, gift_description: title }),
     });
     if (!res.ok) { setMyClaims(prevMyClaims); setExistingClaims(prevExistingClaims); setActionError("Couldn't release claim — try again"); setTimeout(() => setActionError(""), 3000); }
@@ -306,7 +379,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     if (!newHint.trim()) return;
     setAdding(true); setAddError("");
     try {
-      const res = await fetch("/api/hints", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newHint.trim(), category: hintCategory }) });
+      const occId = selectedAddList !== "hints" ? selectedAddList : null;
+      const res = await fetch("/api/hints", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newHint.trim(), category: hintCategory, occasion_id: occId }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add hint");
       setHints([data, ...hints]); setNewHint("");
@@ -356,10 +433,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     if (!enrichedProduct || !hintUrl.trim()) return;
     setAdding(true); setAddError("");
     try {
+      const occId = selectedAddList !== "hints" ? selectedAddList : null;
       const res = await fetch("/api/hints", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: enrichedProduct.title, category: "want", url: hintUrl.trim(), product_title: enrichedProduct.title, product_image: enrichedProduct.image, product_price: enrichedProduct.price }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: enrichedProduct.title, category: "want", url: hintUrl.trim(), product_title: enrichedProduct.title, product_image: enrichedProduct.image, product_price: enrichedProduct.price, occasion_id: occId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add");
@@ -370,71 +447,245 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     } finally { setAdding(false); }
   }
 
+  async function addOccasion() {
+    if (!newOccasionName.trim()) return;
+    setSavingOccasion(true); setOccasionError("");
+    try {
+      const res = await fetch("/api/occasions", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newOccasionName.trim(), date: newOccasionDate || null, visibility: newOccasionVisibility }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setOccasions(prev => [...prev, data]);
+      setSelectedAddList(data.id); // auto-select the new list
+      setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); setAddingOccasion(false);
+    } catch { setOccasionError("Failed to save — try again"); } finally { setSavingOccasion(false); }
+  }
+
+  async function deleteOccasion(id: string) {
+    const prevOccasions = occasions;
+    const prevHints = hints;
+    setOccasions(occasions.filter(o => o.id !== id));
+    setHints(hints.map(h => h.occasion_id === id ? { ...h, occasion_id: null } : h));
+    setConfirmDeleteOccasion(null);
+    if (selectedAddList === id) setSelectedAddList("hints");
+    const res = await fetch(`/api/occasions/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setOccasions(prevOccasions); setHints(prevHints);
+      setActionError("Couldn't remove list — try again"); setTimeout(() => setActionError(""), 3000);
+    }
+  }
+
+  async function updateHintsVisibility(newVis: VisibilityLevel) {
+    const prev = hintsVisibility;
+    setHintsVisibility(newVis);
+    const res = await fetch("/api/profile/update", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hints_visibility: newVis }),
+    });
+    if (!res.ok) setHintsVisibility(prev);
+  }
+
+  async function updateOccasionVisibility(id: string, newVis: VisibilityLevel) {
+    const prevOccasions = occasions;
+    setOccasions(prev => prev.map(o => o.id === id ? { ...o, visibility: newVis } : o));
+    const res = await fetch(`/api/occasions/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibility: newVis }),
+    });
+    if (!res.ok) setOccasions(prevOccasions);
+  }
+
+  async function shareProfile() {
+    const url = `${window.location.origin}/for/${username}`;
+    const shareText = isOwner ? `Check out my gift profile on GiftButler!` : `Check out ${displayName}'s gift profile on GiftButler!`;
+    if (navigator.share && navigator.maxTouchPoints > 0) {
+      try { await navigator.share({ title: `${displayName}'s Gift Profile`, text: shareText, url }); } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  }
+
+  async function sendFollowRequest() {
+    if (!selectedLabel) return;
+    setFollowLoading(true);
+    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
+    setFollowStatus("pending");
+    setShowLabelPicker(false);
+    setFollowLoading(false);
+  }
+
   function isAlreadyClaimed(title: string): boolean {
     return existingClaims.some(c => c.description === title.toLowerCase() && (!c.occasion || !occasion || c.occasion === occasion));
   }
 
-  const hintsToShow = hints.filter(h => h.category !== "avoid");
-  const avoidHints = hints.filter(h => h.category === "avoid");
-  const productHints = hintsToShow.filter(h => h.url);
-  const textHints = hintsToShow.filter(h => !h.url);
-  const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
-  const displayName = profile.name || username;
-  const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder && hintsToShow.length > 0;
+  // ── Visibility toggle badge ───────────────────────────────────────────────────
+  function VisibilityToggle({ visibility, onToggle }: { visibility: VisibilityLevel; onToggle: () => void }) {
+    const cfg = VISIBILITY_CONFIG[visibility] || VISIBILITY_CONFIG.public;
+    const Icon = cfg.icon;
+    return (
+      <button
+        onClick={onToggle}
+        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-colors hover:opacity-80 ${cfg.color} ${cfg.bg}`}
+        title="Change who can see this list"
+      >
+        <Icon className="w-3 h-3" /> {cfg.label}
+      </button>
+    );
+  }
 
-  const LOADING_MESSAGES = [
-    `Reading ${displayName}'s hints...`,
-    "Understanding their personality...",
-    "Thinking through what they'd love...",
-    "Crossing off the generic stuff...",
-    "Matching gifts to their interests...",
-    "Curating something special...",
-    "Putting it all together...",
-    `Getting to know ${displayName} a little better...`,
-    "Scanning for the unexpected but perfect option...",
-    "Thinking beyond the obvious...",
-    "Filtering out what everyone else would buy...",
-    "Finding something they'd actually be excited about...",
-    "Connecting the dots between their hints...",
-    "Weighing quality over quantity...",
-    "Thinking about what would make them smile...",
-    "Considering their lifestyle and interests...",
-    "Looking for that 'how did you know?' moment...",
-    "Making sure it fits the occasion...",
-    "Double-checking it's within budget...",
-    "Almost ready to reveal the picks...",
-  ];
+  // ── Claim button (shared by recs and product hints) ───────────────────────────
+  function ClaimButton({ title }: { title: string }) {
+    const alreadyClaimed = isAlreadyClaimed(title);
+    const iMineThis = myClaims.includes(title);
+    if (confirmUnclaim === title) {
+      return (
+        <>
+          <button onClick={() => unclaimGift(title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Release</button>
+          <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Keep</button>
+        </>
+      );
+    }
+    return (
+      <button
+        onClick={() => iMineThis ? setConfirmUnclaim(title) : claimGift(title)}
+        disabled={!iMineThis && (alreadyClaimed || claiming === title)}
+        className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors"
+      >
+        {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
+      </button>
+    );
+  }
 
+  // ── Product hint card ─────────────────────────────────────────────────────────
+  function ProductHintCard({ hint, showClaim = false }: { hint: Hint; showClaim?: boolean }) {
+    const claimKey = hint.product_title || hint.content;
+    const alreadyClaimed = isAlreadyClaimed(claimKey);
+    const iMineThis = myClaims.includes(claimKey);
+    return (
+      <div className={`bg-white rounded-2xl shadow-card overflow-hidden ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
+        <div className="flex gap-3 p-4">
+          {hint.product_image && (
+            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
+              <img src={hint.product_image} alt={hint.product_title || ""} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-[#111111] text-sm leading-snug mb-1 line-clamp-2">{hint.product_title || hint.content}</p>
+            {hint.product_price && <p className="text-base font-bold text-[#111111] mb-1">{hint.product_price}</p>}
+            {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
+          </div>
+        </div>
+        <div className="px-4 pb-4 flex gap-2">
+          <a href={hint.url!} target="_blank" rel="noopener noreferrer"
+            className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+            View item <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+          {showClaim && <ClaimButton title={claimKey} />}
+          {!showClaim && isOwner && (
+            confirmDeleteId === hint.id ? (
+              <>
+                <button onClick={() => deleteHint(hint.id)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Delete</button>
+                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 bg-[#EAEAE0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Cancel</button>
+              </>
+            ) : (
+              <button onClick={() => setConfirmDeleteId(hint.id)} className="p-2.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+            )
+          )}
+        </div>
+        {notifyPromptTitle === claimKey && (
+          <div className="mx-4 mb-4 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
+            <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
+            <div className="flex gap-2 flex-shrink-0">
+              <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
+              <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
+            </div>
+          </div>
+        )}
+        {notifySent.has(claimKey) && <p className="mx-4 mb-4 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
+      </div>
+    );
+  }
+
+  // ── Text hint row ─────────────────────────────────────────────────────────────
+  function TextHintRow({ hint }: { hint: Hint }) {
+    const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
+    return (
+      <div className="px-4 py-3.5 group border-b border-[#F0F0E8] last:border-0">
+        {isOwner && editingHintId === hint.id ? (
+          <div>
+            <div className="flex gap-1.5 flex-wrap mb-2">
+              {HINT_CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setEditCategory(c.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${editCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <textarea value={editContent} onChange={e => setEditContent(e.target.value)} maxLength={280} autoFocus rows={2}
+              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] focus:outline-none resize-none mb-2" />
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <button onClick={() => saveHint(hint.id)} disabled={!editContent.trim() || hintSaving}
+                  className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs">Save</button>
+                <button onClick={cancelEditHint} className="px-4 py-1.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs">Cancel</button>
+              </div>
+              <span className={`text-xs ${editContent.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - editContent.length}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full inline-block mb-1.5 ${cat.color}`}>{cat.label}</span>
+              <p className="text-[#111111] text-sm">{hint.content}</p>
+            </div>
+            {isOwner && (
+              <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                {confirmDeleteId === hint.id ? (
+                  <>
+                    <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                    <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEditHint(hint)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
       {actionError && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">
-          {actionError}
-        </div>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">{actionError}</div>
       )}
 
-      {/* Minimal light header */}
+      {/* Header */}
       <header className="bg-[#EAEAE0] sticky top-0 z-10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href={user ? "/home" : "/"} className="text-lg font-bold text-[#111111] tracking-tight">
-            GiftButler
-          </Link>
+          <Link href={user ? "/home" : "/"} className="text-lg font-bold text-[#111111] tracking-tight">GiftButler</Link>
           <div className="flex items-center gap-2">
             {isLoaded && !user && (
               <>
-                <Link href="/sign-in" className="px-4 py-1.5 text-[#888888] hover:text-[#111111] font-semibold text-sm transition-colors">
-                  Sign in
-                </Link>
-                <Link href="/sign-up" className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-                  Sign up
-                </Link>
+                <Link href="/sign-in" className="px-4 py-1.5 text-[#888888] hover:text-[#111111] font-semibold text-sm transition-colors">Sign in</Link>
+                <Link href="/sign-up" className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">Sign up</Link>
               </>
             )}
             {isLoaded && user && (
               <Link href="/profile/edit" className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#111111] transition-all flex-shrink-0">
-                {user.hasImage ? <img src={user.imageUrl} alt="" className="w-full h-full object-cover" /> : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{user.firstName?.[0]?.toUpperCase() || "?"}</div>
-                )}
+                {user.hasImage
+                  ? <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{user.firstName?.[0]?.toUpperCase() || "?"}</div>}
               </Link>
             )}
           </div>
@@ -444,90 +695,53 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {/* Profile section */}
       <div className="max-w-xl mx-auto px-4 py-5">
         <div className="flex items-start gap-4 mb-4">
-          {/* Circular avatar */}
           <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 shadow-card">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-[#2D4A1E] bg-[#C4D4B4]">
-                {profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}
-              </div>
-            )}
+            {avatarUrl
+              ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-[#2D4A1E] bg-[#C4D4B4]">{profile.name?.[0]?.toUpperCase() || username[0]?.toUpperCase()}</div>}
           </div>
-
           <div className="flex-1 min-w-0 pt-1">
             <h1 className="text-2xl font-bold text-[#111111] leading-tight">{displayName}</h1>
             <p className="text-[#888888] text-sm">@{username}</p>
             {profile.bio && <p className="text-[#555555] text-sm mt-1.5 leading-relaxed">{profile.bio}</p>}
-            {(productHints.length > 0 || textHints.length > 0) && (
-              <p className="text-xs text-[#888888] mt-1">
-                {productHints.length > 0 && `${productHints.length} specific want${productHints.length !== 1 ? "s" : ""}`}
-                {productHints.length > 0 && textHints.length > 0 && " · "}
-                {textHints.length > 0 && `${textHints.length} hint${textHints.length !== 1 ? "s" : ""}`}
-              </p>
-            )}
           </div>
         </div>
 
-        {/* Occasions section — birthday + manual occasions */}
-        {(daysUntilBirthday !== null || occasions.length > 0 || (isLoaded && isOwner)) && (
+        {/* Birthday chip (always shown if birthday set) */}
+        {daysUntilBirthday !== null && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-2">
-              {isOwner ? "Your occasions" : "Find a gift for..."}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {/* Birthday chip */}
-              {daysUntilBirthday !== null && (
-                isOwner ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
-                    <Cake className="w-3.5 h-3.5" />
-                    {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                    <Cake className="w-3.5 h-3.5" />
-                    {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
-                  </button>
-                )
-              )}
+            {isOwner ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+                <Cake className="w-3.5 h-3.5" />
+                {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
+              </div>
+            ) : (
+              <button
+                onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
+                <Cake className="w-3.5 h-3.5" />
+                {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
+              </button>
+            )}
+          </div>
+        )}
 
-              {/* Manual occasion chips */}
-              {occasions.map(occ => {
-                const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
-                const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
-                if (isOwner) {
-                  return (
-                    <div key={occ.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
-                      <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>{occ.name}</span>
-                      {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `${daysUntil}d`}</span>}
-                      <button onClick={() => deleteOccasion(occ.id)} className="ml-0.5 text-[#5C3118]/40 hover:text-[#5C3118] transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                }
-                return (
-                  <button key={occ.id}
-                    onClick={() => { setOccasion(occ.name); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                    <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{occ.name}</span>
-                    {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `in ${daysUntil}d`}</span>}
-                  </button>
-                );
-              })}
-
-              {isOwner && (
-                <button onClick={() => setAddingOccasion(true)}
+        {/* Visitor: occasion chips as gift finder launchers */}
+        {!isOwner && occasions.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {occasions.map(occ => {
+              const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
+              const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
+              return (
+                <button key={occ.id}
+                  onClick={() => { setOccasion(occ.name); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                  <Plus className="w-3.5 h-3.5" />
-                  Add occasion
+                  <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{occ.name}</span>
+                  {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `in ${daysUntil}d`}</span>}
                 </button>
-              )}
-            </div>
+              );
+            })}
           </div>
         )}
 
@@ -542,12 +756,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </button>
               <Link href="/profile/edit"
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
-                <Pencil className="w-3.5 h-3.5" />
-                Edit profile
+                <Pencil className="w-3.5 h-3.5" /> Edit profile
               </Link>
             </>
           )}
-
           {isLoaded && user && !isOwner && (
             <>
               {followStatus === "none" && !showLabelPicker && (
@@ -560,16 +772,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               {followStatus === "accepted" && <span className="px-4 py-2 bg-[#C4D4B4] text-[#2D4A1E] font-semibold rounded-full text-sm flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> In my people</span>}
               <button onClick={shareProfile}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
-                <Copy className="w-3.5 h-3.5" />
-                {shareCopied ? "Copied!" : "Share"}
+                <Copy className="w-3.5 h-3.5" /> {shareCopied ? "Copied!" : "Share"}
               </button>
             </>
           )}
           {isLoaded && !user && (
             <button onClick={shareProfile}
               className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
-              <Copy className="w-3.5 h-3.5" />
-              {shareCopied ? "Copied!" : "Share"}
+              <Copy className="w-3.5 h-3.5" /> {shareCopied ? "Copied!" : "Share"}
             </button>
           )}
         </div>
@@ -600,551 +810,603 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         )}
       </div>
 
-      {/* ── CONTENT ── */}
+      {/* ── CONTENT ────────────────────────────────────────────────────────────── */}
       <div className="max-w-xl mx-auto px-4 space-y-4">
 
-        {/* Empty profile state for visitors */}
-        {isLoaded && !isOwner && hintsToShow.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-card p-6 text-center">
-            <p className="font-semibold text-[#111111] mb-1">{displayName} hasn&apos;t added any hints yet</p>
-            <p className="text-[#888888] text-sm mb-4">You can still find gift ideas — just without the personal touch.</p>
-            <button
-              onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-              Find a gift anyway <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        {/* ═══ OWNER VIEW ══════════════════════════════════════════════════════ */}
+        {isOwner && (
+          <>
+            {/* Add to wishlist form */}
+            <div className="bg-white rounded-2xl shadow-card p-5">
+              <p className="text-base font-bold text-[#111111] mb-3">Add to your wishlist</p>
 
-        {/* Specific wants — always visible, never filtered */}
-        {isLoaded && !isOwner && productHints.length > 0 && (
-          <div>
-            <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> What {displayName} wants</p>
-            <div className="flex flex-col gap-3">
-              {productHints.map(hint => {
-                const claimKey = hint.product_title || hint.content;
-                const alreadyClaimed = isAlreadyClaimed(claimKey);
-                const iMineThis = myClaims.includes(claimKey);
-                return (
-                  <div key={hint.id} className={`bg-white rounded-2xl shadow-card overflow-hidden ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
-                    <div className="flex gap-3 p-4">
-                      {hint.product_image && (
-                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
-                          <img src={hint.product_image} alt={hint.product_title || ""} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#111111] text-sm leading-snug mb-1 line-clamp-2">{hint.product_title || hint.content}</p>
-                        {hint.product_price && <p className="text-base font-bold text-[#111111] mb-1">{hint.product_price}</p>}
-                        {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
-                      </div>
-                    </div>
-                    <div className="px-4 pb-4 flex gap-2">
-                      <a href={hint.url!} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
-                        View item <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                      {confirmUnclaim === claimKey ? (
-                        <>
-                          <button onClick={() => unclaimGift(claimKey)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Release</button>
-                          <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Keep</button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => iMineThis ? setConfirmUnclaim(claimKey) : claimGift(claimKey)}
-                          disabled={!iMineThis && (alreadyClaimed || claiming === claimKey)}
-                          className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                          {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Education banner */}
-        {isLoaded && !isOwner && textHints.length > 0 && recommendations.length === 0 && !showFinder && (() => {
-          try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
-        })() && (
-          <div className="bg-[#B8CED0] rounded-2xl p-4">
-            <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
-            <p className="text-[#1A3D42] text-sm leading-relaxed">
-              {displayName} dropped {textHints.length} gift idea{textHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
-            </p>
-          </div>
-        )}
-
-        {/* Gift Finder — loading state */}
-        {showFinder && recommendations.length === 0 && generating && (
-          <div className="bg-white rounded-2xl shadow-card p-8 text-center overflow-hidden">
-            {/* Pulsating glow rings */}
-            <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="absolute inset-0 rounded-full bg-[#ECC8AE] animate-ping opacity-20" />
-              <div className="absolute inset-2 rounded-full bg-[#ECC8AE] animate-ping opacity-30" style={{ animationDelay: "0.4s", animationDuration: "1.2s" }} />
-              <div className="relative w-24 h-24 rounded-full bg-[#ECC8AE] flex items-center justify-center">
-                <Sparkles className="w-10 h-10 text-[#5C3118]" />
+              {/* List picker */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-none">
+                <button
+                  onClick={() => setSelectedAddList("hints")}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${selectedAddList === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                  <Lightbulb className="w-3 h-3 inline mr-1" />Hints
+                </button>
+                {occasions.map(occ => (
+                  <button key={occ.id}
+                    onClick={() => setSelectedAddList(occ.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${selectedAddList === occ.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                    {occ.name}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setAddingOccasion(true)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 bg-[#ECC8AE] text-[#5C3118] hover:bg-[#E4B89C] transition-colors flex items-center gap-1">
+                  <Plus className="w-3 h-3" /> New list
+                </button>
               </div>
-            </div>
 
-            {/* Cycling message */}
-            <p
-              className="text-base font-bold text-[#111111] mb-1 transition-opacity duration-300"
-              style={{ opacity: msgVisible ? 1 : 0 }}
-            >
-              {LOADING_MESSAGES[loadingMsgIdx]}
-            </p>
-            <p className="text-xs text-[#888888] mb-6">GiftButler AI is reading all their hints at once</p>
-
-            {/* Bouncing dots */}
-            <div className="flex justify-center gap-2">
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className="w-2.5 h-2.5 rounded-full bg-[#ECC8AE] animate-bounce"
-                  style={{ animationDelay: `${i * 160}ms` }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Gift Finder — form */}
-        {showFinder && recommendations.length === 0 && !generating && (
-          <div ref={finderRef} className="bg-white rounded-2xl shadow-card p-5">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
-              <button onClick={() => setShowFinder(false)} className="p-1.5 bg-[#F0F0E8] rounded-full text-[#888888] hover:text-[#111111]"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="flex flex-col gap-4 mb-5">
-              {[
-                { label: "I'm their", value: relationship, onChange: (v: string) => setRelationship(v), ref: relationshipRef, placeholder: "Select relationship...", options: [
-                  { group: "Partner", items: [["husband","Husband"],["wife","Wife"],["partner","Partner"]] },
-                  { group: "Family", items: [["dad","Dad"],["mom","Mom"],["son","Son"],["daughter","Daughter"],["brother","Brother"],["sister","Sister"],["grandfather","Grandfather"],["grandmother","Grandmother"],["grandson","Grandson"],["granddaughter","Granddaughter"],["uncle","Uncle"],["aunt","Aunt"],["nephew","Nephew"],["niece","Niece"],["cousin","Cousin"]] },
-                  { group: "Friends & Others", items: [["best friend","Best Friend"],["friend","Friend"],["colleague","Colleague"],["other","Other"]] },
-                ]},
-              ].map(field => (
-                <div key={field.label}>
-                  <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">{field.label}</label>
-                  <select ref={field.ref as React.Ref<HTMLSelectElement>} value={field.value} onChange={e => field.onChange(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
-                    <option value="">{field.placeholder}</option>
-                    {field.options.map(og => (
-                      <optgroup key={og.group} label={og.group}>
-                        {og.items.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-              ))}
-              <div>
-                <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Budget</label>
-                <select value={budget} onChange={e => setBudget(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
-                  <option value="">Select budget...</option>
-                  <option value="under $25">Under $25</option>
-                  <option value="$25-$50">$25 – $50</option>
-                  <option value="$50-$100">$50 – $100</option>
-                  <option value="$100-$200">$100 – $200</option>
-                  <option value="over $200">$200+</option>
-                </select>
+              {/* Mode tabs */}
+              <div className="flex bg-[#F5F5F0] rounded-xl p-1 gap-1 mb-4">
+                <button onClick={() => { setHintMode("text"); setEnrichError(""); setEnrichedProduct(null); setDiscoveryRecs([]); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "text" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
+                  Describe it
+                </button>
+                <button onClick={() => { setHintMode("link"); setAddError(""); setNewHint(""); setDiscoveryRecs([]); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "link" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
+                  <Link2 className="w-3.5 h-3.5" /> Paste a link
+                </button>
+                <button onClick={() => { setHintMode("discover"); setAddError(""); setNewHint(""); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "discover" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
+                  <Sparkles className="w-3.5 h-3.5" /> Discover
+                </button>
               </div>
-              <div>
-                <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
-                <input
-                  type="text"
-                  value={occasion}
-                  onChange={e => setOccasion(e.target.value)}
-                  placeholder="Birthday, Graduation, Mother's Day..."
-                  autoComplete="off"
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]"
-                />
-                {!occasion && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {["Birthday","Mother's Day","Father's Day","Graduation","Anniversary","Wedding","Baby Shower","Holiday","Just Because"].map(s => (
-                      <button key={s} type="button" onClick={() => setOccasion(s)}
-                        className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
-                        {s}
+
+              {/* Describe it */}
+              {hintMode === "text" && (
+                <>
+                  <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+                    {HINT_CATEGORIES.map(c => (
+                      <button key={c.id} onClick={() => setHintCategory(c.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                        {c.label}
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
-            {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
-            <button onClick={generateGifts} disabled={!relationship || !budget}
-              className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2">
-              {generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
-            </button>
-          </div>
-        )}
+                  <form onSubmit={addHint} className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <input value={newHint} onChange={e => setNewHint(e.target.value)}
+                        onBlur={() => {
+                          const val = newHint.trim();
+                          try { new URL(val); setHintMode("link"); setHintUrl(val); setNewHint(""); } catch {}
+                        }} maxLength={280}
+                        placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
+                        className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
+                      <button type="submit" disabled={!newHint.trim() || adding}
+                        className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
+                        {adding ? "..." : "Add"}
+                      </button>
+                    </div>
+                    <div className="flex justify-between px-1">
+                      {addError ? <p className="text-red-600 text-xs">{addError}</p> : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid" ? <p className="text-xs text-[#888888]">More detail = better gifts</p> : <span />}
+                      {newHint.length > 0 && <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</p>}
+                    </div>
+                  </form>
+                </>
+              )}
 
-        {/* Recommendations */}
-        {recommendations.length > 0 && (() => {
-          const availableCategories = ["all", ...Array.from(new Set(recommendations.map(r => r.category)))];
-          const filtered = categoryFilter === "all" ? recommendations : recommendations.filter(r => r.category === categoryFilter);
-          const visible = showAllRecs ? filtered : filtered.slice(0, 5);
-          return (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-[#111111]">Gift ideas for {displayName}</h2>
-                <span className="text-xs text-[#888888]">{filtered.length} ideas</span>
-              </div>
-              {availableCategories.length > 2 && (
-                <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-none">
-                  {availableCategories.map(cat => (
-                    <button key={cat} onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${categoryFilter === cat ? "bg-[#111111] text-white" : "bg-white text-[#111111] shadow-card hover:bg-[#F0F0E8]"}`}>
-                      {GIFT_CATEGORY_LABELS[cat] || cat}
+              {/* Paste a link */}
+              {hintMode === "link" && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs text-[#888888]">Find something on Amazon, Target, Etsy — anywhere. Paste the link here and we&apos;ll save it.</p>
+                  <div className="flex gap-2">
+                    <input type="url" value={hintUrl}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val.includes(" ")) { setHintMode("text"); setNewHint(val.trim()); setHintUrl(""); setEnrichedProduct(null); setEnrichError(""); return; }
+                        setHintUrl(val); setEnrichedProduct(null); setEnrichError("");
+                      }}
+                      onKeyDown={e => e.key === "Enter" && enrichUrl()}
+                      placeholder="https://amazon.com/..."
+                      className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                    />
+                    <button onClick={enrichUrl} disabled={!hintUrl.trim() || enriching}
+                      className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
+                      {enriching ? "..." : "Look up"}
                     </button>
-                  ))}
+                  </div>
+                  {enrichError && <p className="text-red-500 text-xs">{enrichError}</p>}
+                  {enrichedProduct && (
+                    <div className="bg-[#F5F5F0] rounded-xl p-3 flex gap-3">
+                      {enrichedProduct.image && (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white">
+                          <img src={enrichedProduct.image} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#111111] leading-snug line-clamp-2">{enrichedProduct.title}</p>
+                        {enrichedProduct.price && <p className="text-sm font-bold text-[#111111] mt-1">{enrichedProduct.price}</p>}
+                      </div>
+                    </div>
+                  )}
+                  {addError && <p className="text-red-500 text-xs">{addError}</p>}
+                  {enrichedProduct && (
+                    <button onClick={addLinkHint} disabled={adding}
+                      className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                      {adding ? "Saving..." : "Save to wishlist"}
+                    </button>
+                  )}
                 </div>
               )}
-              <div className="flex flex-col gap-3">
-                {visible.map((rec, i) => {
-                  const alreadyClaimed = isAlreadyClaimed(rec.title);
-                  const iMineThis = myClaims.includes(rec.title);
-                  return (
-                    <div key={i} className={`bg-white rounded-2xl shadow-card p-4 ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
-                      <h3 className="font-semibold text-[#111111] text-sm leading-snug mb-1">{rec.title}</h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-base font-bold text-[#111111]">{rec.priceRange}</span>
-                        <span className="text-xs text-[#888888]">· {rec.category}</span>
-                        {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
-                      </div>
-                      <p className="text-[#888888] text-xs leading-relaxed mb-3">{rec.why}</p>
-                      <div className="flex gap-2">
-                        <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
-                          Find this gift <ArrowRight className="w-3.5 h-3.5" />
-                        </a>
-                        {confirmUnclaim === rec.title ? (
-                          <>
-                            <button onClick={() => unclaimGift(rec.title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-sm transition-colors">Release</button>
-                            <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-sm transition-colors">Keep</button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => iMineThis ? setConfirmUnclaim(rec.title) : claimGift(rec.title)}
-                            disabled={!iMineThis && (alreadyClaimed || claiming === rec.title)}
-                            className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                            {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
-                          </button>
-                        )}
-                      </div>
-                      {notifyPromptTitle === rec.title && (
-                        <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
-                          <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
-                            <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
-                          </div>
-                        </div>
-                      )}
-                      {notifySent.has(rec.title) && <p className="mt-2 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-3 space-y-2">
-                {!showAllRecs && filtered.length > 5 && (
-                  <button onClick={() => setShowAllRecs(true)} className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm shadow-card transition-colors">
-                    See all {filtered.length} results
-                  </button>
-                )}
-                <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
-                  className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
-                  Refine search
-                </button>
-              </div>
-            </div>
-          );
-        })()}
 
-        {/* Sign-up CTA for visitors */}
-        {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
-          <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
-            <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
-            <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
-            <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-              Get started <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-        )}
-
-        {/* Drop a hint (owner) */}
-        {isOwner && (
-          <div className="bg-white rounded-2xl shadow-card p-5">
-            <p className="text-base font-bold text-[#111111] mb-3">Add to your wishlist</p>
-
-            {/* Mode tabs */}
-            <div className="flex bg-[#F5F5F0] rounded-xl p-1 gap-1 mb-4">
-              <button onClick={() => { setHintMode("text"); setEnrichError(""); setEnrichedProduct(null); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "text" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
-                Describe it
-              </button>
-              <button onClick={() => { setHintMode("link"); setAddError(""); setNewHint(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "link" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
-                <Link2 className="w-3.5 h-3.5" /> Paste a link
-              </button>
-            </div>
-
-            {hintMode === "text" && (
-              <>
-                <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
-                  {HINT_CATEGORIES.map(c => (
-                    <button key={c.id} onClick={() => setHintCategory(c.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                      {c.label}
+              {/* Discover with AI */}
+              {hintMode === "discover" && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs text-[#888888]">AI reads all your hints and finds gifts you&apos;d genuinely love — things you might not know existed yet.</p>
+                  <div className="flex flex-col gap-3">
+                    <select value={discoveryBudget} onChange={e => setDiscoveryBudget(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
+                      <option value="">Select a budget...</option>
+                      <option value="under $25">Under $25</option>
+                      <option value="$25-$50">$25 – $50</option>
+                      <option value="$50-$100">$50 – $100</option>
+                      <option value="$100-$200">$100 – $200</option>
+                      <option value="over $200">$200+</option>
+                    </select>
+                    <input value={discoveryOccasion} onChange={e => setDiscoveryOccasion(e.target.value)}
+                      placeholder="For any occasion, or specify one..."
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
+                  </div>
+                  {discoveryError && <p className="text-red-600 text-xs">{discoveryError}</p>}
+                  {discoveryRecs.length === 0 && (
+                    <button onClick={generateSelfDiscovery} disabled={!discoveryBudget || discoveryGenerating}
+                      className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2">
+                      {discoveryGenerating ? "Finding gifts..." : <><Sparkles className="w-4 h-4" /> Find gifts I&apos;d love</>}
                     </button>
-                  ))}
-                </div>
-                <form onSubmit={addHint} className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <input value={newHint} onChange={e => setNewHint(e.target.value)}
-                      onBlur={() => {
-                        const val = newHint.trim();
-                        try { new URL(val); setHintMode("link"); setHintUrl(val); setNewHint(""); } catch {}
-                      }} maxLength={280}
-                      placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
-                      className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
-                    <button type="submit" disabled={!newHint.trim() || adding}
-                      className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
-                      {adding ? "..." : "Add"}
-                    </button>
-                  </div>
-                  <div className="flex justify-between px-1">
-                    {addError ? <p className="text-red-600 text-xs">{addError}</p> : newHint.trim().length > 0 && newHint.trim().length < 40 && hintCategory !== "avoid" ? <p className="text-xs text-[#888888]">More detail = better gifts</p> : <span />}
-                    {newHint.length > 0 && <p className={`text-xs ml-auto ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</p>}
-                  </div>
-                </form>
-              </>
-            )}
-
-            {hintMode === "link" && (
-              <div className="flex flex-col gap-3">
-                <p className="text-xs text-[#888888]">Find something on Amazon, Target, Etsy — anywhere. Paste the link here and we&apos;ll save it.</p>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={hintUrl}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val.includes(" ")) {
-                        setHintMode("text"); setNewHint(val.trim()); setHintUrl(""); setEnrichedProduct(null); setEnrichError(""); return;
-                      }
-                      setHintUrl(val); setEnrichedProduct(null); setEnrichError("");
-                    }}
-                    onKeyDown={e => e.key === "Enter" && enrichUrl()}
-                    placeholder="https://amazon.com/..."
-                    className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
-                  />
-                  <button onClick={enrichUrl} disabled={!hintUrl.trim() || enriching}
-                    className="px-5 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors whitespace-nowrap">
-                    {enriching ? "..." : "Look up"}
-                  </button>
-                </div>
-                {enrichError && <p className="text-red-500 text-xs">{enrichError}</p>}
-                {enrichedProduct && (
-                  <div className="bg-[#F5F5F0] rounded-xl p-3 flex gap-3">
-                    {enrichedProduct.image && (
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-white">
-                        <img src={enrichedProduct.image} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#111111] leading-snug line-clamp-2">{enrichedProduct.title}</p>
-                      {enrichedProduct.price && <p className="text-sm font-bold text-[#111111] mt-1">{enrichedProduct.price}</p>}
-                    </div>
-                  </div>
-                )}
-                {addError && <p className="text-red-500 text-xs">{addError}</p>}
-                {enrichedProduct && (
-                  <button onClick={addLinkHint} disabled={adding}
-                    className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
-                    {adding ? "Saving..." : "Save to wishlist"}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Progress nudge */}
-        {isOwner && textHints.length >= 1 && textHints.length < 5 && (
-          <div className="bg-[#C4D4B4] rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-[#2D4A1E]">{textHints.length < 3 ? "Getting started" : "Almost there"}</p>
-              <span className="text-xs font-bold text-[#2D4A1E]">{textHints.length}/5</span>
-            </div>
-            <div className="w-full h-1.5 bg-white/40 rounded-full mb-2 overflow-hidden">
-              <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((textHints.length / 5) * 100)}%` }} />
-            </div>
-            <p className="text-xs text-[#2D4A1E]/80">
-              {textHints.length < 3 ? "Add hints — the AI needs context to go beyond generic suggestions." : "5+ hints is where gift ideas start feeling truly personal."}
-            </p>
-          </div>
-        )}
-
-        {/* Specific wants (owner view) */}
-        {isOwner && productHints.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
-              <p className="text-sm font-bold text-[#111111]">Specific wants</p>
-              <span className="text-xs text-[#888888]">{productHints.length}</span>
-            </div>
-            <div className="divide-y divide-[#F0F0E8]">
-              {productHints.map(hint => (
-                <div key={hint.id} className="p-4 flex items-center gap-3 group">
-                  {hint.product_image && (
-                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
-                      <img src={hint.product_image} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                    </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#111111] line-clamp-1">{hint.product_title || hint.content}</p>
-                    {hint.product_price && <p className="text-xs font-bold text-[#888888]">{hint.product_price}</p>}
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {confirmDeleteId === hint.id ? (
-                      <>
-                        <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        {hint.url && (
-                          <a href={hint.url} target="_blank" rel="noopener noreferrer"
-                            className="px-2.5 py-1 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] text-xs font-semibold rounded-full transition-colors flex items-center gap-1">
-                            View <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                        <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Hints list (text hints) */}
-        {(isOwner || textHints.length > 0) && (
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
-              <p className="text-sm font-bold text-[#111111]">
-                {isOwner ? "Gift ideas" : `${displayName}'s hints`}
-              </p>
-              {textHints.length > 0 && <span className="text-xs text-[#888888]">{textHints.length}</span>}
-            </div>
-            {isOwner && textHints.length === 0 ? (
-              <div className="p-6 text-center">
-                <Lightbulb className="w-8 h-8 text-[#CCCCCC] mx-auto mb-2" />
-                <p className="font-bold text-[#111111] text-sm mb-1">Drop hints for AI-powered suggestions</p>
-                <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[#F0F0E8]">
-                {textHints.map(hint => {
-                  const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
-                  return (
-                    <div key={hint.id} className="px-4 py-3.5 group">
-                      {isOwner && editingHintId === hint.id ? (
-                        <div>
-                          <div className="flex gap-1.5 flex-wrap mb-2">
-                            {HINT_CATEGORIES.map(c => (
-                              <button key={c.id} onClick={() => setEditCategory(c.id)}
-                                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${editCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                                {c.label}
-                              </button>
-                            ))}
-                          </div>
-                          <textarea value={editContent} onChange={e => setEditContent(e.target.value)} maxLength={280} autoFocus rows={2}
-                            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] focus:outline-none resize-none mb-2" />
-                          <div className="flex items-center justify-between">
-                            <div className="flex gap-2">
-                              <button onClick={() => saveHint(hint.id)} disabled={!editContent.trim() || hintSaving}
-                                className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs">Save</button>
-                              <button onClick={cancelEditHint} className="px-4 py-1.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs">Cancel</button>
-                            </div>
-                            <span className={`text-xs ${editContent.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - editContent.length}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full inline-block mb-1.5 ${cat.color}`}>{cat.label}</span>
-                            <p className="text-[#111111] text-sm">{hint.content}</p>
-                          </div>
-                          {isOwner && (
-                            <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              {confirmDeleteId === hint.id ? (
-                                <>
-                                  <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                                  <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
-                                </>
-                              ) : (
-                                <>
-                                  <button onClick={() => startEditHint(hint)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                                  <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-                                </>
-                              )}
-                            </div>
+                  {discoveryRecs.length > 0 && (
+                    <div className="space-y-2.5">
+                      {discoveryRecs.map((rec, i) => (
+                        <div key={i} className="bg-[#F5F5F0] rounded-xl p-3">
+                          <p className="font-semibold text-[#111111] text-sm leading-snug">{rec.title}</p>
+                          <p className="text-xs text-[#888888] mt-0.5">{rec.priceRange} · {rec.category}</p>
+                          <p className="text-xs text-[#888888] mt-1 leading-relaxed">{rec.why}</p>
+                          {savedDiscoveryRecs.has(i) ? (
+                            <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-2"><Check className="w-3 h-3" /> Saved to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}</p>
+                          ) : (
+                            <button onClick={() => saveDiscoveryRec(rec, i)}
+                              className="mt-2 px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-full transition-colors">
+                              Save to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}
+                            </button>
                           )}
                         </div>
-                      )}
+                      ))}
+                      <button onClick={() => { setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); }}
+                        className="w-full py-2 text-xs text-[#888888] hover:text-[#111111] transition-colors">
+                        Try different options
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Occasion nudge — shown to owners with 3+ hints but no occasions */}
-        {isOwner && occasions.length === 0 && textHints.length >= 3 && (
-          <button onClick={() => setAddingOccasion(true)}
-            className="w-full px-4 py-3.5 bg-[#ECC8AE] rounded-2xl text-left hover:bg-[#E4B89C] transition-colors">
-            <p className="text-sm font-semibold text-[#5C3118] flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> Add an occasion</p>
-            <p className="text-xs text-[#5C3118]/70 mt-0.5">Christmas? Anniversary? Visitors can tap it to find the perfect gift for that moment.</p>
-          </button>
-        )}
-
-        {/* Avoid nudge */}
-        {isOwner && avoidHints.length === 0 && hints.length > 0 && (
-          <button onClick={() => setHintCategory("avoid")}
-            className="w-full px-4 py-3.5 bg-white rounded-2xl shadow-card text-left hover:bg-[#F0F0E8] transition-colors border-2 border-dashed border-[#E0E0D8] hover:border-red-300">
-            <p className="text-sm font-semibold text-[#888888] hover:text-red-500">+ What should people NOT get you?</p>
-            <p className="text-xs text-[#AAAAAA] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
-          </button>
-        )}
-
-        {avoidHints.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-red-100">
-              <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
-            </div>
-            <div className="divide-y divide-[#F0F0E8]">
-              {avoidHints.map(hint => (
-                <div key={hint.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                  <span className="text-[#888888] text-sm">— {hint.content}</span>
-                  {isOwner && (
-                    confirmDeleteId === hint.id ? (
-                      <div className="flex gap-1">
-                        <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-                    )
                   )}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+
+            {/* Occasion list sections */}
+            {occasions.map(occ => {
+              const occHints = hints.filter(h => (h.occasion_id ?? null) === occ.id && h.category !== "avoid");
+              const occProducts = occHints.filter(h => h.url);
+              const occTextHints = occHints.filter(h => !h.url);
+              const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
+              const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
+              return (
+                <div key={occ.id} className="bg-white rounded-2xl shadow-card overflow-hidden">
+                  <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CalendarDays className="w-4 h-4 text-[#888888] flex-shrink-0" />
+                      <span className="font-bold text-[#111111] text-sm truncate">{occ.name}</span>
+                      {isUpcoming && <span className="text-xs text-[#888888] flex-shrink-0">{daysUntil === 0 ? "· today" : `· in ${daysUntil}d`}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <VisibilityToggle
+                        visibility={occ.visibility as VisibilityLevel || "public"}
+                        onToggle={() => {
+                          const idx = VISIBILITY_CYCLE.indexOf(occ.visibility as VisibilityLevel);
+                          updateOccasionVisibility(occ.id, VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]);
+                        }}
+                      />
+                      {confirmDeleteOccasion === occ.id ? (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => deleteOccasion(occ.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                          <button onClick={() => setConfirmDeleteOccasion(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteOccasion(occ.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                      )}
+                    </div>
+                  </div>
+                  {occHints.length === 0 ? (
+                    <div className="px-4 py-5 text-center">
+                      <p className="text-xs text-[#CCCCCC]">No items yet — select <strong>{occ.name}</strong> above and add hints or paste a link</p>
+                    </div>
+                  ) : (
+                    <div>
+                      {occProducts.map(hint => (
+                        <div key={hint.id} className="p-4 border-b border-[#F0F0E8] last:border-0">
+                          <ProductHintCard hint={hint} showClaim={false} />
+                        </div>
+                      ))}
+                      {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Hints list section */}
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+              <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-[#888888]" />
+                  <span className="font-bold text-[#111111] text-sm">Hints</span>
+                  {generalHints.length > 0 && <span className="text-xs text-[#888888]">{generalHints.length}</span>}
+                </div>
+                <VisibilityToggle
+                  visibility={hintsVisibility}
+                  onToggle={() => {
+                    const idx = VISIBILITY_CYCLE.indexOf(hintsVisibility);
+                    updateHintsVisibility(VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]);
+                  }}
+                />
+              </div>
+
+              {generalProductHints.length === 0 && generalTextHints.length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="font-bold text-[#111111] text-sm mb-1">Drop hints for AI-powered suggestions</p>
+                  <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
+                </div>
+              ) : (
+                <div>
+                  {generalProductHints.map(hint => (
+                    <div key={hint.id} className="p-4 border-b border-[#F0F0E8] last:border-0">
+                      <ProductHintCard hint={hint} showClaim={false} />
+                    </div>
+                  ))}
+                  {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                </div>
+              )}
+
+              {/* Progress nudge */}
+              {generalTextHints.length >= 1 && generalTextHints.length < 5 && (
+                <div className="mx-4 mb-4 mt-1 bg-[#C4D4B4] rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-bold text-[#2D4A1E]">{generalTextHints.length < 3 ? "Getting started" : "Almost there"}</p>
+                    <span className="text-xs font-bold text-[#2D4A1E]">{generalTextHints.length}/5</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-white/40 rounded-full mb-1.5 overflow-hidden">
+                    <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((generalTextHints.length / 5) * 100)}%` }} />
+                  </div>
+                  <p className="text-xs text-[#2D4A1E]/80">
+                    {generalTextHints.length < 3 ? "Add hints — the AI needs context to go beyond generic suggestions." : "5+ hints is where gift ideas start feeling truly personal."}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Occasion nudge */}
+            {occasions.length === 0 && generalTextHints.length >= 3 && (
+              <button onClick={() => setAddingOccasion(true)}
+                className="w-full px-4 py-3.5 bg-[#ECC8AE] rounded-2xl text-left hover:bg-[#E4B89C] transition-colors">
+                <p className="text-sm font-semibold text-[#5C3118] flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> Add an occasion</p>
+                <p className="text-xs text-[#5C3118]/70 mt-0.5">Christmas? Anniversary? Visitors can tap it to find the perfect gift for that moment.</p>
+              </button>
+            )}
+
+            {/* Avoid nudge */}
+            {avoidHints.length === 0 && hints.length > 0 && (
+              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); }}
+                className="w-full px-4 py-3.5 bg-white rounded-2xl shadow-card text-left hover:bg-[#F0F0E8] transition-colors border-2 border-dashed border-[#E0E0D8] hover:border-red-300">
+                <p className="text-sm font-semibold text-[#888888] hover:text-red-500">+ What should people NOT get you?</p>
+                <p className="text-xs text-[#AAAAAA] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
+              </button>
+            )}
+
+            {/* Avoid section */}
+            {avoidHints.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                <div className="px-4 py-3 border-b border-red-100">
+                  <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
+                </div>
+                <div className="divide-y divide-[#F0F0E8]">
+                  {avoidHints.map(hint => (
+                    <div key={hint.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                      <span className="text-[#888888] text-sm">— {hint.content}</span>
+                      {confirmDeleteId === hint.id ? (
+                        <div className="flex gap-1">
+                          <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                          <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ═══ VISITOR VIEW ════════════════════════════════════════════════════ */}
+        {!isOwner && (
+          <>
+            {/* Occasion sections for visitors */}
+            {occasions.map(occ => {
+              const occHints = hints.filter(h => (h.occasion_id ?? null) === occ.id && h.category !== "avoid");
+              const occProducts = occHints.filter(h => h.url);
+              const occTextHints = occHints.filter(h => !h.url);
+              if (occHints.length === 0) return null;
+              return (
+                <div key={occ.id}>
+                  <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" /> {occ.name}
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    {occProducts.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} />)}
+                    {occTextHints.length > 0 && (
+                      <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                        {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Product hints in general list (visible to non-connected visitors if hints are public) */}
+            {generalProductHints.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> What {displayName} wants</p>
+                <div className="flex flex-col gap-3">
+                  {generalProductHints.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} />)}
+                </div>
+              </div>
+            )}
+
+            {/* Hints section for visitors */}
+            {generalTextHints.length > 0 && (
+              <div>
+                {recommendations.length === 0 && !showFinder && (() => {
+                  try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
+                })() && (
+                  <div className="bg-[#B8CED0] rounded-2xl p-4 mb-3">
+                    <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
+                    <p className="text-[#1A3D42] text-sm leading-relaxed">
+                      {displayName} dropped {generalTextHints.length} gift hint{generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
+                    </p>
+                  </div>
+                )}
+                <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                  <div className="px-4 py-3.5 border-b border-[#F0F0E8]">
+                    <p className="text-sm font-bold text-[#111111]">{displayName}&apos;s hints</p>
+                  </div>
+                  {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                </div>
+              </div>
+            )}
+
+            {/* Empty state — nothing visible */}
+            {isLoaded && hintsToShow.length === 0 && occasions.length === 0 && (
+              <div className="bg-white rounded-2xl shadow-card p-6 text-center">
+                <p className="font-semibold text-[#111111] mb-1">{displayName} hasn&apos;t added any hints yet</p>
+                {!isConnected && initialProfile.hints_visibility !== "public" ? (
+                  <>
+                    <p className="text-[#888888] text-sm mb-4">Connect with {displayName} to unlock their personal hints and get more personalized gift ideas.</p>
+                    {isLoaded && user ? (
+                      followStatus === "pending"
+                        ? <p className="text-sm text-[#888888] font-semibold">Request sent — waiting for {displayName} to accept</p>
+                        : followStatus !== "accepted" && (
+                          <button onClick={() => setShowLabelPicker(true)}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                            + Add to my people
+                          </button>
+                        )
+                    ) : (
+                      <Link href="/sign-up" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                        Join to connect <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    )}
+                    <p className="text-[#AAAAAA] text-xs mt-4">You can still find a gift — just without the personal touch.</p>
+                    <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors mt-2">
+                      Find a gift anyway <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[#888888] text-sm mb-4">You can still find gift ideas — just without the personal touch.</p>
+                    <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                      Find a gift anyway <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Gift Finder — loading */}
+            {showFinder && recommendations.length === 0 && generating && (
+              <div className="bg-white rounded-2xl shadow-card p-8 text-center overflow-hidden">
+                <div className="relative w-24 h-24 mx-auto mb-6">
+                  <div className="absolute inset-0 rounded-full bg-[#ECC8AE] animate-ping opacity-20" />
+                  <div className="absolute inset-2 rounded-full bg-[#ECC8AE] animate-ping opacity-30" style={{ animationDelay: "0.4s", animationDuration: "1.2s" }} />
+                  <div className="relative w-24 h-24 rounded-full bg-[#ECC8AE] flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-[#5C3118]" />
+                  </div>
+                </div>
+                <p className="text-base font-bold text-[#111111] mb-1 transition-opacity duration-300" style={{ opacity: msgVisible ? 1 : 0 }}>
+                  {LOADING_MESSAGES[loadingMsgIdx]}
+                </p>
+                <p className="text-xs text-[#888888] mb-6">GiftButler AI is reading all their hints at once</p>
+                <div className="flex justify-center gap-2">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="w-2.5 h-2.5 rounded-full bg-[#ECC8AE] animate-bounce" style={{ animationDelay: `${i * 160}ms` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Gift Finder — form */}
+            {showFinder && recommendations.length === 0 && !generating && (
+              <div ref={finderRef} className="bg-white rounded-2xl shadow-card p-5">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
+                  <button onClick={() => setShowFinder(false)} className="p-1.5 bg-[#F0F0E8] rounded-full text-[#888888] hover:text-[#111111]"><X className="w-4 h-4" /></button>
+                </div>
+                <div className="flex flex-col gap-4 mb-5">
+                  <div>
+                    <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">I&apos;m their</label>
+                    <select ref={relationshipRef} value={relationship} onChange={e => setRelationship(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
+                      <option value="">Select relationship...</option>
+                      <optgroup label="Partner">
+                        {[["husband","Husband"],["wife","Wife"],["partner","Partner"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                      </optgroup>
+                      <optgroup label="Family">
+                        {[["dad","Dad"],["mom","Mom"],["son","Son"],["daughter","Daughter"],["brother","Brother"],["sister","Sister"],["grandfather","Grandfather"],["grandmother","Grandmother"],["grandson","Grandson"],["granddaughter","Granddaughter"],["uncle","Uncle"],["aunt","Aunt"],["nephew","Nephew"],["niece","Niece"],["cousin","Cousin"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                      </optgroup>
+                      <optgroup label="Friends & Others">
+                        {[["best friend","Best Friend"],["friend","Friend"],["colleague","Colleague"],["other","Other"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Budget</label>
+                    <select value={budget} onChange={e => setBudget(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
+                      <option value="">Select budget...</option>
+                      <option value="under $25">Under $25</option>
+                      <option value="$25-$50">$25 – $50</option>
+                      <option value="$50-$100">$50 – $100</option>
+                      <option value="$100-$200">$100 – $200</option>
+                      <option value="over $200">$200+</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
+                    <input type="text" value={occasion} onChange={e => setOccasion(e.target.value)} placeholder="Birthday, Graduation, Mother's Day..." autoComplete="off"
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
+                    {!occasion && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {["Birthday","Mother's Day","Father's Day","Graduation","Anniversary","Wedding","Baby Shower","Holiday","Just Because"].map(s => (
+                          <button key={s} type="button" onClick={() => setOccasion(s)}
+                            className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
+                <button onClick={generateGifts} disabled={!relationship || !budget}
+                  className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2">
+                  {generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
+                </button>
+              </div>
+            )}
+
+            {/* Recommendations */}
+            {recommendations.length > 0 && (() => {
+              const availableCategories = ["all", ...Array.from(new Set(recommendations.map(r => r.category)))];
+              const filtered = categoryFilter === "all" ? recommendations : recommendations.filter(r => r.category === categoryFilter);
+              const visible = showAllRecs ? filtered : filtered.slice(0, 5);
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-bold text-[#111111]">Gift ideas for {displayName}</h2>
+                    <span className="text-xs text-[#888888]">{filtered.length} ideas</span>
+                  </div>
+                  {availableCategories.length > 2 && (
+                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-none">
+                      {availableCategories.map(cat => (
+                        <button key={cat} onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
+                          className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${categoryFilter === cat ? "bg-[#111111] text-white" : "bg-white text-[#111111] shadow-card hover:bg-[#F0F0E8]"}`}>
+                          {GIFT_CATEGORY_LABELS[cat] || cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-3">
+                    {visible.map((rec, i) => {
+                      const alreadyClaimed = isAlreadyClaimed(rec.title);
+                      const iMineThis = myClaims.includes(rec.title);
+                      return (
+                        <div key={i} className={`bg-white rounded-2xl shadow-card p-4 ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
+                          <h3 className="font-semibold text-[#111111] text-sm leading-snug mb-1">{rec.title}</h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-base font-bold text-[#111111]">{rec.priceRange}</span>
+                            <span className="text-xs text-[#888888]">· {rec.category}</span>
+                            {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
+                          </div>
+                          <p className="text-[#888888] text-xs leading-relaxed mb-3">{rec.why}</p>
+                          <div className="flex gap-2">
+                            <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
+                              className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+                              Find this gift <ArrowRight className="w-3.5 h-3.5" />
+                            </a>
+                            {isLoaded && user && <ClaimButton title={rec.title} />}
+                          </div>
+                          {notifyPromptTitle === rec.title && (
+                            <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
+                              <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
+                              <div className="flex gap-2 flex-shrink-0">
+                                <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
+                                <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
+                              </div>
+                            </div>
+                          )}
+                          {notifySent.has(rec.title) && <p className="mt-2 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {!showAllRecs && filtered.length > 5 && (
+                      <button onClick={() => setShowAllRecs(true)} className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm shadow-card transition-colors">
+                        See all {filtered.length} results
+                      </button>
+                    )}
+                    <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
+                      className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Sign-up CTA for visitors */}
+            {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
+              <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
+                <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
+                <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
+                <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                  Get started <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+
+            {/* Avoid section — visible to all */}
+            {avoidHints.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                <div className="px-4 py-3 border-b border-red-100">
+                  <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
+                </div>
+                <div className="divide-y divide-[#F0F0E8]">
+                  {avoidHints.map(hint => (
+                    <div key={hint.id} className="px-4 py-3">
+                      <span className="text-[#888888] text-sm">— {hint.content}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <div className="text-center pb-4">
@@ -1170,10 +1432,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
       {isLoaded && user && <BottomTabBar myUsername={myUsername} />}
 
-      {/* Add occasion — bottom sheet (mobile) / centered modal (desktop) */}
+      {/* Add occasion sheet */}
       {isOwner && addingOccasion && (() => {
         const isBirthday = newOccasionName.trim().toLowerCase().includes("birthday");
-        const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); };
+        const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); };
         return (
           <>
             <style>{`
@@ -1184,37 +1446,23 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               .gb-backdrop { animation: gb-backdrop 0.2s ease-out; }
               @media (min-width: 768px) { .gb-sheet { animation: gb-fade-in 0.2s ease-out; } }
             `}</style>
-
-            {/* Backdrop */}
             <div className="gb-backdrop fixed inset-0 z-50 bg-black/40" onClick={closeSheet} />
-
-            {/* Sheet wrapper — positions the panel */}
             <div className="gb-sheet fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
-              <div
-                className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden"
-                onClick={e => e.stopPropagation()}
-              >
-                {/* Drag handle pill (mobile only) */}
+              <div className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="pt-3 pb-1 flex justify-center md:hidden">
                   <div className="w-10 h-1 bg-[#E0E0D8] rounded-full" />
                 </div>
-
-                {/* Scrollable content — handles keyboard-push on mobile */}
                 <div className="px-6 pt-4 pb-6 overflow-y-auto" style={{ maxHeight: "85svh", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
                   <div className="flex items-center justify-between mb-5">
-                    <p className="text-lg font-bold text-[#111111]">Add an occasion</p>
+                    <p className="text-lg font-bold text-[#111111]">Add a list</p>
                     <button onClick={closeSheet} className="p-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] rounded-full text-[#888888] hover:text-[#111111] transition-colors">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-
                   <div className="flex flex-col gap-4">
                     <div>
-                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Occasion</label>
-                      <input
-                        type="text"
-                        value={newOccasionName}
-                        onChange={e => setNewOccasionName(e.target.value)}
+                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">List name</label>
+                      <input type="text" value={newOccasionName} onChange={e => setNewOccasionName(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && !isBirthday && addOccasion()}
                         placeholder="e.g. Graduation, Mother's Day..."
                         autoComplete="off"
@@ -1222,7 +1470,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                       />
                       {!newOccasionName && (
                         <div className="flex flex-wrap gap-1.5 mt-2.5">
-                          {["Mother's Day","Father's Day","Graduation","Wedding","Anniversary","Baby Shower","Retirement","Holiday","Housewarming"].map(s => (
+                          {["Mother's Day","Father's Day","Graduation","Wedding","Anniversary","Baby Shower","Retirement","Holiday","Housewarming","Christmas"].map(s => (
                             <button key={s} type="button" onClick={() => setNewOccasionName(s)}
                               className="px-3 py-1.5 bg-white border border-[#E0E0D8] hover:border-[#ECC8AE] hover:bg-[#FDF5EE] rounded-full text-xs font-semibold text-[#555555] hover:text-[#5C3118] transition-colors">
                               {s}
@@ -1237,28 +1485,37 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                         </p>
                       )}
                     </div>
-
                     {!isBirthday && (
                       <div>
                         <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
                           Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
                         </label>
-                        <input
-                          type="date"
-                          value={newOccasionDate}
-                          onChange={e => setNewOccasionDate(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none"
-                        />
+                        <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
                       </div>
                     )}
-
+                    {!isBirthday && (
+                      <div>
+                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-2">Who can see this list?</label>
+                        <div className="flex gap-2">
+                          {VISIBILITY_CYCLE.map(v => {
+                            const cfg = VISIBILITY_CONFIG[v];
+                            const Icon = cfg.icon;
+                            return (
+                              <button key={v} type="button" onClick={() => setNewOccasionVisibility(v)}
+                                className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 text-xs font-semibold transition-all ${newOccasionVisibility === v ? "border-[#111111] bg-[#F5F5F0]" : "border-[#E0E0D8] bg-white hover:border-[#AAAAAA]"}`}>
+                                <Icon className="w-4 h-4" />
+                                {cfg.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     {occasionError && <p className="text-red-500 text-xs">{occasionError}</p>}
-                    <button
-                      onClick={addOccasion}
-                      disabled={!newOccasionName.trim() || isBirthday || savingOccasion}
-                      className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors"
-                    >
-                      {savingOccasion ? "Saving..." : "Save occasion"}
+                    <button onClick={addOccasion} disabled={!newOccasionName.trim() || isBirthday || savingOccasion}
+                      className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                      {savingOccasion ? "Saving..." : "Create list"}
                     </button>
                   </div>
                 </div>

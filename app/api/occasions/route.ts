@@ -23,14 +23,17 @@ export async function POST(req: NextRequest) {
 
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
-  const { name, date } = body;
+  const { name, date, visibility } = body;
 
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
   if (name.trim().length > 100) return NextResponse.json({ error: "Name too long" }, { status: 400 });
 
+  const VALID_VISIBILITY = ["public", "connections", "private"];
+  const safeVisibility = VALID_VISIBILITY.includes(visibility) ? visibility : "public";
+
   const { data, error } = await supabaseAdmin
     .from("occasions")
-    .insert({ user_id: userId, name: name.trim(), date: date || null })
+    .insert({ user_id: userId, name: name.trim(), date: date || null, visibility: safeVisibility })
     .select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

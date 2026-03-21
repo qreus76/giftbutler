@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -28,9 +29,21 @@ export async function POST(req: NextRequest) {
 
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
-  const { username, relationship, budget, occasion } = body;
-  if (!username || !relationship || !budget) {
+  const { username, relationship, budget, occasion, is_self_discovery } = body;
+  if (!username || !budget) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+  if (!is_self_discovery && !relationship) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  // Self-discovery: must be authenticated as the profile owner
+  if (is_self_discovery) {
+    const { userId } = await auth();
+    const { data: ownerCheck } = await supabase.from("profiles").select("id").eq("username", username).single();
+    if (!userId || !ownerCheck || userId !== ownerCheck.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   // Get profile and hints
@@ -42,7 +55,9 @@ export async function POST(req: NextRequest) {
 
   if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-  const { data: hints } = await supabase
+  // Self-discovery uses admin client to fetch ALL hints (owner sees everything)
+  const hintsClient = is_self_discovery ? supabaseAdmin : supabase;
+  const { data: hints } = await hintsClient
     .from("hints")
     .select("*")
     .eq("user_id", profile.id)
@@ -92,6 +107,7 @@ export async function POST(req: NextRequest) {
 
   const name = profile.name || username;
   const occasionText = occasion ? ` for their ${occasion}` : "";
+  const effectiveRelationship = is_self_discovery ? "yourself (self-gift — the buyer and recipient are the same person)" : relationship;
 
   let birthdayContext = "";
   if (profile.birthday) {
@@ -112,9 +128,9 @@ export async function POST(req: NextRequest) {
     : "";
 
   const prompt = `You are GiftButler, an expert gift recommendation AI. Your goal is to find gifts so personal and specific that the recipient will feel truly seen and understood.
-
+${is_self_discovery ? `\nThis is a SELF-DISCOVERY session — ${name} is finding gifts for themselves. Every suggestion should be something they'd genuinely use and love, not a generic gift idea.\n` : ""}
 RECIPIENT: ${name}
-RELATIONSHIP TO BUYER: ${relationship}
+RELATIONSHIP TO BUYER: ${effectiveRelationship}
 BUDGET: ${budget}${birthdayContext}${occasionContext}
 
 THEIR HINTS:
