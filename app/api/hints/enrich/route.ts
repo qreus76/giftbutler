@@ -35,8 +35,8 @@ function extractAsin(url: string): string | null {
   return null;
 }
 
-function amazonWidgetImageUrl(asin: string): string {
-  return `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=${AFFILIATE_TAG}`;
+function amazonImageUrl(asin: string): string {
+  return `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SL500_.jpg`;
 }
 
 function extractTitle(html: string): string | null {
@@ -94,13 +94,13 @@ export async function POST(req: NextRequest) {
 
     const ogTitle = extractMeta(html, "og:title");
 
-    // For Amazon URLs, extract ASIN from the final URL and use the affiliate image widget
+    // For Amazon URLs, extract ASIN and resolve to a direct CDN image URL
     let ogImage = extractMeta(html, "og:image");
     try {
       const finalHostname = new URL(finalUrl).hostname;
       if (isAmazonHost(finalHostname)) {
         const asin = extractAsin(finalUrl);
-        if (asin) ogImage = amazonWidgetImageUrl(asin);
+        if (asin) ogImage = amazonImageUrl(asin);
       }
     } catch { /* keep ogImage as-is */ }
     const ogPrice =

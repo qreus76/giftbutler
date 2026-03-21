@@ -38,8 +38,8 @@ function extractAsin(url) {
   return null;
 }
 
-function amazonWidgetImageUrl(asin) {
-  return `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=${AFFILIATE_TAG}`;
+function amazonImageUrl(asin) {
+  return `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SL500_.jpg`;
 }
 
 function extractOgImage(html) {
@@ -67,12 +67,12 @@ async function fetchImage(url) {
     const finalUrl = res.url;
     const html = await res.text();
 
-    // For Amazon URLs, use the affiliate image widget via ASIN
+    // For Amazon URLs, resolve ASIN to a direct CDN image URL
     try {
       const hostname = new URL(finalUrl).hostname;
       if (isAmazonHost(hostname)) {
         const asin = extractAsin(finalUrl);
-        if (asin) return amazonWidgetImageUrl(asin);
+        if (asin) return amazonImageUrl(asin);
       }
     } catch { /* fall through */ }
 
