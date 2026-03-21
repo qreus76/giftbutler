@@ -509,7 +509,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <button onClick={shareProfile}
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                 <Share className="w-3.5 h-3.5" />
-                {shareCopied ? "Copied!" : "Share profile"}
+                {shareCopied ? "Copied!" : "Share my list"}
               </button>
               <Link href="/profile/edit"
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
