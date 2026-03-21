@@ -422,57 +422,13 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </button>
               );
             })}
-            {isOwner && !addingOccasion && (
+            {isOwner && (
               <button onClick={() => setAddingOccasion(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-dashed border-[#E0E0D8] hover:border-[#ECC8AE] rounded-full text-xs font-semibold text-[#888888] hover:text-[#5C3118] transition-colors">
                 <Plus className="w-3.5 h-3.5" />
                 Add occasion
               </button>
             )}
-          </div>
-        )}
-
-        {/* Add occasion form (owner) */}
-        {isOwner && addingOccasion && (
-          <div className="mb-4 bg-white rounded-2xl shadow-card p-4">
-            <p className="text-sm font-bold text-[#111111] mb-3">Add an occasion</p>
-            <div className="flex flex-col gap-3">
-              <input
-                type="text"
-                list="occasion-suggestions"
-                value={newOccasionName}
-                onChange={e => setNewOccasionName(e.target.value)}
-                placeholder="e.g. Graduation, Mother's Day..."
-                className="w-full px-4 py-2.5 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
-              />
-              <datalist id="occasion-suggestions">
-                <option value="Mother's Day" />
-                <option value="Father's Day" />
-                <option value="High School Graduation" />
-                <option value="College Graduation" />
-                <option value="Wedding" />
-                <option value="Baby Shower" />
-                <option value="Retirement" />
-                <option value="Anniversary" />
-                <option value="Holiday" />
-                <option value="Housewarming" />
-              </datalist>
-              <div>
-                <label className="text-xs text-[#888888] mb-1 block">Date <span className="text-[#CCCCCC]">(optional)</span></label>
-                <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={addOccasion} disabled={!newOccasionName.trim() || savingOccasion}
-                  className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
-                  {savingOccasion ? "Saving..." : "Save"}
-                </button>
-                <button onClick={() => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); }}
-                  className="px-5 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] font-semibold rounded-full text-sm transition-colors">
-                  Cancel
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
@@ -1049,6 +1005,100 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       )}
 
       {isLoaded && user && <BottomTabBar myUsername={myUsername} />}
+
+      {/* Add occasion — bottom sheet (mobile) / centered modal (desktop) */}
+      {isOwner && addingOccasion && (
+        <>
+          <style>{`
+            @keyframes gb-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+            @keyframes gb-fade-in  { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+            @keyframes gb-backdrop { from { opacity: 0; } to { opacity: 1; } }
+            .gb-sheet   { animation: gb-slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+            .gb-modal   { animation: gb-fade-in  0.2s ease-out; }
+            .gb-backdrop{ animation: gb-backdrop 0.2s ease-out; }
+            @media (min-width: 768px) { .gb-sheet { animation: gb-fade-in 0.2s ease-out; } }
+          `}</style>
+
+          {/* Backdrop */}
+          <div
+            className="gb-backdrop fixed inset-0 z-50 bg-black/40"
+            onClick={() => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); }}
+          />
+
+          {/* Sheet */}
+          <div className="gb-sheet fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
+            <div
+              className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Drag handle (mobile only) */}
+              <div className="pt-3 pb-0 flex justify-center md:hidden">
+                <div className="w-10 h-1 bg-[#E0E0D8] rounded-full" />
+              </div>
+
+              <div className="px-6 pt-5 pb-6" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
+                <div className="flex items-center justify-between mb-5">
+                  <p className="text-lg font-bold text-[#111111]">Add an occasion</p>
+                  <button
+                    onClick={() => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); }}
+                    className="p-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] rounded-full text-[#888888] hover:text-[#111111] transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Occasion</label>
+                    <input
+                      type="text"
+                      list="occasion-suggestions"
+                      value={newOccasionName}
+                      onChange={e => setNewOccasionName(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && addOccasion()}
+                      placeholder="e.g. Graduation, Mother's Day..."
+                      autoFocus
+                      className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                    />
+                    <datalist id="occasion-suggestions">
+                      <option value="Mother's Day" />
+                      <option value="Father's Day" />
+                      <option value="High School Graduation" />
+                      <option value="College Graduation" />
+                      <option value="Wedding" />
+                      <option value="Baby Shower" />
+                      <option value="Retirement" />
+                      <option value="Anniversary" />
+                      <option value="Holiday" />
+                      <option value="Housewarming" />
+                    </datalist>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
+                      Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={newOccasionDate}
+                      onChange={e => setNewOccasionDate(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                    />
+                  </div>
+
+                  <button
+                    onClick={addOccasion}
+                    disabled={!newOccasionName.trim() || savingOccasion}
+                    className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors mt-1"
+                  >
+                    {savingOccasion ? "Saving..." : "Save occasion"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }
