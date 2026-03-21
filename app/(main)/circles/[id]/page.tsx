@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { ArrowLeft, Copy, Check, Gift, Shuffle, Share2, CalendarDays } from "lucide-react";
+import { ArrowLeft, Copy, Check, Gift, Shuffle, Share2, CalendarDays, Pencil, X, DollarSign, Calendar, AtSign } from "lucide-react";
 import { use } from "react";
 
 interface CircleDetail {
@@ -57,6 +57,13 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editBudget, setEditBudget] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editRecipient, setEditRecipient] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
 
@@ -75,6 +82,36 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id, isLoaded, user, router]);
+
+  function openEdit() {
+    if (!circle) return;
+    setEditName(circle.name);
+    setEditBudget(circle.budget ? String(circle.budget) : "");
+    setEditDate(circle.event_date ? circle.event_date.slice(0, 10) : "");
+    setEditRecipient(circle.recipient_username || "");
+    setSaveError("");
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!circle || !editName.trim()) return;
+    setSaving(true); setSaveError("");
+    const res = await fetch(`/api/circles/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editName,
+        budget: editBudget || null,
+        eventDate: editDate || null,
+        recipientUsername: circle.circle_type === "occasion" ? editRecipient : undefined,
+      }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (!res.ok) { setSaveError(data.error || "Failed to save"); return; }
+    setCircle(prev => prev ? { ...prev, ...data.circle, isOrganizer: prev.isOrganizer, memberCount: prev.memberCount } : prev);
+    setEditing(false);
+  }
 
   async function handleDraw() {
     if (!circle) return;
@@ -149,6 +186,11 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-[#111111]">{circle.name}</h1>
+              {circle.isOrganizer && (
+                <button onClick={openEdit} className="p-1.5 text-[#888888] hover:text-[#111111] transition-colors">
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
               {isExchange ? (
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${isOpen ? "bg-[#C4D4B4] text-[#2D4A1E]" : "bg-[#ECC8AE] text-[#5C3118]"}`}>
                   {isOpen ? "Open" : "Names drawn"}
@@ -341,6 +383,92 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
           )}
         </div>
       </div>
+
+      {/* Edit sheet */}
+      {editing && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setEditing(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[85svh] overflow-y-auto md:max-w-lg md:mx-auto md:left-1/2 md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:rounded-3xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-[#111111]">Edit circle</h2>
+              <button onClick={() => setEditing(false)} className="p-1.5 text-[#888888] hover:text-[#111111]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">Circle name</label>
+                <input
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">
+                  {circle.circle_type === "occasion" ? "Suggested contribution ($)" : "Budget per person ($)"}
+                  <span className="text-[#CCCCCC] normal-case font-normal ml-1">(optional)</span>
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
+                  <input
+                    type="number"
+                    value={editBudget}
+                    onChange={e => setEditBudget(e.target.value)}
+                    placeholder="0"
+                    min={1}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">
+                  Event date <span className="text-[#CCCCCC] normal-case font-normal">(optional)</span>
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={e => setEditDate(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none"
+                  />
+                </div>
+              </div>
+
+              {circle.circle_type === "occasion" && (
+                <div>
+                  <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">
+                    Recipient username <span className="text-[#CCCCCC] normal-case font-normal">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
+                    <input
+                      value={editRecipient}
+                      onChange={e => setEditRecipient(e.target.value.replace(/^@/, ""))}
+                      placeholder="their username"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {saveError && <p className="text-red-500 text-xs">{saveError}</p>}
+
+              <button
+                onClick={saveEdit}
+                disabled={saving || !editName.trim()}
+                className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors"
+              >
+                {saving ? "Saving..." : "Save changes"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }

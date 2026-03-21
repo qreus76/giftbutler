@@ -103,6 +103,42 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+
+  const { data: circle } = await supabaseAdmin
+    .from("gift_circles")
+    .select("organizer_id")
+    .eq("id", id)
+    .single();
+
+  if (!circle) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (circle.organizer_id !== userId) return NextResponse.json({ error: "Only the organizer can edit" }, { status: 403 });
+
+  const { name, budget, eventDate, recipientUsername } = await req.json();
+
+  const updates: Record<string, unknown> = {};
+  if (name !== undefined) updates.name = name.trim();
+  if (budget !== undefined) updates.budget = budget ? parseInt(budget) : null;
+  if (eventDate !== undefined) updates.event_date = eventDate || null;
+  if (recipientUsername !== undefined) updates.recipient_username = recipientUsername?.trim() || null;
+
+  if (!updates.name && name !== undefined) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+
+  const { data: updated, error } = await supabaseAdmin
+    .from("gift_circles")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+  return NextResponse.json({ circle: updated });
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
