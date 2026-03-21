@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { ArrowLeft, LogOut, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, LogOut, Check, AlertTriangle, Lock, Globe } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function EditProfilePage() {
   const [username, setUsername] = useState("");
   const [currentUsername, setCurrentUsername] = useState("");
   const [usernameLockedUntil, setUsernameLockedUntil] = useState<Date | null>(null);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -27,6 +28,7 @@ export default function EditProfilePage() {
         setBirthday(data.profile.birthday || "");
         setUsername(data.profile.username || "");
         setCurrentUsername(data.profile.username || "");
+        setIsPrivate(data.profile.is_private || false);
         if (data.profile.username_changed_at) {
           const changedAt = new Date(data.profile.username_changed_at);
           const nextAllowed = new Date(changedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -43,7 +45,7 @@ export default function EditProfilePage() {
     const res = await fetch("/api/profile/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), bio: bio.trim(), birthday: birthday || null, username: username.trim() !== currentUsername ? username.trim() : undefined }),
+      body: JSON.stringify({ name: name.trim(), bio: bio.trim(), birthday: birthday || null, username: username.trim() !== currentUsername ? username.trim() : undefined, is_private: isPrivate }),
     });
     const data = await res.json();
     setSaving(false);
@@ -154,6 +156,24 @@ export default function EditProfilePage() {
                 className="w-full text-[#111111] text-base focus:outline-none mt-1"
               />
             </div>
+          </div>
+
+          {/* Privacy toggle */}
+          <div className="bg-white rounded-2xl shadow-card p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {isPrivate ? <Lock className="w-5 h-5 text-[#111111] flex-shrink-0" /> : <Globe className="w-5 h-5 text-[#888888] flex-shrink-0" />}
+              <div>
+                <p className="text-sm font-semibold text-[#111111]">{isPrivate ? "Private profile" : "Public profile"}</p>
+                <p className="text-xs text-[#888888] mt-0.5">{isPrivate ? "Only your connections can see your wishlist" : "Anyone with your link can see your wishlist"}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPrivate(p => !p)}
+              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${isPrivate ? "bg-[#111111]" : "bg-[#CCCCCC]"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPrivate ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
           </div>
 
           {error && <p className="text-red-500 text-sm px-1">{error}</p>}

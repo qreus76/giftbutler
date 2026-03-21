@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import ProfileClient from "./ProfileClient";
+import LockedProfile from "./LockedProfile";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -84,6 +85,52 @@ export default async function ProfilePage({ params }: Props) {
     const clerkUser = await clerk.users.getUser(profile.id);
     avatarUrl = clerkUser.hasImage ? clerkUser.imageUrl : null;
   } catch { /* no photo available */ }
+
+  // Privacy gate
+  if (profile.is_private) {
+    const { userId } = await auth();
+
+    // Owner always sees their own profile
+    if (userId !== profile.id) {
+      const hintCountRes = await supabase
+        .from("hints")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile.id);
+      const hintCount = hintCountRes.count ?? 0;
+      const displayName = profile.name || profile.username;
+
+      // Check connection status
+      let connectionStatus: "unauthenticated" | "none" | "pending" = "unauthenticated";
+      if (userId) {
+        const { data: follow } = await supabaseAdmin
+          .from("follows")
+          .select("status")
+          .or(`and(requester_id.eq.${userId},receiver_id.eq.${profile.id}),and(requester_id.eq.${profile.id},receiver_id.eq.${userId})`)
+          .single();
+
+        if (follow?.status === "accepted") {
+          // Accepted connection — fall through to show full profile
+          connectionStatus = "accepted" as never;
+        } else if (follow?.status === "pending") {
+          connectionStatus = "pending";
+        } else {
+          connectionStatus = "none";
+        }
+      }
+
+      if (connectionStatus !== ("accepted" as never)) {
+        return (
+          <LockedProfile
+            displayName={displayName}
+            username={profile.username}
+            avatarUrl={avatarUrl}
+            hintCount={hintCount}
+            connectionStatus={connectionStatus}
+          />
+        );
+      }
+    }
+  }
 
   const [hintsRes, claimsRes, occasionsRes] = await Promise.all([
     supabase

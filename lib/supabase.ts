@@ -20,6 +20,7 @@ export type Profile = {
   bio: string | null;
   birthday: string | null;
   created_at: string;
+  is_private: boolean;
 };
 
 export type Occasion = {
