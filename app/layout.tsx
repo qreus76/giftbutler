@@ -16,9 +16,21 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"),
   title: "GiftButler — No more guessing. Just the right gift.",
   description: "Drop hints. Share your link. Get gifts you actually want.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "GiftButler",
+  },
   icons: {
-    icon: { url: "/logo.png", type: "image/png" },
-    apple: { url: "/logo.png", type: "image/png" },
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
+      { url: "/icons/icon-180x180.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     title: "GiftButler — No more guessing. Just the right gift.",
