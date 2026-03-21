@@ -1088,25 +1088,22 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                       <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Occasion</label>
                       <input
                         type="text"
-                        list="occasion-suggestions"
                         value={newOccasionName}
                         onChange={e => setNewOccasionName(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && !isBirthday && addOccasion()}
                         placeholder="e.g. Graduation, Mother's Day..."
                         className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                       />
-                      <datalist id="occasion-suggestions">
-                        <option value="Mother's Day" />
-                        <option value="Father's Day" />
-                        <option value="High School Graduation" />
-                        <option value="College Graduation" />
-                        <option value="Wedding" />
-                        <option value="Baby Shower" />
-                        <option value="Retirement" />
-                        <option value="Anniversary" />
-                        <option value="Holiday" />
-                        <option value="Housewarming" />
-                      </datalist>
+                      {!newOccasionName && (
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          {["Mother's Day","Father's Day","Graduation","Wedding","Anniversary","Baby Shower","Retirement","Holiday","Housewarming"].map(s => (
+                            <button key={s} type="button" onClick={() => setNewOccasionName(s)}
+                              className="px-3 py-1.5 bg-white border border-[#E0E0D8] hover:border-[#ECC8AE] hover:bg-[#FDF5EE] rounded-full text-xs font-semibold text-[#555555] hover:text-[#5C3118] transition-colors">
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {isBirthday && (
                         <p className="text-xs text-[#C4824A] mt-1.5 flex items-center gap-1">
                           <Cake className="w-3.5 h-3.5 flex-shrink-0" />
