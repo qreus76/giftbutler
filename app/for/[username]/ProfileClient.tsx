@@ -119,6 +119,23 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 
+  // Lock body scroll while sheet is open (prevents background scroll + iOS bounce)
+  useEffect(() => {
+    if (!addingOccasion) return;
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [addingOccasion]);
+
   async function addOccasion() {
     if (!newOccasionName.trim()) return;
     setSavingOccasion(true);
@@ -1007,98 +1024,103 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       {isLoaded && user && <BottomTabBar myUsername={myUsername} />}
 
       {/* Add occasion — bottom sheet (mobile) / centered modal (desktop) */}
-      {isOwner && addingOccasion && (
-        <>
-          <style>{`
-            @keyframes gb-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-            @keyframes gb-fade-in  { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
-            @keyframes gb-backdrop { from { opacity: 0; } to { opacity: 1; } }
-            .gb-sheet   { animation: gb-slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
-            .gb-modal   { animation: gb-fade-in  0.2s ease-out; }
-            .gb-backdrop{ animation: gb-backdrop 0.2s ease-out; }
-            @media (min-width: 768px) { .gb-sheet { animation: gb-fade-in 0.2s ease-out; } }
-          `}</style>
+      {isOwner && addingOccasion && (() => {
+        const isBirthday = newOccasionName.trim().toLowerCase() === "birthday";
+        const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); };
+        return (
+          <>
+            <style>{`
+              @keyframes gb-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+              @keyframes gb-fade-in  { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+              @keyframes gb-backdrop { from { opacity: 0; } to { opacity: 1; } }
+              .gb-sheet    { animation: gb-slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+              .gb-backdrop { animation: gb-backdrop 0.2s ease-out; }
+              @media (min-width: 768px) { .gb-sheet { animation: gb-fade-in 0.2s ease-out; } }
+            `}</style>
 
-          {/* Backdrop */}
-          <div
-            className="gb-backdrop fixed inset-0 z-50 bg-black/40"
-            onClick={() => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); }}
-          />
+            {/* Backdrop */}
+            <div className="gb-backdrop fixed inset-0 z-50 bg-black/40" onClick={closeSheet} />
 
-          {/* Sheet */}
-          <div className="gb-sheet fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
-            <div
-              className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl"
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Drag handle (mobile only) */}
-              <div className="pt-3 pb-0 flex justify-center md:hidden">
-                <div className="w-10 h-1 bg-[#E0E0D8] rounded-full" />
-              </div>
-
-              <div className="px-6 pt-5 pb-6" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
-                <div className="flex items-center justify-between mb-5">
-                  <p className="text-lg font-bold text-[#111111]">Add an occasion</p>
-                  <button
-                    onClick={() => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); }}
-                    className="p-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] rounded-full text-[#888888] hover:text-[#111111] transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+            {/* Sheet wrapper — positions the panel */}
+            <div className="gb-sheet fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
+              <div
+                className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Drag handle pill (mobile only) */}
+                <div className="pt-3 pb-1 flex justify-center md:hidden">
+                  <div className="w-10 h-1 bg-[#E0E0D8] rounded-full" />
                 </div>
 
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Occasion</label>
-                    <input
-                      type="text"
-                      list="occasion-suggestions"
-                      value={newOccasionName}
-                      onChange={e => setNewOccasionName(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && addOccasion()}
-                      placeholder="e.g. Graduation, Mother's Day..."
-                      autoFocus
-                      className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
-                    />
-                    <datalist id="occasion-suggestions">
-                      <option value="Mother's Day" />
-                      <option value="Father's Day" />
-                      <option value="High School Graduation" />
-                      <option value="College Graduation" />
-                      <option value="Wedding" />
-                      <option value="Baby Shower" />
-                      <option value="Retirement" />
-                      <option value="Anniversary" />
-                      <option value="Holiday" />
-                      <option value="Housewarming" />
-                    </datalist>
+                {/* Scrollable content — handles keyboard-push on mobile */}
+                <div className="px-6 pt-4 pb-6 overflow-y-auto" style={{ maxHeight: "85svh", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
+                  <div className="flex items-center justify-between mb-5">
+                    <p className="text-lg font-bold text-[#111111]">Add an occasion</p>
+                    <button onClick={closeSheet} className="p-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] rounded-full text-[#888888] hover:text-[#111111] transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
-                      Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={newOccasionDate}
-                      onChange={e => setNewOccasionDate(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
-                    />
-                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Occasion</label>
+                      <input
+                        type="text"
+                        list="occasion-suggestions"
+                        value={newOccasionName}
+                        onChange={e => setNewOccasionName(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && !isBirthday && addOccasion()}
+                        placeholder="e.g. Graduation, Mother's Day..."
+                        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                      />
+                      <datalist id="occasion-suggestions">
+                        <option value="Mother's Day" />
+                        <option value="Father's Day" />
+                        <option value="High School Graduation" />
+                        <option value="College Graduation" />
+                        <option value="Wedding" />
+                        <option value="Baby Shower" />
+                        <option value="Retirement" />
+                        <option value="Anniversary" />
+                        <option value="Holiday" />
+                        <option value="Housewarming" />
+                      </datalist>
+                      {isBirthday && (
+                        <p className="text-xs text-[#C4824A] mt-1.5 flex items-center gap-1">
+                          <Cake className="w-3.5 h-3.5 flex-shrink-0" />
+                          Your birthday is already on your profile — update it in <a href="/profile/edit" className="underline font-semibold">Edit Profile</a>.
+                        </p>
+                      )}
+                    </div>
 
-                  <button
-                    onClick={addOccasion}
-                    disabled={!newOccasionName.trim() || savingOccasion}
-                    className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors mt-1"
-                  >
-                    {savingOccasion ? "Saving..." : "Save occasion"}
-                  </button>
+                    {!isBirthday && (
+                      <div>
+                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
+                          Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={newOccasionDate}
+                          onChange={e => setNewOccasionDate(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none"
+                        />
+                      </div>
+                    )}
+
+                    <button
+                      onClick={addOccasion}
+                      disabled={!newOccasionName.trim() || isBirthday || savingOccasion}
+                      className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors"
+                    >
+                      {savingOccasion ? "Saving..." : "Save occasion"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
     </main>
   );
 }
