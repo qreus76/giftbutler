@@ -77,6 +77,7 @@ export default function MyPeoplePage() {
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbort = useRef<AbortController | null>(null);
   const [suggestions, setSuggestions] = useState<{ id: string; username: string; name: string; avatar: string | null; mutualCount: number }[]>([]);
   const [referred, setReferred] = useState<{ id: string; username: string; name: string; avatar: string | null } | null>(null);
   const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
@@ -126,17 +127,25 @@ export default function MyPeoplePage() {
     setSelectedResult(null);
     setSearchNotFound(false);
     setSelectedLabel("");
+    setSearching(false);
     if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (searchAbort.current) { searchAbort.current.abort(); searchAbort.current = null; }
     if (!val.trim() || val.trim().length < 2) return;
     searchTimer.current = setTimeout(async () => {
+      const controller = new AbortController();
+      searchAbort.current = controller;
       setSearching(true);
-      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim())}`);
-      const data = await res.json();
-      setSearching(false);
-      if (data.results && data.results.length > 0) {
-        setSearchResults(data.results);
-      } else {
-        setSearchNotFound(true);
+      try {
+        const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim())}`, { signal: controller.signal });
+        const data = await res.json();
+        setSearching(false);
+        if (data.results && data.results.length > 0) {
+          setSearchResults(data.results);
+        } else {
+          setSearchNotFound(true);
+        }
+      } catch {
+        // Aborted — do nothing, results already cleared
       }
     }, 300);
   }
