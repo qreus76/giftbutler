@@ -106,7 +106,7 @@ export default function MyPeoplePage() {
   }, [isLoaded, user, router]);
 
   useEffect(() => {
-    if (tab === "circles" && circles.length === 0 && !circlesLoading) {
+    if (tab === "circles" && !circlesLoading) {
       setCirclesLoading(true);
       fetch("/api/circles").then(r => r.json()).then(d => setCircles(d.circles || [])).finally(() => setCirclesLoading(false));
     }

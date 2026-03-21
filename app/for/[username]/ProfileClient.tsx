@@ -638,26 +638,21 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
                 <input
                   type="text"
-                  list="occasion-finder-list"
                   value={occasion}
                   onChange={e => setOccasion(e.target.value)}
                   placeholder="Birthday, Graduation, Mother's Day..."
                   className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]"
                 />
-                <datalist id="occasion-finder-list">
-                  <option value="Birthday" />
-                  <option value="Mother's Day" />
-                  <option value="Father's Day" />
-                  <option value="High School Graduation" />
-                  <option value="College Graduation" />
-                  <option value="Wedding" />
-                  <option value="Baby Shower" />
-                  <option value="Retirement" />
-                  <option value="Anniversary" />
-                  <option value="Holiday" />
-                  <option value="Housewarming" />
-                  <option value="Just Because" />
-                </datalist>
+                {!occasion && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {["Birthday","Mother's Day","Father's Day","Graduation","Anniversary","Wedding","Baby Shower","Holiday","Just Because"].map(s => (
+                      <button key={s} type="button" onClick={() => setOccasion(s)}
+                        className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
@@ -865,17 +860,17 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         )}
 
         {/* Progress nudge */}
-        {isOwner && textHints.length >= 1 && textHints.length < 8 && (
+        {isOwner && textHints.length >= 1 && textHints.length < 5 && (
           <div className="bg-[#C4D4B4] rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-[#2D4A1E]">{textHints.length < 3 ? "Getting started" : textHints.length < 5 ? "Building nicely" : "Almost there"}</p>
-              <span className="text-xs font-bold text-[#2D4A1E]">{textHints.length}/8</span>
+              <p className="text-xs font-bold text-[#2D4A1E]">{textHints.length < 3 ? "Getting started" : "Almost there"}</p>
+              <span className="text-xs font-bold text-[#2D4A1E]">{textHints.length}/5</span>
             </div>
             <div className="w-full h-1.5 bg-white/40 rounded-full mb-2 overflow-hidden">
-              <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((textHints.length / 8) * 100)}%` }} />
+              <div className="h-full bg-[#2D4A1E] rounded-full transition-all" style={{ width: `${Math.round((textHints.length / 5) * 100)}%` }} />
             </div>
             <p className="text-xs text-[#2D4A1E]/80">
-              {textHints.length < 3 ? "Add hints — the AI needs context to go beyond generic suggestions." : "8+ hints is where gift ideas start feeling truly personal."}
+              {textHints.length < 3 ? "Add hints — the AI needs context to go beyond generic suggestions." : "5+ hints is where gift ideas start feeling truly personal."}
             </p>
           </div>
         )}

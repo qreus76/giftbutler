@@ -37,12 +37,13 @@ function timeAgo(dateStr: string): string {
 
 function getCompletionItems(profile: Profile, hints: Hint[]) {
   const profileUrl = profile.username ? `/for/${profile.username}` : null;
+  const hintCount = hints.filter(h => h.category !== "avoid").length;
   return [
     { done: !!profile.name, label: "Add your display name", action: "/profile/edit" },
     { done: !!profile.bio, label: "Write a short bio", action: "/profile/edit" },
     { done: !!profile.birthday, label: "Add your birthday", action: "/profile/edit" },
-    { done: hints.filter(h => h.category !== "avoid").length >= 3, label: "Add at least 3 hints", action: profileUrl },
-    { done: hints.filter(h => h.category !== "avoid").length >= 8, label: "Add 8+ hints for the best recommendations", action: profileUrl },
+    { done: hintCount >= 3, label: "Add at least 3 hints", action: profileUrl },
+    { done: hintCount >= 5, label: "Add 5+ hints for better recommendations", action: profileUrl },
   ];
 }
 
@@ -251,7 +252,7 @@ export default function ActivityPage() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Profile views", value: visitCount, sub: visitCount === 0 ? "share your link!" : "last 30 days", icon: <Eye className="w-4 h-4" /> },
-            { label: "Hints", value: hints.length, sub: hintsToShow.length < 3 ? "add more" : hintsToShow.length < 8 ? "good start" : "looking great" },
+            { label: "Hints", value: hints.length, sub: hintsToShow.length < 3 ? "add more" : hintsToShow.length < 5 ? "good start" : "looking great" },
             { label: "Gifts planned", value: claimCount, sub: claimCount > 0 ? "someone's shopping" : "claimed", highlight: claimCount > 0 },
           ].map((stat, i) => (
             <div key={i} className={`rounded-2xl p-4 shadow-card ${stat.highlight ? "bg-[#ECC8AE]" : "bg-white"}`}>

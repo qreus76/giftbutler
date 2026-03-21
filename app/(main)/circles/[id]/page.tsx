@@ -64,6 +64,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   const [editRecipient, setEditRecipient] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [confirmDraw, setConfirmDraw] = useState(false);
 
   useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
 
@@ -308,15 +309,37 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
             {isExchange && (
               <div className="pt-1">
                 {drawError && <p className="text-red-500 text-xs mb-2">{drawError}</p>}
-                <button
-                  onClick={handleDraw}
-                  disabled={drawing || circle.memberCount < 2}
-                  className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  {drawing ? "Drawing names..." : circle.memberCount < 2 ? "Need at least 2 members" : "Draw names"}
-                </button>
-                <p className="text-xs text-[#888888] text-center mt-2">Everyone will be emailed their assignment. This can&apos;t be undone.</p>
+                {confirmDraw ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-[#111111] text-center">Draw names for all {circle.memberCount} members?</p>
+                    <p className="text-xs text-[#888888] text-center">Everyone will be emailed their assignment. This can&apos;t be undone.</p>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={() => { setConfirmDraw(false); handleDraw(); }}
+                        disabled={drawing}
+                        className="flex-1 py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Shuffle className="w-4 h-4" />
+                        {drawing ? "Drawing..." : "Yes, draw names"}
+                      </button>
+                      <button onClick={() => setConfirmDraw(false)} className="flex-1 py-3 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setConfirmDraw(true)}
+                      disabled={circle.memberCount < 2}
+                      className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Shuffle className="w-4 h-4" />
+                      {circle.memberCount < 2 ? "Need at least 2 members" : "Draw names"}
+                    </button>
+                    <p className="text-xs text-[#888888] text-center mt-2">Everyone will be emailed their assignment. This can&apos;t be undone.</p>
+                  </>
+                )}
               </div>
             )}
           </div>
