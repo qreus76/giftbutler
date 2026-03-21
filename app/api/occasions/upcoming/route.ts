@@ -6,12 +6,17 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ occasions: [] });
 
-  const { data: follows } = await supabase
-    .from("follows").select("following_id").eq("follower_id", userId).eq("status", "accepted");
+  const [{ data: asRequester }, { data: asReceiver }] = await Promise.all([
+    supabase.from("follows").select("receiver_id").eq("requester_id", userId).eq("status", "accepted"),
+    supabase.from("follows").select("requester_id").eq("receiver_id", userId).eq("status", "accepted"),
+  ]);
 
-  if (!follows?.length) return NextResponse.json({ occasions: [] });
+  const followingIds = [
+    ...(asRequester || []).map((f: { receiver_id: string }) => f.receiver_id),
+    ...(asReceiver || []).map((f: { requester_id: string }) => f.requester_id),
+  ];
 
-  const followingIds = follows.map((f: { following_id: string }) => f.following_id);
+  if (!followingIds.length) return NextResponse.json({ occasions: [] });
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];

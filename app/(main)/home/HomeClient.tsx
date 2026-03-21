@@ -80,12 +80,12 @@ export default function ActivityPage() {
   }
 
   async function handleFollowRequest(requesterId: string, action: "accept" | "reject") {
-    await fetch("/api/follows", {
+    const res = await fetch("/api/follows", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requester_id: requesterId, action, label: requestLabels[requesterId] || null }),
     });
-    removeRequest(requesterId);
+    if (res.ok) removeRequest(requesterId);
   }
 
   async function copyLink() {

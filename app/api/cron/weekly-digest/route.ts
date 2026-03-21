@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: visitRows, error } = await supabaseAdmin
     .from("profile_visits")
-    .select("profile_id")
+    .select("profile_user_id")
     .gte("created_at", since);
 
   if (error) {
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   // Count visits per profile
   const countMap = new Map<string, number>();
   for (const row of visitRows) {
-    countMap.set(row.profile_id, (countMap.get(row.profile_id) || 0) + 1);
+    countMap.set(row.profile_user_id, (countMap.get(row.profile_user_id) || 0) + 1);
   }
 
   // Get profile info for these users
