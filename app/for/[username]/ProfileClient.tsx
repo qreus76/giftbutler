@@ -783,10 +783,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </div>
                 <form onSubmit={addHint} className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <input value={newHint} onChange={e => {
-                        const val = e.target.value;
-                        try { new URL(val.trim()); setHintMode("link"); setHintUrl(val.trim()); setNewHint(""); return; } catch {}
-                        setNewHint(val);
+                    <input value={newHint} onChange={e => setNewHint(e.target.value)}
+                      onPaste={e => {
+                        const pasted = e.clipboardData.getData("text").trim();
+                        try { new URL(pasted); e.preventDefault(); setHintMode("link"); setHintUrl(pasted); setNewHint(""); } catch {}
                       }} maxLength={280}
                       placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
                       className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
@@ -810,13 +810,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   <input
                     type="url"
                     value={hintUrl}
-                    onChange={e => {
-                      const val = e.target.value;
-                      try { new URL(val.trim()); } catch {
-                        // Looks like plain text — switch to describe mode
-                        setHintMode("text"); setNewHint(val); setHintUrl(""); setEnrichedProduct(null); setEnrichError(""); return;
+                    onChange={e => { setHintUrl(e.target.value); setEnrichedProduct(null); setEnrichError(""); }}
+                    onPaste={e => {
+                      const pasted = e.clipboardData.getData("text").trim();
+                      try { new URL(pasted); } catch {
+                        e.preventDefault(); setHintMode("text"); setNewHint(pasted); setHintUrl(""); setEnrichedProduct(null); setEnrichError("");
                       }
-                      setHintUrl(val); setEnrichedProduct(null); setEnrichError("");
                     }}
                     onKeyDown={e => e.key === "Enter" && enrichUrl()}
                     placeholder="https://amazon.com/..."
