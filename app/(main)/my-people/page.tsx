@@ -81,6 +81,8 @@ export default function MyPeoplePage() {
   const [suggestions, setSuggestions] = useState<{ id: string; username: string; name: string; avatar: string | null; mutualCount: number }[]>([]);
   const [referred, setReferred] = useState<{ id: string; username: string; name: string; avatar: string | null } | null>(null);
   const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
+  const [suggestionLabel, setSuggestionLabel] = useState<Record<string, string>>({});
 
   // Circles state
   const [circles, setCircles] = useState<Circle[]>([]);
@@ -180,6 +182,32 @@ export default function MyPeoplePage() {
     setSendingRequest(false);
   }
 
+  async function sendFollowRequestFromSuggestion(username: string, label: string) {
+    if (!label) return;
+    setSendingRequest(true);
+    const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label }) });
+    if (res.ok) {
+      const person = suggestions.find(s => s.username === username) || (referred?.username === username ? referred : null);
+      if (person) {
+        const newPerson: Person = {
+          id: person.id,
+          username: person.username,
+          name: person.name,
+          avatar: person.avatar,
+          birthday: null,
+          daysUntilBirthday: null,
+          myLabel: label,
+          status: "pending",
+        };
+        setPeople(prev => [...prev, newPerson]);
+      }
+      setSuggestions(prev => prev.filter(s => s.username !== username));
+      if (referred?.username === username) setReferred(null);
+      setExpandedSuggestion(null);
+    }
+    setSendingRequest(false);
+  }
+
   async function removeConnection(username: string) {
     const prev = people;
     setRemoving(username);
@@ -207,7 +235,7 @@ export default function MyPeoplePage() {
 
   return (
     <main className="min-h-screen bg-[#EAEAE0]">
-      <div className="max-w-xl mx-auto px-4 py-5 space-y-5">
+      <div className="max-w-xl mx-auto px-4 py-5 space-y-5 pb-28">
         <div>
           <h1 className="text-3xl font-bold text-[#111111]">My People</h1>
           <p className="text-[#888888] text-base mt-0.5">Your gift network.</p>
@@ -242,7 +270,7 @@ export default function MyPeoplePage() {
                 <input
                   value={searchQuery}
                   onChange={e => handleSearchInput(e.target.value)}
-                  placeholder="Enter their username..."
+                  placeholder="Search by name or username..."
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                 />
               </div>
@@ -299,41 +327,89 @@ export default function MyPeoplePage() {
                 <p className="text-sm font-bold text-[#111111] mb-3">People you might know</p>
                 <div className="space-y-2">
                   {referred && (
-                    <div className="flex items-center gap-3 p-2 rounded-xl bg-[#FFF8EE]">
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                        {referred.avatar ? <img src={referred.avatar} alt={referred.name} className="w-full h-full object-cover" /> : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#5C3118] bg-[#ECC8AE]">{referred.name[0]?.toUpperCase()}</div>
+                    <div className={`rounded-xl transition-colors ${expandedSuggestion === referred.username ? "bg-[#FFF8EE]" : "bg-[#FFF8EE]"}`}>
+                      <div className="flex items-center gap-3 p-2">
+                        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                          {referred.avatar ? <img src={referred.avatar} alt={referred.name} className="w-full h-full object-cover" /> : (
+                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#5C3118] bg-[#ECC8AE]">{referred.name[0]?.toUpperCase()}</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#111111] text-sm truncate">{referred.name}</p>
+                          <p className="text-xs text-[#888888]">You found GiftButler through their profile</p>
+                        </div>
+                        {expandedSuggestion !== referred.username && (
+                          <button
+                            onClick={() => setExpandedSuggestion(referred.username)}
+                            className="px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-xs flex-shrink-0 transition-colors"
+                          >
+                            Add
+                          </button>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#111111] text-sm truncate">{referred.name}</p>
-                        <p className="text-xs text-[#888888]">You found GiftButler through their profile</p>
-                      </div>
-                      <button
-                        onClick={() => { setSearchQuery(referred.username); handleSearchInput(referred.username); }}
-                        className="px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-xs flex-shrink-0 transition-colors"
-                      >
-                        Add
-                      </button>
+                      {expandedSuggestion === referred.username && (
+                        <div className="px-2 pb-3 pt-1">
+                          <p className="text-xs font-semibold text-[#888888] mb-2">Who is {referred.name} to you?</p>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {LABELS.map(l => (
+                              <button key={l} onClick={() => setSuggestionLabel(prev => ({ ...prev, [referred.username]: l }))}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${suggestionLabel[referred.username] === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
+                                {l}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => { setSelectedLabel(suggestionLabel[referred.username] || ""); sendFollowRequestFromSuggestion(referred.username, suggestionLabel[referred.username] || ""); }} disabled={!suggestionLabel[referred.username] || sendingRequest}
+                              className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-xs transition-colors">
+                              {sendingRequest ? "Sending..." : "Send request"}
+                            </button>
+                            <button onClick={() => setExpandedSuggestion(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Cancel</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {suggestions.map(s => (
-                    <div key={s.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#F5F5F0]">
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                        {s.avatar ? <img src={s.avatar} alt={s.name} className="w-full h-full object-cover" /> : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{s.name[0]?.toUpperCase()}</div>
+                    <div key={s.id} className={`rounded-xl transition-colors ${expandedSuggestion === s.username ? "bg-[#F0F0E8]" : "hover:bg-[#F5F5F0]"}`}>
+                      <div className="flex items-center gap-3 p-2">
+                        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                          {s.avatar ? <img src={s.avatar} alt={s.name} className="w-full h-full object-cover" /> : (
+                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{s.name[0]?.toUpperCase()}</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#111111] text-sm truncate">{s.name}</p>
+                          <p className="text-xs text-[#888888]">{s.mutualCount} mutual connection{s.mutualCount !== 1 ? "s" : ""}</p>
+                        </div>
+                        {expandedSuggestion !== s.username && (
+                          <button
+                            onClick={() => setExpandedSuggestion(s.username)}
+                            className="px-3 py-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] font-semibold rounded-full text-xs flex-shrink-0 transition-colors"
+                          >
+                            Add
+                          </button>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#111111] text-sm truncate">{s.name}</p>
-                        <p className="text-xs text-[#888888]">{s.mutualCount} mutual connection{s.mutualCount !== 1 ? "s" : ""}</p>
-                      </div>
-                      <button
-                        onClick={() => { setSearchQuery(s.username); handleSearchInput(s.username); }}
-                        className="px-3 py-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] font-semibold rounded-full text-xs flex-shrink-0 transition-colors"
-                      >
-                        Add
-                      </button>
+                      {expandedSuggestion === s.username && (
+                        <div className="px-2 pb-3 pt-1">
+                          <p className="text-xs font-semibold text-[#888888] mb-2">Who is {s.name} to you?</p>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {LABELS.map(l => (
+                              <button key={l} onClick={() => setSuggestionLabel(prev => ({ ...prev, [s.username]: l }))}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${suggestionLabel[s.username] === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
+                                {l}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => sendFollowRequestFromSuggestion(s.username, suggestionLabel[s.username] || "")} disabled={!suggestionLabel[s.username] || sendingRequest}
+                              className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-xs transition-colors">
+                              {sendingRequest ? "Sending..." : "Send request"}
+                            </button>
+                            <button onClick={() => setExpandedSuggestion(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Cancel</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -378,10 +454,12 @@ export default function MyPeoplePage() {
                             </span>
                           )}
                         </div>
-                        <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayColor(person.daysUntilBirthday)}`}>
-                          <Cake className="w-3.5 h-3.5 flex-shrink-0" />
-                          {birthdayText(person.daysUntilBirthday)}
-                        </p>
+                        {(person.status === "accepted" || person.birthday !== null) && (
+                          <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayColor(person.daysUntilBirthday)}`}>
+                            <Cake className="w-3.5 h-3.5 flex-shrink-0" />
+                            {birthdayText(person.daysUntilBirthday)}
+                          </p>
+                        )}
                         {(occasionsMap[person.id] || []).map(occ => (
                           <span key={occ.id} className="inline-flex items-center gap-1 text-xs mt-0.5 text-[#5C3118] font-semibold">
                             <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
@@ -398,12 +476,14 @@ export default function MyPeoplePage() {
                         <>
                           <button onClick={() => removeConnection(person.username)} disabled={removing === person.username}
                             className="px-4 py-2.5 bg-red-500 text-white font-semibold rounded-full text-sm">
-                            {removing === person.username ? "..." : "Remove"}
+                            {removing === person.username ? "..." : (person.status === "pending" ? "Cancel" : "Remove")}
                           </button>
-                          <button onClick={() => setConfirmRemove(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm">Cancel</button>
+                          <button onClick={() => setConfirmRemove(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm">Keep</button>
                         </>
                       ) : (
-                        <button onClick={() => setConfirmRemove(person.username)} className="px-4 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">Remove</button>
+                        <button onClick={() => setConfirmRemove(person.username)} className="px-4 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">
+                          {person.status === "pending" ? "Cancel request" : "Remove"}
+                        </button>
                       )}
                     </div>
                   </div>
