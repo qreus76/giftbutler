@@ -469,19 +469,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         </div>
 
-        {/* Birthday badge — clickable for visitors to pre-fill the gift finder */}
-        {daysUntilBirthday !== null && daysUntilBirthday <= 60 && (
+        {/* Birthday badge — always shown when birthday is set; clickable for visitors */}
+        {daysUntilBirthday !== null && (
           isOwner ? (
             <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
               <Cake className="w-3.5 h-3.5" />
-              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
             </div>
           ) : (
             <button
               onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
               className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
               <Cake className="w-3.5 h-3.5" />
-              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
             </button>
           )
         )}
