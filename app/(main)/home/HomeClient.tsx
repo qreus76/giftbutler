@@ -101,8 +101,28 @@ export default function ActivityPage() {
   const completionDone = completionItems.filter(i => i.done).length;
   const completionPct = completionItems.length ? Math.round((completionDone / completionItems.length) * 100) : 0;
   const nextStep = completionItems.find(i => !i.done);
-  const upcomingBirthdays = people.filter(p => p.daysUntilBirthday !== null && p.daysUntilBirthday <= 30).sort((a, b) => (a.daysUntilBirthday ?? 999) - (b.daysUntilBirthday ?? 999));
-  const upcomingCount = upcomingBirthdays.length + upcomingOccasions.length;
+  const upcomingEvents = [
+    ...people
+      .filter(p => p.daysUntilBirthday !== null && p.daysUntilBirthday <= 30)
+      .map(p => ({
+        key: `bday-${p.id}`,
+        username: p.username,
+        name: p.name,
+        avatar: p.avatar,
+        daysUntil: p.daysUntilBirthday!,
+        type: "birthday" as const,
+      })),
+    ...upcomingOccasions.map(occ => ({
+      key: `occ-${occ.user_id}-${occ.name}`,
+      username: occ.username,
+      name: occ.person_name || occ.username,
+      avatar: people.find(p => p.username === occ.username)?.avatar ?? null,
+      daysUntil: occ.days_until,
+      type: "occasion" as const,
+      occasionName: occ.name,
+    })),
+  ].sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 5);
+  const upcomingCount = upcomingEvents.length;
   const hintsToShow = hints.filter(h => h.category !== "avoid");
 
   if (loading) return (
@@ -269,47 +289,29 @@ export default function ActivityPage() {
             </div>
           ) : (
             <div className="divide-y divide-[#F0F0E8]">
-              {upcomingBirthdays.slice(0, 5).map(person => (
-                <div key={person.id} className="flex items-center gap-3 px-4 py-3">
+              {upcomingEvents.map(event => (
+                <div key={event.key} className="flex items-center gap-3 px-4 py-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                    {person.avatar ? <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" /> : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#C4D4B4]">{person.name?.[0]?.toUpperCase() || "?"}</div>
+                    {event.avatar ? <img src={event.avatar} alt={event.name} className="w-full h-full object-cover" /> : (
+                      <div className={`w-full h-full flex items-center justify-center text-sm font-bold text-white ${event.type === "birthday" ? "bg-[#C4D4B4]" : "bg-[#ECC8AE]"}`}>
+                        {event.name?.[0]?.toUpperCase() || "?"}
+                      </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#111111] truncate">{person.name}</p>
-                    <p className={`text-xs font-medium flex items-center gap-1 ${person.daysUntilBirthday === 0 ? "text-red-500" : person.daysUntilBirthday! <= 7 ? "text-[#C4824A]" : "text-[#888888]"}`}>
-                      <Cake className="w-3 h-3 flex-shrink-0" />
-                      {person.daysUntilBirthday === 0 ? "Birthday today!" : person.daysUntilBirthday === 1 ? "Birthday tomorrow" : `Birthday in ${person.daysUntilBirthday} days`}
+                    <p className="text-sm font-semibold text-[#111111] truncate">{event.name}</p>
+                    <p className={`text-xs font-medium flex items-center gap-1 ${event.daysUntil === 0 ? "text-red-500" : event.daysUntil <= 7 ? "text-[#C4824A]" : "text-[#888888]"}`}>
+                      {event.type === "birthday"
+                        ? <><Cake className="w-3 h-3 flex-shrink-0" />{event.daysUntil === 0 ? "Birthday today!" : event.daysUntil === 1 ? "Birthday tomorrow" : `Birthday in ${event.daysUntil} days`}</>
+                        : <><CalendarDays className="w-3 h-3 flex-shrink-0" />{"occasionName" in event ? event.occasionName : ""} · {event.daysUntil === 0 ? "today" : event.daysUntil === 1 ? "tomorrow" : `in ${event.daysUntil} days`}</>
+                      }
                     </p>
                   </div>
-                  <a href={`/for/${person.username}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs transition-colors flex-shrink-0">
+                  <a href={`/for/${event.username}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs transition-colors flex-shrink-0">
                     Gift <ArrowRight className="w-3 h-3" />
                   </a>
                 </div>
               ))}
-              {upcomingOccasions.slice(0, 5).map(occ => {
-                const personForAvatar = people.find(p => p.username === occ.username);
-                return (
-                  <div key={occ.user_id + occ.name} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                      {personForAvatar?.avatar ? <img src={personForAvatar.avatar} alt={occ.person_name || ""} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#ECC8AE]">{(occ.person_name || occ.username)?.[0]?.toUpperCase() || "?"}</div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#111111] truncate">{occ.person_name || occ.username}</p>
-                      <p className={`text-xs font-medium flex items-center gap-1 ${occ.days_until === 0 ? "text-red-500" : occ.days_until <= 7 ? "text-[#C4824A]" : "text-[#5C3118]"}`}>
-                        <CalendarDays className="w-3 h-3 flex-shrink-0" />
-                        {occ.name} · {occ.days_until === 0 ? "today" : occ.days_until === 1 ? "tomorrow" : `in ${occ.days_until} days`}
-                      </p>
-                    </div>
-                    <a href={`/for/${occ.username}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs transition-colors flex-shrink-0">
-                      Gift <ArrowRight className="w-3 h-3" />
-                    </a>
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>
