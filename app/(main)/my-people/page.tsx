@@ -29,6 +29,7 @@ interface SearchResult {
   name: string;
   avatar: string | null;
   followStatus: "none" | "pending" | "accepted";
+  mutualCount: number;
 }
 
 interface Circle {
@@ -69,13 +70,16 @@ export default function MyPeoplePage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
-  const [searchIsSelf, setSearchIsSelf] = useState(false);
   const [searching, setSearching] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [suggestions, setSuggestions] = useState<{ id: string; username: string; name: string; avatar: string | null; mutualCount: number }[]>([]);
+  const [referred, setReferred] = useState<{ id: string; username: string; name: string; avatar: string | null } | null>(null);
+  const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
 
   // Circles state
   const [circles, setCircles] = useState<Circle[]>([]);
@@ -94,7 +98,8 @@ export default function MyPeoplePage() {
     Promise.all([
       fetch("/api/follows/network").then(r => r.json()),
       fetch("/api/occasions/upcoming").then(r => r.json()),
-    ]).then(([peopleData, occasionData]) => {
+      fetch("/api/follows/suggestions").then(r => r.json()),
+    ]).then(([peopleData, occasionData, suggestionsData]) => {
       setPeople(peopleData.people || []);
       const map: Record<string, UpcomingOccasion[]> = {};
       for (const occ of occasionData.occasions || []) {
@@ -102,6 +107,9 @@ export default function MyPeoplePage() {
         map[occ.user_id].push(occ);
       }
       setOccasionsMap(map);
+      setSuggestions(suggestionsData.suggestions || []);
+      setReferred(suggestionsData.referred || null);
+      setSuggestionsLoaded(true);
     }).finally(() => setLoading(false));
   }, [isLoaded, user, router]);
 
@@ -114,21 +122,23 @@ export default function MyPeoplePage() {
 
   function handleSearchInput(val: string) {
     setSearchQuery(val);
-    setSearchResult(null);
+    setSearchResults([]);
+    setSelectedResult(null);
     setSearchNotFound(false);
-    setSearchIsSelf(false);
     setSelectedLabel("");
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!val.trim() || val.trim().length < 2) return;
     searchTimer.current = setTimeout(async () => {
       setSearching(true);
-      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim().toLowerCase())}`);
+      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim())}`);
       const data = await res.json();
       setSearching(false);
-      if (data.result) setSearchResult(data.result);
-      else if (data.isSelf) setSearchIsSelf(true);
-      else setSearchNotFound(true);
-    }, 400);
+      if (data.results && data.results.length > 0) {
+        setSearchResults(data.results);
+      } else {
+        setSearchNotFound(true);
+      }
+    }, 300);
   }
 
   async function sendFollowRequest(username: string) {
@@ -136,14 +146,13 @@ export default function MyPeoplePage() {
     setSendingRequest(true);
     const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
     if (res.ok) {
-      setSearchResult(prev => prev ? { ...prev, followStatus: "pending" } : prev);
-      // Optimistically add to people list as pending
-      if (searchResult) {
+      const person = searchResults.find(r => r.username === username) || (referred?.username === username ? referred : null);
+      if (person) {
         const newPerson: Person = {
-          id: searchResult.id,
-          username: searchResult.username,
-          name: searchResult.name,
-          avatar: searchResult.avatar,
+          id: person.id,
+          username: person.username,
+          name: person.name,
+          avatar: person.avatar,
           birthday: null,
           daysUntilBirthday: null,
           myLabel: selectedLabel,
@@ -151,6 +160,13 @@ export default function MyPeoplePage() {
         };
         setPeople(prev => [...prev, newPerson]);
       }
+      setSearchResults([]);
+      setSelectedResult(null);
+      setSearchQuery("");
+      setSelectedLabel("");
+      // Remove from suggestions
+      setSuggestions(prev => prev.filter(s => s.username !== username));
+      if (referred?.username === username) setReferred(null);
     }
     setSendingRequest(false);
   }
@@ -211,7 +227,7 @@ export default function MyPeoplePage() {
           <>
             {/* Search card */}
             <div className="bg-white rounded-2xl shadow-card p-4">
-              <p className="text-sm font-bold text-[#111111] mb-3">Find someone by username</p>
+              <p className="text-sm font-bold text-[#111111] mb-3">Find someone by name or username</p>
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
                 <input
@@ -223,44 +239,97 @@ export default function MyPeoplePage() {
               </div>
 
               {searching && <p className="text-xs text-[#888888] mt-2">Searching...</p>}
-              {searchNotFound && !searching && <p className="text-xs text-[#888888] mt-2">No profile found with that username.</p>}
-              {searchIsSelf && !searching && <p className="text-xs text-[#888888] mt-2">That&apos;s you! Search for someone else.</p>}
+              {searchNotFound && !searching && <p className="text-xs text-[#888888] mt-2">No one found — try a different name or username.</p>}
 
-              {searchResult && !searching && (
-                <div className="mt-4 pt-4 border-t border-[#F0F0E8]">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                      {searchResult.avatar ? <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[#2D4A1E] bg-[#C4D4B4]">{searchResult.name[0]?.toUpperCase()}</div>
+              {searchResults.length > 0 && !searching && (
+                <div className="mt-3 space-y-1">
+                  {searchResults.map(result => (
+                    <div key={result.id}>
+                      <button
+                        onClick={() => setSelectedResult(selectedResult?.id === result.id ? null : result)}
+                        className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors text-left ${selectedResult?.id === result.id ? "bg-[#F0F0E8]" : "hover:bg-[#F5F5F0]"}`}
+                      >
+                        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                          {result.avatar ? <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" /> : (
+                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{result.name[0]?.toUpperCase()}</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#111111] text-sm truncate">{result.name}</p>
+                          <p className="text-xs text-[#888888]">@{result.username}{result.mutualCount > 0 ? ` · ${result.mutualCount} mutual` : ""}</p>
+                        </div>
+                        {result.followStatus === "accepted" && <span className="text-xs font-semibold text-emerald-600 flex-shrink-0">Connected</span>}
+                        {result.followStatus === "pending" && <span className="text-xs font-semibold text-[#888888] flex-shrink-0">Sent</span>}
+                      </button>
+                      {selectedResult?.id === result.id && result.followStatus === "none" && (
+                        <div className="px-2 pb-2 pt-1">
+                          <p className="text-xs font-semibold text-[#888888] mb-2">Who are they to you?</p>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {LABELS.map(l => (
+                              <button key={l} onClick={() => setSelectedLabel(l)}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
+                                {l}
+                              </button>
+                            ))}
+                          </div>
+                          <button onClick={() => sendFollowRequest(result.username)} disabled={!selectedLabel || sendingRequest}
+                            className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors">
+                            {sendingRequest ? "Sending..." : "Send request"}
+                          </button>
+                        </div>
                       )}
                     </div>
-                    <div>
-                      <p className="font-semibold text-[#111111]">{searchResult.name}</p>
-                      <p className="text-xs text-[#888888]">@{searchResult.username}</p>
-                    </div>
-                  </div>
-                  {searchResult.followStatus === "accepted" && <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Already in your people</p>}
-                  {searchResult.followStatus === "pending" && <p className="text-xs text-[#888888] font-semibold">Request already sent</p>}
-                  {searchResult.followStatus === "none" && (
-                    <>
-                      <p className="text-xs font-semibold text-[#888888] mb-2">Who are they to you?</p>
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {LABELS.map(l => (
-                          <button key={l} onClick={() => setSelectedLabel(l)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                      <button onClick={() => sendFollowRequest(searchResult.username)} disabled={!selectedLabel || sendingRequest}
-                        className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors">
-                        {sendingRequest ? "Sending..." : "Send request"}
-                      </button>
-                    </>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
+
+            {/* People you might know */}
+            {suggestionsLoaded && (referred || suggestions.length > 0) && (
+              <div className="bg-white rounded-2xl shadow-card p-4">
+                <p className="text-sm font-bold text-[#111111] mb-3">People you might know</p>
+                <div className="space-y-2">
+                  {referred && (
+                    <div className="flex items-center gap-3 p-2 rounded-xl bg-[#FFF8EE]">
+                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                        {referred.avatar ? <img src={referred.avatar} alt={referred.name} className="w-full h-full object-cover" /> : (
+                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#5C3118] bg-[#ECC8AE]">{referred.name[0]?.toUpperCase()}</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[#111111] text-sm truncate">{referred.name}</p>
+                        <p className="text-xs text-[#888888]">You found GiftButler through their profile</p>
+                      </div>
+                      <button
+                        onClick={() => { setSearchQuery(referred.username); handleSearchInput(referred.username); }}
+                        className="px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-xs flex-shrink-0 transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
+                  {suggestions.map(s => (
+                    <div key={s.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#F5F5F0]">
+                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                        {s.avatar ? <img src={s.avatar} alt={s.name} className="w-full h-full object-cover" /> : (
+                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{s.name[0]?.toUpperCase()}</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[#111111] text-sm truncate">{s.name}</p>
+                        <p className="text-xs text-[#888888]">{s.mutualCount} mutual connection{s.mutualCount !== 1 ? "s" : ""}</p>
+                      </div>
+                      <button
+                        onClick={() => { setSearchQuery(s.username); handleSearchInput(s.username); }}
+                        className="px-3 py-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] font-semibold rounded-full text-xs flex-shrink-0 transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {loading && (
               <div className="flex justify-center py-12">

@@ -13,6 +13,7 @@ interface SearchResult {
   name: string;
   avatar: string | null;
   followStatus: "none" | "pending" | "accepted";
+  mutualCount: number;
 }
 
 const QUIZ_STEPS = [
@@ -64,9 +65,9 @@ export default function OnboardingPage() {
   const [copied, setCopied] = useState(false);
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
-  const [searchIsSelf, setSearchIsSelf] = useState(false);
   const [searching, setSearching] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
@@ -79,6 +80,13 @@ export default function OnboardingPage() {
   const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"}/for/${username}`;
   const [canShare, setCanShare] = useState(false);
   useEffect(() => { setCanShare(!!navigator.share); }, []);
+  const [referral, setReferral] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const ref = localStorage.getItem("gb_referral");
+      if (ref) setReferral(ref);
+    } catch { /* storage unavailable */ }
+  }, []);
 
   function handleAnswer(value: string) {
     const newAnswers = [...answers, value];
@@ -99,10 +107,11 @@ export default function OnboardingPage() {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch("/api/onboarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username.trim().toLowerCase(), answers }) });
+      const res = await fetch("/api/onboarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username.trim().toLowerCase(), answers, referredBy: referral || undefined }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setDone(true);
+      try { localStorage.removeItem("gb_referral"); } catch { /* ok */ }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setSaving(false);
@@ -111,20 +120,22 @@ export default function OnboardingPage() {
 
   function handleSearchInput(val: string) {
     setSearchQuery(val);
-    setSearchResult(null);
+    setSearchResults([]);
+    setSelectedResult(null);
     setSearchNotFound(false);
-    setSearchIsSelf(false);
     setSelectedLabel("");
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!val.trim() || val.trim().length < 2) return;
     searchTimer.current = setTimeout(async () => {
       setSearching(true);
-      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim().toLowerCase())}`);
+      const res = await fetch(`/api/follows/search?q=${encodeURIComponent(val.trim())}`);
       const data = await res.json();
       setSearching(false);
-      if (data.result) setSearchResult(data.result);
-      else if (data.isSelf) setSearchIsSelf(true);
-      else setSearchNotFound(true);
+      if (data.results && data.results.length > 0) {
+        setSearchResults(data.results);
+      } else {
+        setSearchNotFound(true);
+      }
     }, 400);
   }
 
@@ -133,7 +144,8 @@ export default function OnboardingPage() {
     setSendingRequest(true);
     await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: searchUsername, label: selectedLabel }) });
     setSentRequests(prev => [...prev, searchUsername]);
-    setSearchResult(null);
+    setSearchResults([]);
+    setSelectedResult(null);
     setSearchQuery("");
     setSelectedLabel("");
     setSendingRequest(false);
@@ -170,6 +182,28 @@ export default function OnboardingPage() {
               <p className="text-[#111111] text-sm font-semibold flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
             </div>
           )}
+          {referral && !sentRequests.includes(referral) && (
+            <div className="bg-[#ECC8AE] rounded-2xl p-4 mb-3">
+              <p className="text-xs font-bold text-[#5C3118] uppercase tracking-wide mb-2">You came from their profile</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#5C3118] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  {referral[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#111111] text-sm">@{referral}</p>
+                  <p className="text-xs text-[#5C3118]">Add them to your people?</p>
+                </div>
+              </div>
+              {!searchResults.find(r => r.username === referral) ? (
+                <button
+                  onClick={() => handleSearchInput(referral)}
+                  className="mt-3 w-full py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors"
+                >
+                  Add @{referral}
+                </button>
+              ) : null}
+            </div>
+          )}
           <div className="bg-white rounded-2xl shadow-card p-4 mb-3">
             <div className="relative mb-3">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
@@ -177,34 +211,46 @@ export default function OnboardingPage() {
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
             </div>
             {searching && <p className="text-xs text-[#888888]">Searching...</p>}
-            {searchNotFound && !searching && <p className="text-xs text-[#888888]">No profile found with that username.</p>}
-            {searchIsSelf && !searching && <p className="text-xs text-[#888888]">That&apos;s you! Search for someone else.</p>}
-            {searchResult && !searching && (
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                    {searchResult.avatar ? <img src={searchResult.avatar} alt={searchResult.name} className="w-full h-full object-cover" /> : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-[#2D4A1E] bg-[#C4D4B4]">{searchResult.name[0]?.toUpperCase()}</div>
+            {searchNotFound && !searching && <p className="text-xs text-[#888888]">No one found — try a different name or username.</p>}
+            {searchResults.length > 0 && !searching && (
+              <div className="mt-3 space-y-1">
+                {searchResults.map(result => (
+                  <div key={result.id}>
+                    <button
+                      onClick={() => setSelectedResult(selectedResult?.id === result.id ? null : result)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors text-left ${selectedResult?.id === result.id ? "bg-[#F0F0E8]" : "hover:bg-[#F5F5F0]"}`}
+                    >
+                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                        {result.avatar ? <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" /> : (
+                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{result.name[0]?.toUpperCase()}</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[#111111] text-sm truncate">{result.name}</p>
+                        <p className="text-xs text-[#888888]">@{result.username}{result.mutualCount > 0 ? ` · ${result.mutualCount} mutual` : ""}</p>
+                      </div>
+                      {result.followStatus === "accepted" && <span className="text-xs font-semibold text-emerald-600 flex-shrink-0">Connected</span>}
+                      {result.followStatus === "pending" && <span className="text-xs font-semibold text-[#888888] flex-shrink-0">Sent</span>}
+                    </button>
+                    {selectedResult?.id === result.id && result.followStatus === "none" && (
+                      <div className="px-2 pb-2 pt-1">
+                        <p className="text-xs font-semibold text-[#888888] mb-2">Who are they to you?</p>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {LABELS.map(l => (
+                            <button key={l} onClick={() => setSelectedLabel(l)}
+                              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                        <button onClick={() => sendFollowRequest(result.username)} disabled={!selectedLabel || sendingRequest}
+                          className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                          {sendingRequest ? "Sending..." : "Send request"}
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <p className="font-semibold text-[#111111] text-sm">{searchResult.name}</p>
-                    <p className="text-xs text-[#888888]">@{searchResult.username}</p>
-                  </div>
-                </div>
-                <p className="text-xs font-semibold text-[#888888] mb-2">Who are they to you?</p>
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {LABELS.map(l => (
-                    <button key={l} onClick={() => setSelectedLabel(l)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={() => sendFollowRequest(searchResult.username)} disabled={!selectedLabel || sendingRequest}
-                  className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
-                  {sendingRequest ? "Sending..." : "Send request"}
-                </button>
+                ))}
               </div>
             )}
           </div>

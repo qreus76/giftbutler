@@ -186,6 +186,10 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   useEffect(() => {
     if (!isLoaded) return;
     if (!isOwner) fetch(`/api/profile/${username}?ref=${encodeURIComponent(document.referrer || "")}`);
+    // Store referral for new sign-ups coming through this profile
+    if (isLoaded && !user) {
+      try { localStorage.setItem("gb_referral", username); } catch { /* storage unavailable */ }
+    }
   }, [username, isOwner, isLoaded]);
 
   useEffect(() => {
