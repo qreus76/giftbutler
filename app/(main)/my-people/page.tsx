@@ -264,13 +264,12 @@ export default function MyPeoplePage() {
           <>
             {/* Search card */}
             <div className="bg-white rounded-2xl shadow-card p-4">
-              <p className="text-sm font-bold text-[#111111] mb-3">Find someone by name or username</p>
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
                 <input
                   value={searchQuery}
                   onChange={e => handleSearchInput(e.target.value)}
-                  placeholder="Search by name or username..."
+                  placeholder="Search people..."
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                 />
               </div>
@@ -278,47 +277,81 @@ export default function MyPeoplePage() {
               {searching && <p className="text-xs text-[#888888] mt-2">Searching...</p>}
               {searchNotFound && !searching && <p className="text-xs text-[#888888] mt-2">No one found — try a different name or username.</p>}
 
-              {searchResults.length > 0 && !searching && (
-                <div className="mt-3 space-y-1">
-                  {searchResults.map(result => (
-                    <div key={result.id}>
-                      <button
-                        onClick={() => setSelectedResult(selectedResult?.id === result.id ? null : result)}
-                        className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors text-left ${selectedResult?.id === result.id ? "bg-[#F0F0E8]" : "hover:bg-[#F5F5F0]"}`}
-                      >
-                        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                          {result.avatar ? <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" /> : (
-                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{result.name[0]?.toUpperCase()}</div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[#111111] text-sm truncate">{result.name}</p>
-                          <p className="text-xs text-[#888888]">@{result.username}{result.mutualCount > 0 ? ` · ${result.mutualCount} mutual` : ""}</p>
-                        </div>
-                        {result.followStatus === "accepted" && <span className="text-xs font-semibold text-emerald-600 flex-shrink-0">Connected</span>}
-                        {result.followStatus === "pending" && <span className="text-xs font-semibold text-[#888888] flex-shrink-0">Sent</span>}
-                      </button>
-                      {selectedResult?.id === result.id && result.followStatus === "none" && (
-                        <div className="px-2 pb-2 pt-1">
-                          <p className="text-xs font-semibold text-[#888888] mb-2">Who are they to you?</p>
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {LABELS.map(l => (
-                              <button key={l} onClick={() => setSelectedLabel(l)}
-                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
-                                {l}
-                              </button>
-                            ))}
-                          </div>
-                          <button onClick={() => sendFollowRequest(result.username)} disabled={!selectedLabel || sendingRequest}
-                            className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors">
-                            {sendingRequest ? "Sending..." : "Send request"}
+              {searchResults.length > 0 && !searching && (() => {
+                const networkResults = searchResults.filter(r => r.followStatus !== "none");
+                const newResults = searchResults.filter(r => r.followStatus === "none");
+                return (
+                  <div className="mt-3 space-y-1">
+                    {networkResults.length > 0 && (
+                      <>
+                        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide px-1 pb-1">In your network</p>
+                        {networkResults.map(result => (
+                          <button
+                            key={result.id}
+                            onClick={() => result.followStatus === "accepted" ? router.push(`/for/${result.username}`) : undefined}
+                            className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors text-left ${result.followStatus === "accepted" ? "hover:bg-[#F5F5F0] cursor-pointer" : "cursor-default"}`}
+                          >
+                            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                              {result.avatar ? <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" /> : (
+                                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{result.name[0]?.toUpperCase()}</div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-[#111111] text-sm truncate">{result.name}</p>
+                              <p className="text-xs text-[#888888]">@{result.username}</p>
+                            </div>
+                            {result.followStatus === "accepted" && <ArrowRight className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" />}
+                            {result.followStatus === "pending" && <span className="text-xs font-semibold text-[#888888] flex-shrink-0">Not yet confirmed</span>}
                           </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        ))}
+                      </>
+                    )}
+
+                    {newResults.length > 0 && (
+                      <>
+                        {networkResults.length > 0 && <div className="border-t border-[#F0F0E8] my-1" />}
+                        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide px-1 pb-1">Add someone new</p>
+                        {newResults.map(result => (
+                          <div key={result.id}>
+                            <button
+                              onClick={() => setSelectedResult(selectedResult?.id === result.id ? null : result)}
+                              className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors text-left ${selectedResult?.id === result.id ? "bg-[#F0F0E8]" : "hover:bg-[#F5F5F0]"}`}
+                            >
+                              <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                                {result.avatar ? <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" /> : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#2D4A1E] bg-[#C4D4B4]">{result.name[0]?.toUpperCase()}</div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-[#111111] text-sm truncate">{result.name}</p>
+                                <p className="text-xs text-[#888888]">@{result.username}{result.mutualCount > 0 ? ` · ${result.mutualCount} mutual` : ""}</p>
+                              </div>
+                              <Plus className="w-4 h-4 text-[#888888] flex-shrink-0" />
+                            </button>
+                            {selectedResult?.id === result.id && (
+                              <div className="px-2 pb-2 pt-1">
+                                <p className="text-xs font-semibold text-[#888888] mb-2">Who are they to you?</p>
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                  {LABELS.map(l => (
+                                    <button key={l} onClick={() => setSelectedLabel(l)}
+                                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${selectedLabel === l ? "bg-[#111111] border-[#111111] text-white" : "bg-white border-[#E0E0D8] text-[#111111] hover:border-[#111111]"}`}>
+                                      {l}
+                                    </button>
+                                  ))}
+                                </div>
+                                <button onClick={() => sendFollowRequest(result.username)} disabled={!selectedLabel || sendingRequest}
+                                  className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors">
+                                  {sendingRequest ? "Sending..." : "Send request"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* People you might know */}
