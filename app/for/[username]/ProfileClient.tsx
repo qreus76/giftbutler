@@ -141,21 +141,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     };
   }, [addingOccasion]);
 
-  const LOADING_MESSAGES = [
-    `Reading ${displayName}'s hints...`,
-    "Understanding their personality...",
-    "Thinking through what they'd love...",
-    "Crossing off the generic stuff...",
-    "Matching gifts to their interests...",
-    "Curating something special...",
-    "Putting it all together...",
-  ];
-
   useEffect(() => {
+    const msgCount = 7;
     if (!generating) { setLoadingMsgIdx(0); setMsgVisible(true); return; }
     const interval = setInterval(() => {
       setMsgVisible(false);
-      setTimeout(() => { setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length); setMsgVisible(true); }, 300);
+      setTimeout(() => { setLoadingMsgIdx(i => (i + 1) % msgCount); setMsgVisible(true); }, 300);
     }, 2500);
     return () => clearInterval(interval);
   }, [generating]);
@@ -372,6 +363,16 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
   const displayName = profile.name || username;
   const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder && textHints.length > 0;
+
+  const LOADING_MESSAGES = [
+    `Reading ${displayName}'s hints...`,
+    "Understanding their personality...",
+    "Thinking through what they'd love...",
+    "Crossing off the generic stuff...",
+    "Matching gifts to their interests...",
+    "Curating something special...",
+    "Putting it all together...",
+  ];
 
   return (
     <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
