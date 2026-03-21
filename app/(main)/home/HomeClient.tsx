@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, UserPlus, Cake, Gift, Pencil, Share2, ArrowRight, CalendarDays } from "lucide-react";
+import { UserPlus, Cake, Gift, Sparkles, Share2, ArrowRight, CalendarDays } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 import { useFollowRequests } from "@/lib/follow-request-context";
 
@@ -54,8 +54,6 @@ export default function ActivityPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [hints, setHints] = useState<Hint[]>([]);
-  const [visitCount, setVisitCount] = useState(0);
-  const [claimCount, setClaimCount] = useState(0);
   const [people, setPeople] = useState<Person[]>([]);
   const [upcomingOccasions, setUpcomingOccasions] = useState<UpcomingOccasion[]>([]);
   const [copied, setCopied] = useState(false);
@@ -72,8 +70,7 @@ export default function ActivityPage() {
       const data = await meRes.json();
       setProfile(data.profile);
       setHints(data.hints);
-      setVisitCount(data.visitCount || 0);
-      setClaimCount(data.claimCount || 0);
+
       if (peopleRes.ok) { const pd = await peopleRes.json(); setPeople(pd.people || []); }
       if (occasionsRes.ok) { const od = await occasionsRes.json(); setUpcomingOccasions(od.occasions || []); }
     } catch { setLoadError(true); } finally { setLoading(false); }
@@ -132,7 +129,11 @@ export default function ActivityPage() {
           <h1 className="text-3xl font-bold text-[#111111] leading-tight">
             {profile?.name ? `Hey, ${profile.name.split(" ")[0]}!` : "Welcome back!"}
           </h1>
-          <p className="text-[#888888] text-base mt-0.5">What would you like to do?</p>
+          <p className="text-[#888888] text-base mt-0.5">
+            {hints.length === 0 && people.length === 0
+              ? "Let's get you set up."
+              : "What would you like to do?"}
+          </p>
         </div>
 
         {/* Action cards — Artilate style */}
@@ -154,11 +155,11 @@ export default function ActivityPage() {
           <a href="/my-people"
             className="flex items-center gap-4 bg-[#B8CED0] rounded-2xl p-4 active:opacity-80 transition-opacity">
             <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-card">
-              <Pencil className="w-5 h-5 text-[#111111]" />
+              <Sparkles className="w-5 h-5 text-[#111111]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-[#111111]">Gift AI</p>
-              <p className="text-sm text-[#111111]/60">Find gifts for your people</p>
+              <p className="font-semibold text-[#111111]">Find a gift</p>
+              <p className="text-sm text-[#111111]/60">Pick someone, let AI do the rest</p>
             </div>
             <div className="w-8 h-8 bg-[#111111] rounded-full flex items-center justify-center flex-shrink-0">
               <ArrowRight className="w-4 h-4 text-white" />
@@ -246,21 +247,6 @@ export default function ActivityPage() {
             </div>
           </div>
         )}
-
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Profile views", value: visitCount, sub: visitCount === 0 ? "share your link!" : "last 30 days", icon: <Eye className="w-4 h-4" /> },
-            { label: "Hints", value: hints.length, sub: hintsToShow.length < 3 ? "add more" : hintsToShow.length < 5 ? "good start" : "looking great" },
-            { label: "Gifts planned", value: claimCount, sub: claimCount > 0 ? "someone's shopping" : "claimed", highlight: claimCount > 0 },
-          ].map((stat, i) => (
-            <div key={i} className={`rounded-2xl p-4 shadow-card ${stat.highlight ? "bg-[#ECC8AE]" : "bg-white"}`}>
-              <p className="text-2xl font-bold text-[#111111]">{stat.value}</p>
-              <p className="text-xs font-semibold text-[#111111] mt-0.5">{stat.label}</p>
-              <p className="text-xs text-[#888888]">{stat.sub}</p>
-            </div>
-          ))}
-        </div>
 
         {/* Coming up — birthdays + occasions */}
         <div className="bg-white rounded-2xl shadow-card overflow-hidden">
