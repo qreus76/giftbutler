@@ -19,6 +19,8 @@ export default function EditProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   useEffect(() => {
     fetch("/api/me").then(r => r.json()).then(data => {
@@ -42,6 +44,7 @@ export default function EditProfilePage() {
     e.preventDefault();
     setSaving(true);
     setError("");
+    setUsernameError("");
     const res = await fetch("/api/profile/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,7 +52,15 @@ export default function EditProfilePage() {
     });
     const data = await res.json();
     setSaving(false);
-    if (!res.ok) { setError(data.error || "Failed to save — try again"); return; }
+    if (!res.ok) {
+      const msg = data.error || "Failed to save — try again";
+      if (msg.toLowerCase().includes("username")) {
+        setUsernameError(msg);
+      } else {
+        setError(msg);
+      }
+      return;
+    }
     if (data.username) { setCurrentUsername(data.username); setUsername(data.username); }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -108,12 +119,17 @@ export default function EditProfilePage() {
                 <input
                   type="text"
                   value={username}
-                  onChange={e => !usernameLockedUntil && setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                  onChange={e => { setUsernameError(""); !usernameLockedUntil && setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")); }}
                   disabled={!!usernameLockedUntil}
                   className="flex-1 text-[#111111] text-base focus:outline-none font-medium disabled:text-[#888888]"
                 />
               </div>
-              {usernameLockedUntil ? (
+              {usernameError ? (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                  {usernameError}
+                </p>
+              ) : usernameLockedUntil ? (
                 <p className="text-xs text-[#888888] mt-1.5 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                   Next change available {usernameLockedUntil.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
@@ -140,6 +156,9 @@ export default function EditProfilePage() {
                 maxLength={160}
                 className="w-full text-[#111111] text-base focus:outline-none resize-none placeholder-[#CCCCCC] mt-1"
               />
+              <p className={`text-xs text-right mt-1 ${bio.length >= 140 ? "text-red-500" : "text-[#CCCCCC]"}`}>
+                {160 - bio.length}
+              </p>
             </div>
           </div>
 
@@ -155,6 +174,7 @@ export default function EditProfilePage() {
                 onChange={e => setBirthday(e.target.value)}
                 className="w-full text-[#111111] text-base focus:outline-none mt-1"
               />
+              <p className="text-xs text-[#AAAAAA] mt-1.5">Shows on your profile so people can find the perfect birthday gift.</p>
             </div>
           </div>
 
@@ -187,13 +207,35 @@ export default function EditProfilePage() {
           </button>
         </form>
 
-        <button
-          onClick={() => signOut(() => router.push("/"))}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-[#E0E0D8] hover:bg-red-50 hover:border-red-200 text-[#888888] hover:text-red-500 font-semibold rounded-full text-sm transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign out
-        </button>
+        <div className="border-t border-[#E8E8E0] pt-5">
+          {confirmSignOut ? (
+            <div className="space-y-2">
+              <p className="text-sm text-center text-[#888888]">Are you sure you want to sign out?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => signOut(() => router.push("/"))}
+                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full text-sm transition-colors"
+                >
+                  Yes, sign out
+                </button>
+                <button
+                  onClick={() => setConfirmSignOut(false)}
+                  className="flex-1 py-3 bg-white border border-[#E0E0D8] text-[#111111] font-semibold rounded-full text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmSignOut(true)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-[#E0E0D8] hover:bg-red-50 hover:border-red-200 text-[#888888] hover:text-red-500 font-semibold rounded-full text-sm transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          )}
+        </div>
       </div>
     </main>
   );
