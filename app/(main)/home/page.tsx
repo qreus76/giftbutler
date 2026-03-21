@@ -250,7 +250,7 @@ export default function ActivityPage() {
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Profile views", value: visitCount, sub: "last 30 days", icon: <Eye className="w-4 h-4" /> },
+            { label: "Profile views", value: visitCount, sub: visitCount === 0 ? "share your link!" : "last 30 days", icon: <Eye className="w-4 h-4" /> },
             { label: "Hints", value: hints.length, sub: hintsToShow.length < 3 ? "add more" : hintsToShow.length < 8 ? "good start" : "looking great" },
             { label: "Gifts planned", value: claimCount, sub: claimCount > 0 ? "someone's shopping" : "claimed", highlight: claimCount > 0 },
           ].map((stat, i) => (

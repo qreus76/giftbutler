@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, Check } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -148,7 +148,7 @@ export default function EditProfilePage() {
             disabled={saving}
             className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors text-base"
           >
-            {saved ? "✓ Saved!" : saving ? "Saving..." : "Save changes"}
+            {saved ? <span className="flex items-center justify-center gap-1.5"><Check className="w-4 h-4" /> Saved!</span> : saving ? "Saving..." : "Save changes"}
           </button>
         </form>
 

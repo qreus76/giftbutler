@@ -135,6 +135,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log(`[weekly-digest] Sent ${sent} digests`);
   return NextResponse.json({ sent });
 }

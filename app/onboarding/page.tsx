@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, Search, Users, Cake, ArrowRight } from "lucide-react";
+import { Copy, Check, Search, Users, Cake, ArrowRight, Gift } from "lucide-react";
 
 const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother","Sister","Grandfather","Grandmother","Grandson","Granddaughter","Uncle","Aunt","Nephew","Niece","Cousin","Best Friend","Friend","Colleague","Other"];
 
@@ -165,7 +165,7 @@ export default function OnboardingPage() {
           </div>
           {sentRequests.length > 0 && (
             <div className="bg-[#C4D4B4] rounded-2xl px-4 py-3 mb-3">
-              <p className="text-[#111111] text-sm font-semibold">✓ {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
+              <p className="text-[#111111] text-sm font-semibold flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> {sentRequests.length} request{sentRequests.length > 1 ? "s" : ""} sent</p>
             </div>
           )}
           <div className="bg-white rounded-2xl shadow-card p-4 mb-3">
@@ -224,7 +224,7 @@ export default function OnboardingPage() {
           <h2 className="text-2xl font-bold text-[#111111] mb-2">When&apos;s your birthday?</h2>
           <p className="text-[#888888] text-sm mb-8">We&apos;ll remind you to share your profile before your birthday.</p>
           <div className="bg-white rounded-2xl shadow-card p-5 mb-4">
-            <input type="date" value={birthdayInput} max={new Date().toISOString().split("T")[0]} onChange={e => setBirthdayInput(e.target.value)}
+            <input type="date" value={birthdayInput} max={new Date().toISOString().split("T")[0]} min="1900-01-01" onChange={e => setBirthdayInput(e.target.value)}
               className="w-full text-[#111111] text-base focus:outline-none" />
           </div>
           <button onClick={saveBirthday} disabled={savingBirthday || !birthdayInput}
@@ -245,7 +245,9 @@ export default function OnboardingPage() {
     return (
       <main className="min-h-screen bg-[#EAEAE0] flex items-center justify-center px-5">
         <div className="w-full max-w-md text-center">
-          <div className="text-5xl mb-4">🎉</div>
+          <div className="w-16 h-16 bg-[#C4D4B4] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Gift className="w-8 h-8 text-[#2D4A1E]" />
+          </div>
           <h2 className="text-2xl font-bold text-[#111111] mb-2">Your profile is live!</h2>
           <p className="text-[#888888] text-sm mb-2">Share your link — that&apos;s when the magic happens.</p>
           <p className="text-xs text-[#888888] mb-6">We added a few hints from your answers. Edit them anytime.</p>
@@ -261,7 +263,7 @@ export default function OnboardingPage() {
                 onClick={() => { navigator.clipboard.writeText(msg).catch(() => alert("Unable to copy.")); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
                 className="text-left bg-white rounded-2xl shadow-card px-4 py-3 hover:bg-[#F5F5F0] transition-colors">
                 <p className="text-[#888888] text-xs leading-relaxed">{msg}</p>
-                <p className="text-[#111111] text-xs font-semibold mt-1.5">{copiedMsgIndex === i ? "✓ Copied!" : "Copy this message →"}</p>
+                <p className="text-[#111111] text-xs font-semibold mt-1.5 flex items-center gap-1">{copiedMsgIndex === i ? <><Check className="w-3 h-3" /> Copied!</> : "Copy this message →"}</p>
               </button>
             ))}
           </div>

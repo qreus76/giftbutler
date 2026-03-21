@@ -76,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const profileMap = Object.fromEntries((profiles || []).map((p: { id: string; username: string; name: string }) => [p.id, p]));
   const clerk = await clerkClient();
 
-  Promise.all(
+  await Promise.all(
     memberIds.map(async (giverId: string) => {
       const receiverId = assignments.get(giverId)!;
       const receiverProfile = profileMap[receiverId] as { username: string; name: string } | undefined;
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             from: "GiftButler <notifications@giftbutler.io>",
             to: [giverEmail],
             subject: `🎁 The draw is in — you got ${receiverName}!`,
-            text: `The names have been drawn for ${circle.name}!\n\nYou're buying for: ${receiverName}\nBudget: $${circle.budget}\n\nView their wishlist: ${profileUrl}\n\n---\nGiftButler`,
+            text: `The names have been drawn for ${circle.name}!\n\nYou're buying for: ${receiverName}${circle.budget ? `\nBudget: $${circle.budget}` : ""}\n\nView their wishlist: ${profileUrl}\n\n---\nGiftButler`,
             html: `
               <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#EAEAE0;">
                 <h1 style="font-size:24px;font-weight:800;color:#111111;margin:0 0 4px;">🎁 The draw is in!</h1>
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 <div style="background:#ffffff;border-radius:16px;padding:24px;margin:0 0 20px;">
                   <p style="color:#888888;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 6px;">You're buying for</p>
                   <p style="color:#111111;font-size:28px;font-weight:800;margin:0 0 8px;">${receiverName}</p>
-                  <p style="color:#888888;font-size:14px;margin:0;">Budget: <strong style="color:#111111;">$${circle.budget}</strong></p>
+                  ${circle.budget ? `<p style="color:#888888;font-size:14px;margin:0;">Budget: <strong style="color:#111111;">$${circle.budget}</strong></p>` : ""}
                 </div>
                 <a href="${profileUrl}" style="display:block;background:#111111;color:#ffffff;font-weight:700;font-size:15px;padding:14px 24px;border-radius:50px;text-decoration:none;text-align:center;">View their wishlist →</a>
                 <p style="color:#CCCCCC;font-size:12px;margin:28px 0 0;text-align:center;">GiftButler &middot; <a href="${baseUrl}" style="color:#CCCCCC;">giftbutler.io</a></p>

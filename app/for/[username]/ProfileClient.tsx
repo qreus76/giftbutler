@@ -107,6 +107,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [newOccasionName, setNewOccasionName] = useState("");
   const [newOccasionDate, setNewOccasionDate] = useState("");
   const [savingOccasion, setSavingOccasion] = useState(false);
+  const [occasionError, setOccasionError] = useState("");
 
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
@@ -138,14 +139,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
   async function addOccasion() {
     if (!newOccasionName.trim()) return;
-    setSavingOccasion(true);
+    setSavingOccasion(true); setOccasionError("");
     try {
       const res = await fetch("/api/occasions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newOccasionName.trim(), date: newOccasionDate || null }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setOccasions(prev => [...prev, data]);
       setNewOccasionName(""); setNewOccasionDate(""); setAddingOccasion(false);
-    } catch { /* ignore */ } finally { setSavingOccasion(false); }
+    } catch { setOccasionError("Failed to save — try again"); } finally { setSavingOccasion(false); }
   }
 
   async function deleteOccasion(id: string) {
@@ -237,7 +238,9 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       if (saved) { const data = JSON.parse(saved); sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, myClaims: newClaims })); }
     } catch { /* unavailable */ }
     fetch("/api/claims", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }) })
-      .catch(() => {}).finally(() => { setClaiming(null); setNotifyPromptTitle(title); });
+      .then(r => { if (!r.ok) { setMyClaims(myClaims); setExistingClaims(existingClaims); } else { setNotifyPromptTitle(title); } })
+      .catch(() => { setMyClaims(myClaims); setExistingClaims(existingClaims); })
+      .finally(() => setClaiming(null));
   }
 
   async function unclaimGift(title: string) {
@@ -475,7 +478,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </button>
               )}
               {followStatus === "pending" && <span className="px-4 py-2 bg-white text-[#888888] font-semibold rounded-full text-sm border border-[#E0E0D8]">Request sent</span>}
-              {followStatus === "accepted" && <span className="px-4 py-2 bg-[#C4D4B4] text-[#2D4A1E] font-semibold rounded-full text-sm">✓ In my people</span>}
+              {followStatus === "accepted" && <span className="px-4 py-2 bg-[#C4D4B4] text-[#2D4A1E] font-semibold rounded-full text-sm flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> In my people</span>}
               <button onClick={shareProfile}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
                 <Copy className="w-3.5 h-3.5" />
@@ -559,7 +562,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                           onClick={() => iMineThis ? setConfirmUnclaim(claimKey) : claimGift(claimKey)}
                           disabled={!iMineThis && (alreadyClaimed || claiming === claimKey)}
                           className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                          {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I'm on it"}
+                          {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm on it"}
                         </button>
                       )}
                     </div>
@@ -710,7 +713,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                             onClick={() => iMineThis ? setConfirmUnclaim(rec.title) : claimGift(rec.title)}
                             disabled={!iMineThis && (alreadyClaimed || claiming === rec.title)}
                             className="w-full py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                            {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
+                            {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
                           </button>
                         )}
                       </div>
@@ -723,7 +726,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                           </div>
                         </div>
                       )}
-                      {notifySent.has(rec.title) && <p className="mt-2 text-xs text-emerald-600 font-semibold">✓ Hint sent</p>}
+                      {notifySent.has(rec.title) && <p className="mt-2 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
                     </div>
                   );
                 })}
@@ -1117,6 +1120,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                       </div>
                     )}
 
+                    {occasionError && <p className="text-red-500 text-xs">{occasionError}</p>}
                     <button
                       onClick={addOccasion}
                       disabled={!newOccasionName.trim() || isBirthday || savingOccasion}

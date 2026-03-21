@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays, Shuffle, AtSign } from "lucide-react";
+import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays, Shuffle, AtSign, Check } from "lucide-react";
 
 interface Person {
   id: string;
@@ -221,7 +221,7 @@ export default function MyPeoplePage() {
                       <p className="text-xs text-[#888888]">@{searchResult.username}</p>
                     </div>
                   </div>
-                  {searchResult.followStatus === "accepted" && <p className="text-xs text-emerald-600 font-semibold">✓ Already in your people</p>}
+                  {searchResult.followStatus === "accepted" && <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Already in your people</p>}
                   {searchResult.followStatus === "pending" && <p className="text-xs text-[#888888] font-semibold">Request already sent</p>}
                   {searchResult.followStatus === "none" && (
                     <>

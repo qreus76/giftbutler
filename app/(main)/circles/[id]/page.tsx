@@ -166,7 +166,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
         {/* Assignment card (after draw) */}
         {isDrawn && assignedTo && (
           <div className="bg-[#ECC8AE] rounded-2xl p-5">
-            <p className="text-xs font-bold text-[#5C3118] uppercase tracking-wide mb-3">🎁 You&apos;re buying for</p>
+            <p className="text-xs font-bold text-[#5C3118] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> You&apos;re buying for</p>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
                 {assignedTo.avatar
