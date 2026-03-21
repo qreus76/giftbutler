@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   const { name, budget, eventDate, circleType, recipientUsername } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "Name is required" }, { status: 400 });
-  if (!budget || Number(budget) < 1) return NextResponse.json({ error: "Budget is required" }, { status: 400 });
+  if (budget && Number(budget) < 1) return NextResponse.json({ error: "Budget must be at least $1" }, { status: 400 });
 
   const inviteCode = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
   const type = circleType === "occasion" ? "occasion" : "exchange";
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     .from("gift_circles")
     .insert({
       name: name.trim(),
-      budget: parseInt(budget),
+      budget: budget ? parseInt(budget) : null,
       event_date: eventDate || null,
       organizer_id: userId,
       status: "open",

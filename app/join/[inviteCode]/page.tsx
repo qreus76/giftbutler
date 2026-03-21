@@ -10,7 +10,7 @@ import { use } from "react";
 interface CircleInfo {
   id: string;
   name: string;
-  budget: number;
+  budget: number | null;
   event_date: string | null;
   status: string;
   memberCount: number;
@@ -93,15 +93,17 @@ export default function JoinPage({ params }: { params: Promise<{ inviteCode: str
         </div>
 
         <div className="bg-white rounded-2xl shadow-card p-5 mb-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#C4D4B4] rounded-full flex items-center justify-center flex-shrink-0">
-              <DollarSign className="w-4 h-4 text-[#2D4A1E]" />
+          {circle.budget ? (
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-[#C4D4B4] rounded-full flex items-center justify-center flex-shrink-0">
+                <DollarSign className="w-4 h-4 text-[#2D4A1E]" />
+              </div>
+              <div>
+                <p className="text-xs text-[#888888] font-semibold uppercase tracking-wide">Budget</p>
+                <p className="text-[#111111] font-bold">${circle.budget} {isExchange ? "per person" : "contribution"}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-[#888888] font-semibold uppercase tracking-wide">Budget</p>
-              <p className="text-[#111111] font-bold">${circle.budget} {isExchange ? "per person" : "contribution"}</p>
-            </div>
-          </div>
+          ) : null}
           {eventDate && (
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-[#B8CED0] rounded-full flex items-center justify-center flex-shrink-0">

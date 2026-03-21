@@ -33,7 +33,7 @@ interface SearchResult {
 interface Circle {
   id: string;
   name: string;
-  budget: number;
+  budget: number | null;
   event_date: string | null;
   status: string;
   memberCount: number;
@@ -377,7 +377,9 @@ export default function MyPeoplePage() {
                   )}
 
                   <div>
-                    <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">Budget per person ($)</label>
+                    <label className="text-xs font-semibold text-[#888888] uppercase tracking-wide block mb-1.5">
+                      {circleType === "occasion" ? "Suggested contribution ($)" : "Budget per person ($)"} <span className="text-[#CCCCCC] normal-case font-normal">(optional)</span>
+                    </label>
                     <div className="relative">
                       <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888888]" />
                       <input
@@ -408,7 +410,7 @@ export default function MyPeoplePage() {
                   {createError && <p className="text-red-500 text-xs">{createError}</p>}
                   <button
                     type="submit"
-                    disabled={creating || !circleName.trim() || !circleBudget}
+                    disabled={creating || !circleName.trim()}
                     className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors"
                   >
                     {creating ? "Creating..." : `Create ${circleType === "occasion" ? "Group Occasion" : "Gift Exchange"}`}
@@ -453,7 +455,7 @@ export default function MyPeoplePage() {
                             </span>
                           </div>
                           <p className="text-sm text-[#888888]">
-                            ${circle.budget} · {circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}
+                            {circle.budget ? `$${circle.budget} · ` : ""}{circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}
                             {eventDate ? ` · ${eventDate}` : ""}
                           </p>
                           {circle.isOrganizer && <p className="text-xs text-[#AAAAAA] mt-0.5">You organized this</p>}

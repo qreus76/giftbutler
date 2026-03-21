@@ -10,7 +10,7 @@ import { use } from "react";
 interface CircleDetail {
   id: string;
   name: string;
-  budget: number;
+  budget: number | null;
   event_date: string | null;
   status: string;
   invite_code: string;
@@ -157,7 +157,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
               )}
             </div>
             <p className="text-[#888888] text-sm">
-              ${circle.budget} budget · {circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}
+              {circle.budget ? `$${circle.budget} budget · ` : ""}{circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}
               {eventDate ? ` · ${eventDate}` : ""}
             </p>
           </div>
@@ -176,7 +176,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
               </div>
               <div>
                 <p className="text-2xl font-bold text-[#111111]">{assignedTo.name}</p>
-                <p className="text-sm text-[#5C3118]">${circle.budget} budget</p>
+                {circle.budget ? <p className="text-sm text-[#5C3118]">${circle.budget} budget</p> : null}
               </div>
             </div>
             <div className="flex flex-col gap-2">
