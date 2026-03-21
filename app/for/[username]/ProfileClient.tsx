@@ -783,7 +783,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </div>
                 <form onSubmit={addHint} className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <input value={newHint} onChange={e => setNewHint(e.target.value)} maxLength={280}
+                    <input value={newHint} onChange={e => {
+                        const val = e.target.value;
+                        try { new URL(val.trim()); setHintMode("link"); setHintUrl(val.trim()); setNewHint(""); return; } catch {}
+                        setNewHint(val);
+                      }} maxLength={280}
                       placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
                       className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
                     <button type="submit" disabled={!newHint.trim() || adding}
@@ -806,7 +810,14 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   <input
                     type="url"
                     value={hintUrl}
-                    onChange={e => { setHintUrl(e.target.value); setEnrichedProduct(null); setEnrichError(""); }}
+                    onChange={e => {
+                      const val = e.target.value;
+                      try { new URL(val.trim()); } catch {
+                        // Looks like plain text — switch to describe mode
+                        setHintMode("text"); setNewHint(val); setHintUrl(""); setEnrichedProduct(null); setEnrichError(""); return;
+                      }
+                      setHintUrl(val); setEnrichedProduct(null); setEnrichError("");
+                    }}
                     onKeyDown={e => e.key === "Enter" && enrichUrl()}
                     placeholder="https://amazon.com/..."
                     className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
