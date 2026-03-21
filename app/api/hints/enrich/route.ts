@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || "giftbutler09-20";
+
 function extractMeta(html: string, property: string): string | null {
   // Try property="..." content="..."
   let m = html.match(new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"));
@@ -12,6 +14,29 @@ function extractMeta(html: string, property: string): string | null {
   m = html.match(new RegExp(`<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"));
   if (m) return m[1];
   return null;
+}
+
+function isAmazonHost(hostname: string): boolean {
+  const host = hostname.replace(/^www\./, "");
+  return host === "amazon.com" || host.endsWith(".amazon.com") || host === "a.co" || host === "amzn.to" || host === "amzn.com";
+}
+
+function extractAsin(url: string): string | null {
+  const patterns = [
+    /\/dp\/([A-Z0-9]{10})/,
+    /\/gp\/product\/([A-Z0-9]{10})/,
+    /\/exec\/obidos\/ASIN\/([A-Z0-9]{10})/,
+    /\/product\/([A-Z0-9]{10})/,
+  ];
+  for (const pattern of patterns) {
+    const m = url.match(pattern);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function amazonWidgetImageUrl(asin: string): string {
+  return `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=${AFFILIATE_TAG}`;
 }
 
 function extractTitle(html: string): string | null {
@@ -65,9 +90,19 @@ export async function POST(req: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: "Could not load that page" }, { status: 400 });
 
     const html = await res.text();
+    const finalUrl = res.url; // URL after all redirects
 
     const ogTitle = extractMeta(html, "og:title");
-    const ogImage = extractMeta(html, "og:image");
+
+    // For Amazon URLs, extract ASIN from the final URL and use the affiliate image widget
+    let ogImage = extractMeta(html, "og:image");
+    try {
+      const finalHostname = new URL(finalUrl).hostname;
+      if (isAmazonHost(finalHostname)) {
+        const asin = extractAsin(finalUrl);
+        if (asin) ogImage = amazonWidgetImageUrl(asin);
+      }
+    } catch { /* keep ogImage as-is */ }
     const ogPrice =
       extractMeta(html, "og:price:amount") ||
       extractMeta(html, "product:price:amount") ||

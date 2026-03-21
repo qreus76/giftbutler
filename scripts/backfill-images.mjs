@@ -22,6 +22,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || "giftbutler09-20";
+
+function isAmazonHost(hostname) {
+  const host = hostname.replace(/^www\./, "");
+  return host === "amazon.com" || host.endsWith(".amazon.com") || host === "a.co" || host === "amzn.to" || host === "amzn.com";
+}
+
+function extractAsin(url) {
+  const patterns = [/\/dp\/([A-Z0-9]{10})/, /\/gp\/product\/([A-Z0-9]{10})/, /\/exec\/obidos\/ASIN\/([A-Z0-9]{10})/, /\/product\/([A-Z0-9]{10})/];
+  for (const pattern of patterns) {
+    const m = url.match(pattern);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function amazonWidgetImageUrl(asin) {
+  return `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_SL250_&ID=AsinImage&MarketPlace=US&ServiceVersion=20070822&WS=1&tag=${AFFILIATE_TAG}`;
+}
+
 function extractOgImage(html) {
   let m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
   if (m) return m[1];
@@ -30,7 +50,7 @@ function extractOgImage(html) {
   return null;
 }
 
-async function fetchOgImage(url) {
+async function fetchImage(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -44,7 +64,18 @@ async function fetchOgImage(url) {
     });
     clearTimeout(timeout);
     if (!res.ok) return null;
+    const finalUrl = res.url;
     const html = await res.text();
+
+    // For Amazon URLs, use the affiliate image widget via ASIN
+    try {
+      const hostname = new URL(finalUrl).hostname;
+      if (isAmazonHost(hostname)) {
+        const asin = extractAsin(finalUrl);
+        if (asin) return amazonWidgetImageUrl(asin);
+      }
+    } catch { /* fall through */ }
+
     return extractOgImage(html);
   } catch {
     clearTimeout(timeout);
@@ -70,7 +101,7 @@ let skipped = 0;
 
 for (const hint of hints) {
   process.stdout.write(`  ${hint.id} — ${hint.url.slice(0, 60)}... `);
-  const image = await fetchOgImage(hint.url);
+  const image = await fetchImage(hint.url);
   if (!image) {
     console.log("no image found");
     skipped++;
