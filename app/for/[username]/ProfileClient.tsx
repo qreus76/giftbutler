@@ -783,7 +783,11 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                 </div>
                 <form onSubmit={addHint} className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <input value={newHint} onChange={e => setNewHint(e.target.value)} maxLength={280}
+                    <input value={newHint} onChange={e => setNewHint(e.target.value)}
+                      onBlur={() => {
+                        const val = newHint.trim();
+                        try { new URL(val); setHintMode("link"); setHintUrl(val); setNewHint(""); } catch {}
+                      }} maxLength={280}
                       placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || "Add a hint..."}
                       className="flex-1 px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
                     <button type="submit" disabled={!newHint.trim() || adding}
