@@ -61,7 +61,7 @@ interface Props {
 
 export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, initialOccasions, avatarUrl }: Props) {
   const { user, isLoaded } = useUser();
-  const isOwner = !!user && user.id === initialProfile.id;
+  const isOwner = isLoaded && !!user && user.id === initialProfile.id;
 
   const [profile] = useState<Profile>(initialProfile);
   const [hints, setHints] = useState<Hint[]>(initialHints);
@@ -342,7 +342,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const textHints = hintsToShow.filter(h => !h.url);
   const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
   const displayName = profile.name || username;
-  const showFixedCTA = !isOwner && recommendations.length === 0 && !showFinder && textHints.length > 0;
+  const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder && textHints.length > 0;
 
   return (
     <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
@@ -412,7 +412,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         )}
 
         {/* Occasion chips */}
-        {(occasions.length > 0 || isOwner) && (
+        {(occasions.length > 0 || (isLoaded && isOwner)) && (
           <div className="flex flex-wrap gap-2 mt-1 mb-4">
             {occasions.map(occ => {
               const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
@@ -522,7 +522,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
       <div className="max-w-xl mx-auto px-4 space-y-4">
 
         {/* Specific wants — always visible, never filtered */}
-        {!isOwner && productHints.length > 0 && (
+        {isLoaded && !isOwner && productHints.length > 0 && (
           <div>
             <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> What {displayName} wants</p>
             <div className="flex flex-col gap-3">
@@ -571,7 +571,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         )}
 
         {/* Education banner */}
-        {!isOwner && textHints.length > 0 && recommendations.length === 0 && !showFinder && (() => {
+        {isLoaded && !isOwner && textHints.length > 0 && recommendations.length === 0 && !showFinder && (() => {
           try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
         })() && (
           <div className="bg-[#B8CED0] rounded-2xl p-4">
