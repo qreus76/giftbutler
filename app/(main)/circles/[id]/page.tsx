@@ -69,8 +69,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!user) { router.push("/sign-in"); return; }
+    if (!isLoaded || !user) return;
     fetch(`/api/circles/${id}`)
       .then(r => r.json())
       .then(d => {

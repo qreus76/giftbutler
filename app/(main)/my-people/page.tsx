@@ -89,8 +89,7 @@ export default function MyPeoplePage() {
   const [createError, setCreateError] = useState("");
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!user) { router.push("/sign-in"); return; }
+    if (!isLoaded || !user) return;
     Promise.all([
       fetch("/api/follows/network").then(r => r.json()),
       fetch("/api/occasions/upcoming").then(r => r.json()),
