@@ -192,7 +192,7 @@ export default function ActivityPage() {
               <Share2 className="w-5 h-5 text-[#111111]" />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <p className="font-semibold text-[#111111]">Share my profile</p>
+              <p className="font-semibold text-[#111111]">Share my list</p>
               <p className="text-sm text-[#111111]/60">{copied ? "Link copied!" : profile ? `giftbutler.io/for/${profile.username}` : "Copy your gift link"}</p>
             </div>
             <div className="w-8 h-8 bg-[#111111] rounded-full flex items-center justify-center flex-shrink-0">
