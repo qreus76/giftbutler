@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { ArrowLeft, LogOut, Check, AlertTriangle, Share2, Copy } from "lucide-react";
+import { ArrowLeft, LogOut, Check, AlertTriangle } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -17,7 +17,6 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -54,18 +53,6 @@ export default function EditProfilePage() {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  async function shareProfile() {
-    if (!currentUsername) return;
-    const url = `${window.location.origin}/for/${currentUsername}`;
-    if (navigator.share && window.innerWidth < 768) {
-      try { await navigator.share({ title: `${name || currentUsername}'s gift profile`, text: "Here's what I actually want — no more guessing!", url }); } catch { /* cancelled */ }
-    } else {
-      navigator.clipboard.writeText(url).catch(() => alert("Unable to copy."));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }
-
   if (loading) return (
     <main className="min-h-screen bg-[#EAEAE0] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#111111] border-t-transparent rounded-full animate-spin" />
@@ -87,25 +74,6 @@ export default function EditProfilePage() {
           <h1 className="text-3xl font-bold text-[#111111]">Edit profile</h1>
           <p className="text-[#888888] text-sm mt-0.5">Update your details</p>
         </div>
-
-        {/* Share / copy link */}
-        {currentUsername && (
-          <button
-            onClick={shareProfile}
-            className="w-full flex items-center gap-4 bg-[#ECC8AE] rounded-2xl p-4 active:opacity-80 transition-opacity text-left"
-          >
-            <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-card">
-              {copied ? <Check className="w-5 h-5 text-[#111111]" /> : <Share2 className="w-5 h-5 text-[#111111]" />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-[#111111]">{copied ? "Link copied!" : "Share my profile"}</p>
-              <p className="text-sm text-[#111111]/60 truncate">giftbutler.io/for/{currentUsername}</p>
-            </div>
-            <div className="w-8 h-8 bg-[#111111] rounded-full flex items-center justify-center flex-shrink-0">
-              <Copy className="w-4 h-4 text-white" />
-            </div>
-          </button>
-        )}
 
         <form onSubmit={handleSave} className="space-y-3">
           {[
