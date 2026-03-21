@@ -7,6 +7,7 @@ const isProtectedRoute = createRouteMatcher([
   "/my-people(.*)",
   "/profile(.*)",
   "/onboarding(.*)",
+  "/circles(.*)",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
