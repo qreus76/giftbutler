@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, DM_Serif_Display } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { RotateCcw } from "lucide-react";
+import ScrollToTop from "@/app/components/ScrollToTop";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"] });
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <html lang="en">
         <body className={`${geist.className} ${dmSerif.variable}`}>
+          <ScrollToTop />
           {/* Landscape orientation warning — mobile only */}
           <div className="rotate-warning fixed inset-0 z-50 bg-stone-900 flex-col items-center justify-center text-center px-8">
             <RotateCcw className="w-12 h-12 text-white mb-4 mx-auto" />
