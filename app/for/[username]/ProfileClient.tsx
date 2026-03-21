@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2 } from "lucide-react";
+import { Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2, Gift, Sparkles, Lightbulb, CalendarDays, Plus } from "lucide-react";
 import BottomTabBar from "@/app/components/BottomTabBar";
 import { useUser } from "@clerk/nextjs";
-import type { Profile, Hint } from "@/lib/supabase";
+import type { Profile, Hint, Occasion } from "@/lib/supabase";
 import { getDaysUntilBirthday } from "@/lib/utils";
 
 interface GiftRecommendation {
@@ -55,10 +55,11 @@ interface Props {
   initialProfile: Profile;
   initialHints: Hint[];
   initialClaims: ClaimRecord[];
+  initialOccasions: Occasion[];
   avatarUrl: string | null;
 }
 
-export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, avatarUrl }: Props) {
+export default function ProfileClient({ username, initialProfile, initialHints, initialClaims, initialOccasions, avatarUrl }: Props) {
   const { user, isLoaded } = useUser();
   const isOwner = !!user && user.id === initialProfile.id;
 
@@ -78,6 +79,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [myClaims, setMyClaims] = useState<string[]>([]);
   const [existingClaims, setExistingClaims] = useState<ClaimRecord[]>(initialClaims);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [confirmUnclaim, setConfirmUnclaim] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showAllRecs, setShowAllRecs] = useState(false);
@@ -100,10 +102,41 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const [enrichError, setEnrichError] = useState("");
   const [enrichedProduct, setEnrichedProduct] = useState<{ title: string; image: string | null; price: string | null } | null>(null);
 
+  const [occasions, setOccasions] = useState<Occasion[]>(initialOccasions);
+  const [addingOccasion, setAddingOccasion] = useState(false);
+  const [newOccasionName, setNewOccasionName] = useState("");
+  const [newOccasionDate, setNewOccasionDate] = useState("");
+  const [savingOccasion, setSavingOccasion] = useState(false);
+
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [followLoading, setFollowLoading] = useState(false);
+
+  function getDaysUntilDate(dateStr: string): number {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr + "T00:00:00");
+    return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  async function addOccasion() {
+    if (!newOccasionName.trim()) return;
+    setSavingOccasion(true);
+    try {
+      const res = await fetch("/api/occasions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newOccasionName.trim(), date: newOccasionDate || null }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setOccasions(prev => [...prev, data]);
+      setNewOccasionName(""); setNewOccasionDate(""); setAddingOccasion(false);
+    } catch { /* ignore */ } finally { setSavingOccasion(false); }
+  }
+
+  async function deleteOccasion(id: string) {
+    const prev = occasions;
+    setOccasions(occasions.filter(o => o.id !== id));
+    const res = await fetch(`/api/occasions/${id}`, { method: "DELETE" });
+    if (!res.ok) setOccasions(prev);
+  }
 
   async function shareProfile() {
     const url = `${window.location.origin}/for/${username}`;
@@ -145,11 +178,20 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const { recommendations: recs, myClaims: claims, relationship: rel, budget: bud, occasion: occ } = JSON.parse(saved);
-        if (recs?.length) { setRecommendations(recs); setMyClaims(claims || []); setRelationship(rel || ""); setBudget(bud || ""); setOccasion(occ || ""); }
+        const { recommendations: recs, relationship: rel, budget: bud, occasion: occ } = JSON.parse(saved);
+        if (recs?.length) { setRecommendations(recs); setRelationship(rel || ""); setBudget(bud || ""); setOccasion(occ || ""); }
       }
     } catch { /* unavailable */ }
   }, [STORAGE_KEY]);
+
+  // Load myClaims from API for persistence across sessions
+  useEffect(() => {
+    if (!isLoaded || !user || isOwner) return;
+    fetch(`/api/claims?username=${username}`)
+      .then(r => r.json())
+      .then(d => { if (d.myClaims?.length) setMyClaims(d.myClaims); })
+      .catch(() => {});
+  }, [isLoaded, user, isOwner, username]);
 
   async function generateGifts() {
     if (!relationship || !budget) return;
@@ -179,6 +221,25 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     } catch { /* unavailable */ }
     fetch("/api/claims", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }) })
       .catch(() => {}).finally(() => { setClaiming(null); setNotifyPromptTitle(title); });
+  }
+
+  async function unclaimGift(title: string) {
+    setConfirmUnclaim(null);
+    const prevMyClaims = myClaims;
+    const prevExistingClaims = existingClaims;
+    const newMyClaims = myClaims.filter(c => c !== title);
+    setMyClaims(newMyClaims);
+    setExistingClaims(existingClaims.filter(c => c.description !== title.toLowerCase()));
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) { const data = JSON.parse(saved); sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, myClaims: newMyClaims })); }
+    } catch { /* unavailable */ }
+    const res = await fetch("/api/claims", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipient_username: username, gift_description: title }),
+    });
+    if (!res.ok) { setMyClaims(prevMyClaims); setExistingClaims(prevExistingClaims); }
   }
 
   async function sendNotify() {
@@ -329,7 +390,89 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {daysUntilBirthday !== null && daysUntilBirthday <= 60 && (
           <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
             <Cake className="w-3.5 h-3.5" />
-            {daysUntilBirthday === 0 ? "Birthday today! 🎉" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+            {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+          </div>
+        )}
+
+        {/* Occasion chips */}
+        {(occasions.length > 0 || isOwner) && (
+          <div className="flex flex-wrap gap-2 mt-1 mb-4">
+            {occasions.map(occ => {
+              const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
+              const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
+              if (isOwner) {
+                return (
+                  <div key={occ.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+                    <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{occ.name}</span>
+                    {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `${daysUntil}d`}</span>}
+                    <button onClick={() => deleteOccasion(occ.id)} className="ml-0.5 text-[#5C3118]/40 hover:text-[#5C3118] transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              }
+              return (
+                <button key={occ.id}
+                  onClick={() => { setOccasion(occ.name); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
+                  <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{occ.name}</span>
+                  {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `in ${daysUntil}d`}</span>}
+                </button>
+              );
+            })}
+            {isOwner && !addingOccasion && (
+              <button onClick={() => setAddingOccasion(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-dashed border-[#E0E0D8] hover:border-[#ECC8AE] rounded-full text-xs font-semibold text-[#888888] hover:text-[#5C3118] transition-colors">
+                <Plus className="w-3.5 h-3.5" />
+                Add occasion
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Add occasion form (owner) */}
+        {isOwner && addingOccasion && (
+          <div className="mb-4 bg-white rounded-2xl shadow-card p-4">
+            <p className="text-sm font-bold text-[#111111] mb-3">Add an occasion</p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                list="occasion-suggestions"
+                value={newOccasionName}
+                onChange={e => setNewOccasionName(e.target.value)}
+                placeholder="e.g. Graduation, Mother's Day..."
+                className="w-full px-4 py-2.5 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+              />
+              <datalist id="occasion-suggestions">
+                <option value="Mother's Day" />
+                <option value="Father's Day" />
+                <option value="High School Graduation" />
+                <option value="College Graduation" />
+                <option value="Wedding" />
+                <option value="Baby Shower" />
+                <option value="Retirement" />
+                <option value="Anniversary" />
+                <option value="Holiday" />
+                <option value="Housewarming" />
+              </datalist>
+              <div>
+                <label className="text-xs text-[#888888] mb-1 block">Date <span className="text-[#CCCCCC]">(optional)</span></label>
+                <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]" />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={addOccasion} disabled={!newOccasionName.trim() || savingOccasion}
+                  className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                  {savingOccasion ? "Saving..." : "Save"}
+                </button>
+                <button onClick={() => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); }}
+                  className="px-5 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#111111] font-semibold rounded-full text-sm transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -408,7 +551,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
         {/* Specific wants — always visible, never filtered */}
         {!isOwner && productHints.length > 0 && (
           <div>
-            <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3">🎁 What {displayName} wants</p>
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> What {displayName} wants</p>
             <div className="flex flex-col gap-3">
               {productHints.map(hint => {
                 const claimKey = hint.product_title || hint.content;
@@ -433,10 +576,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                         className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
                         View item <ExternalLink className="w-3.5 h-3.5" />
                       </a>
-                      <button onClick={() => claimGift(claimKey)} disabled={iMineThis || alreadyClaimed || claiming === claimKey}
-                        className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                        {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I&apos;m on it"}
-                      </button>
+                      {confirmUnclaim === claimKey ? (
+                        <>
+                          <button onClick={() => unclaimGift(claimKey)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Release</button>
+                          <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Keep</button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => iMineThis ? setConfirmUnclaim(claimKey) : claimGift(claimKey)}
+                          disabled={!iMineThis && (alreadyClaimed || claiming === claimKey)}
+                          className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
+                          {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I'm on it"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -450,7 +602,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
         })() && (
           <div className="bg-[#B8CED0] rounded-2xl p-4">
-            <p className="text-xs font-bold text-[#1A3D42] mb-1">✨ GiftButler AI</p>
+            <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
             <p className="text-[#1A3D42] text-sm leading-relaxed">
               {displayName} dropped {textHints.length} gift idea{textHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they&apos;d genuinely love.
             </p>
@@ -499,17 +651,28 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               </div>
               <div>
                 <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
-                <select value={occasion} onChange={e => setOccasion(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
-                  <option value="">Select occasion...</option>
-                  <option value="birthday">Birthday</option>
-                  <option value="holiday">Holiday</option>
-                  <option value="anniversary">Anniversary</option>
-                  <option value="Mother's Day">Mother&apos;s Day</option>
-                  <option value="Father's Day">Father&apos;s Day</option>
-                  <option value="graduation">Graduation</option>
-                  <option value="just because">Just Because</option>
-                </select>
+                <input
+                  type="text"
+                  list="occasion-finder-list"
+                  value={occasion}
+                  onChange={e => setOccasion(e.target.value)}
+                  placeholder="Birthday, Graduation, Mother's Day..."
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]"
+                />
+                <datalist id="occasion-finder-list">
+                  <option value="Birthday" />
+                  <option value="Mother's Day" />
+                  <option value="Father's Day" />
+                  <option value="High School Graduation" />
+                  <option value="College Graduation" />
+                  <option value="Wedding" />
+                  <option value="Baby Shower" />
+                  <option value="Retirement" />
+                  <option value="Anniversary" />
+                  <option value="Holiday" />
+                  <option value="Housewarming" />
+                  <option value="Just Because" />
+                </datalist>
               </div>
             </div>
             {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
@@ -564,10 +727,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                           className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
                           Find this gift <ArrowRight className="w-3.5 h-3.5" />
                         </a>
-                        <button onClick={() => claimGift(rec.title)} disabled={iMineThis || alreadyClaimed || claiming === rec.title}
-                          className="w-full py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                          {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
-                        </button>
+                        {confirmUnclaim === rec.title ? (
+                          <div className="flex gap-2">
+                            <button onClick={() => unclaimGift(rec.title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-sm transition-colors">Release claim</button>
+                            <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-sm transition-colors">Keep</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => iMineThis ? setConfirmUnclaim(rec.title) : claimGift(rec.title)}
+                            disabled={!iMineThis && (alreadyClaimed || claiming === rec.title)}
+                            className="w-full py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
+                            {iMineThis ? "✓ Getting this" : alreadyClaimed ? "✓ Taken" : "I'm getting this"}
+                          </button>
+                        )}
                       </div>
                       {notifyPromptTitle === rec.title && (
                         <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
@@ -759,7 +931,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
             </div>
             {isOwner && textHints.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="text-2xl mb-2">💡</p>
+                <Lightbulb className="w-8 h-8 text-[#CCCCCC] mx-auto mb-2" />
                 <p className="font-bold text-[#111111] text-sm mb-1">Drop hints for AI-powered suggestions</p>
                 <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
               </div>

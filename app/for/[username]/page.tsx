@@ -69,7 +69,7 @@ export default async function ProfilePage({ params }: Props) {
     avatarUrl = clerkUser.hasImage ? clerkUser.imageUrl : null;
   } catch { /* no photo available */ }
 
-  const [hintsRes, claimsRes] = await Promise.all([
+  const [hintsRes, claimsRes, occasionsRes] = await Promise.all([
     supabase
       .from("hints")
       .select("*")
@@ -79,6 +79,11 @@ export default async function ProfilePage({ params }: Props) {
       .from("claims")
       .select("gift_description, occasion")
       .eq("recipient_user_id", profile.id),
+    supabase
+      .from("occasions")
+      .select("*")
+      .eq("user_id", profile.id)
+      .order("date", { ascending: true, nullsFirst: false }),
   ]);
 
   const claims = (claimsRes.data || []).map(c => ({
@@ -92,6 +97,7 @@ export default async function ProfilePage({ params }: Props) {
       initialProfile={profile}
       initialHints={hintsRes.data || []}
       initialClaims={claims}
+      initialOccasions={occasionsRes.data || []}
       avatarUrl={avatarUrl}
     />
   );

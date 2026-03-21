@@ -17,6 +17,10 @@ function isClaimsRateLimited(ip: string): boolean {
   return false;
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export async function GET(req: NextRequest) {
   const username = new URL(req.url).searchParams.get("username");
   if (!username) return NextResponse.json({ claims: [] });
@@ -31,15 +35,17 @@ export async function GET(req: NextRequest) {
 
   const { data: claims } = await supabase
     .from("claims")
-    .select("gift_description, occasion, created_at")
+    .select("gift_description, occasion, claimer_user_id, created_at")
     .eq("recipient_user_id", profile.id)
     .order("created_at", { ascending: false });
 
-  return NextResponse.json({ claims: claims || [] });
-}
+  // If authenticated, return which claims belong to the current user
+  const { userId } = await auth();
+  const myClaims = userId
+    ? (claims || []).filter(c => c.claimer_user_id === userId).map(c => c.gift_description)
+    : [];
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return NextResponse.json({ claims: claims || [], myClaims });
 }
 
 export async function POST(req: NextRequest) {
@@ -69,14 +75,22 @@ export async function POST(req: NextRequest) {
 
   if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-  const session = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "anonymous";
+  const normalizedDescription = gift_description.trim().toLowerCase();
+  const session = ip;
 
-  await supabaseAdmin.from("claims").insert({
+  const { error } = await supabaseAdmin.from("claims").insert({
     recipient_user_id: profile.id,
-    gift_description,
+    gift_description: normalizedDescription,
     claimer_session: session,
+    claimer_user_id: claimerUserId || null,
     occasion: occasion || null,
   });
+
+  // Unique constraint violation — already claimed by someone else
+  if (error?.code === "23505") {
+    return NextResponse.json({ error: "Someone already claimed this item", alreadyClaimed: true }, { status: 409 });
+  }
+  if (error) return NextResponse.json({ error: "Failed to claim" }, { status: 500 });
 
   // Send claimer confirmation email if they're logged in
   if (process.env.RESEND_API_KEY && claimerUserId) {
@@ -91,37 +105,26 @@ export async function POST(req: NextRequest) {
         const profileUrl = `${baseUrl}/for/${escapeHtml(recipient_username)}`;
         const occasionText = occasion ? ` for their ${escapeHtml(occasion)}` : "";
         const recipientName = escapeHtml(profile.name || recipient_username);
-        const textBody = `You claimed "${gift_description}" for @${recipient_username}${occasionText}.\n\nYou can still browse more ideas at: ${profileUrl}\n\n---\nGiftButler`;
 
         await fetch("https://api.resend.com/emails", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-          },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.RESEND_API_KEY}` },
           body: JSON.stringify({
             from: "GiftButler <notifications@giftbutler.io>",
             to: [claimerEmail],
             subject: `You're getting ${recipientName} a gift`,
-            text: textBody,
+            text: `You claimed "${normalizedDescription}" for @${recipient_username}${occasionText}.\n\nYou can still browse more ideas at: ${profileUrl}\n\n---\nGiftButler`,
             html: `
-              <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fafaf9;">
-                <h1 style="font-size: 24px; font-weight: 800; color: #1c1917; margin: 0 0 8px;">You&apos;re getting a gift</h1>
-                <p style="color: #78716c; font-size: 15px; margin: 0 0 16px; line-height: 1.6;">
-                  You claimed a gift for ${recipientName}${occasionText}. Consider it locked in!
-                </p>
-                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin: 0 0 24px;">
-                  <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 4px;">Your claimed gift:</p>
-                  <p style="color: #1c1917; font-size: 15px; font-weight: 700; margin: 0;">${escapeHtml(gift_description)}</p>
+              <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#EAEAE0;">
+                <h1 style="font-size:24px;font-weight:800;color:#111111;margin:0 0 8px;">You&apos;re getting a gift</h1>
+                <p style="color:#888888;font-size:15px;margin:0 0 16px;line-height:1.6;">You claimed a gift for ${recipientName}${occasionText}. Consider it locked in!</p>
+                <div style="background:#ffffff;border-radius:16px;padding:16px;margin:0 0 24px;">
+                  <p style="color:#888888;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 4px;">Your claimed gift</p>
+                  <p style="color:#111111;font-size:15px;font-weight:700;margin:0;">${escapeHtml(normalizedDescription)}</p>
                 </div>
-                <a href="${profileUrl}" style="display: inline-block; background: #fbbf24; color: #1c1917; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; text-decoration: none;">
-                  Browse more ideas
-                </a>
-                <p style="color: #a8a29e; font-size: 12px; margin: 32px 0 0;">
-                  GiftButler · <a href="mailto:privacy@giftbutler.io" style="color: #a8a29e;">Unsubscribe</a>
-                </p>
-              </div>
-            `,
+                <a href="${profileUrl}" style="display:block;background:#111111;color:#ffffff;font-weight:700;font-size:14px;padding:14px 24px;border-radius:50px;text-decoration:none;text-align:center;">Browse more ideas</a>
+                <p style="color:#CCCCCC;font-size:12px;margin:28px 0 0;text-align:center;">GiftButler &middot; <a href="mailto:privacy@giftbutler.io" style="color:#CCCCCC;">Unsubscribe</a></p>
+              </div>`,
             headers: {
               "List-Unsubscribe": `<mailto:privacy@giftbutler.io?subject=Unsubscribe>`,
               "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -131,6 +134,41 @@ export async function POST(req: NextRequest) {
       } catch (err) { console.error("[claimer confirmation email] Failed:", err); }
     })();
   }
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
+  const { recipient_username, gift_description } = body;
+
+  if (!recipient_username || !gift_description) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", recipient_username)
+    .single();
+
+  if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+
+  const normalizedDescription = gift_description.trim().toLowerCase();
+
+  // Only delete if this user made the claim
+  const { error } = await supabaseAdmin
+    .from("claims")
+    .delete()
+    .eq("recipient_user_id", profile.id)
+    .eq("gift_description", normalizedDescription)
+    .eq("claimer_user_id", userId);
+
+  if (error) return NextResponse.json({ error: "Failed to release claim" }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

@@ -22,6 +22,14 @@ export type Profile = {
   created_at: string;
 };
 
+export type Occasion = {
+  id: string;
+  user_id: string;
+  name: string;
+  date: string | null;
+  created_at: string;
+};
+
 export type Hint = {
   id: string;
   user_id: string;

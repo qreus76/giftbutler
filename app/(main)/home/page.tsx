@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, UserPlus, Cake, Gift, Pencil, Share2, ArrowRight } from "lucide-react";
+import { Eye, UserPlus, Cake, Gift, Pencil, Share2, ArrowRight, CalendarDays } from "lucide-react";
 import type { Profile, Hint } from "@/lib/supabase";
 import { useFollowRequests } from "@/lib/follow-request-context";
 
@@ -14,6 +14,14 @@ interface Person {
   avatar: string | null;
   daysUntilBirthday: number | null;
   myLabel: string | null;
+}
+
+interface UpcomingOccasion {
+  user_id: string;
+  username: string;
+  person_name: string | null;
+  name: string;
+  days_until: number;
 }
 
 function timeAgo(dateStr: string): string {
@@ -48,6 +56,7 @@ export default function ActivityPage() {
   const [visitCount, setVisitCount] = useState(0);
   const [claimCount, setClaimCount] = useState(0);
   const [people, setPeople] = useState<Person[]>([]);
+  const [upcomingOccasions, setUpcomingOccasions] = useState<UpcomingOccasion[]>([]);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -58,7 +67,7 @@ export default function ActivityPage() {
 
   async function loadProfile() {
     try {
-      const [meRes, peopleRes] = await Promise.all([fetch("/api/me"), fetch("/api/follows/network")]);
+      const [meRes, peopleRes, occasionsRes] = await Promise.all([fetch("/api/me"), fetch("/api/follows/network"), fetch("/api/occasions/upcoming")]);
       const data = await meRes.json();
       if (data.redirect) { router.push("/onboarding"); return; }
       setProfile(data.profile);
@@ -66,6 +75,7 @@ export default function ActivityPage() {
       setVisitCount(data.visitCount || 0);
       setClaimCount(data.claimCount || 0);
       if (peopleRes.ok) { const pd = await peopleRes.json(); setPeople(pd.people || []); }
+      if (occasionsRes.ok) { const od = await occasionsRes.json(); setUpcomingOccasions(od.occasions || []); }
     } catch { setLoadError(true); } finally { setLoading(false); }
   }
 
@@ -95,6 +105,7 @@ export default function ActivityPage() {
   const completionPct = completionItems.length ? Math.round((completionDone / completionItems.length) * 100) : 0;
   const nextStep = completionItems.find(i => !i.done);
   const upcomingBirthdays = people.filter(p => p.daysUntilBirthday !== null && p.daysUntilBirthday <= 30).sort((a, b) => (a.daysUntilBirthday ?? 999) - (b.daysUntilBirthday ?? 999));
+  const upcomingCount = upcomingBirthdays.length + upcomingOccasions.length;
   const hintsToShow = hints.filter(h => h.category !== "avoid");
 
   if (loading) return (
@@ -251,19 +262,19 @@ export default function ActivityPage() {
           ))}
         </div>
 
-        {/* Upcoming birthdays */}
+        {/* Coming up — birthdays + occasions */}
         <div className="bg-white rounded-2xl shadow-card overflow-hidden">
           <div className="px-4 py-3 flex items-center justify-between border-b border-[#F0F0E8]">
             <div className="flex items-center gap-2">
               <Cake className="w-4 h-4 text-[#888888]" />
               <p className="text-sm font-bold text-[#111111]">Coming up</p>
             </div>
-            {upcomingBirthdays.length > 0 && <a href="/my-people" className="text-xs font-semibold text-[#888888] hover:text-[#111111]">See all</a>}
+            {upcomingCount > 0 && <a href="/my-people" className="text-xs font-semibold text-[#888888] hover:text-[#111111]">See all</a>}
           </div>
-          {upcomingBirthdays.length === 0 ? (
+          {upcomingCount === 0 ? (
             <div className="text-center py-8 px-4">
-              <p className="text-[#111111] text-sm font-semibold mb-1">{people.length === 0 ? "No one in your network yet" : "No birthdays in the next 30 days"}</p>
-              <p className="text-[#888888] text-xs mb-4">{people.length === 0 ? "Add family and friends to see upcoming birthdays." : "You're all caught up."}</p>
+              <p className="text-[#111111] text-sm font-semibold mb-1">{people.length === 0 ? "No one in your network yet" : "Nothing coming up in the next 30 days"}</p>
+              <p className="text-[#888888] text-xs mb-4">{people.length === 0 ? "Add family and friends to see upcoming events." : "You're all caught up."}</p>
               {people.length === 0 && (
                 <a href="/my-people" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] text-white font-bold rounded-full text-sm">
                   Add people <ArrowRight className="w-4 h-4" />
@@ -281,8 +292,9 @@ export default function ActivityPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[#111111] truncate">{person.name}</p>
-                    <p className={`text-xs font-medium ${person.daysUntilBirthday === 0 ? "text-red-500" : person.daysUntilBirthday! <= 7 ? "text-[#C4824A]" : "text-[#888888]"}`}>
-                      {person.daysUntilBirthday === 0 ? "Today! 🎉" : person.daysUntilBirthday === 1 ? "Tomorrow" : `In ${person.daysUntilBirthday} days`}
+                    <p className={`text-xs font-medium flex items-center gap-1 ${person.daysUntilBirthday === 0 ? "text-red-500" : person.daysUntilBirthday! <= 7 ? "text-[#C4824A]" : "text-[#888888]"}`}>
+                      <Cake className="w-3 h-3 flex-shrink-0" />
+                      {person.daysUntilBirthday === 0 ? "Birthday today!" : person.daysUntilBirthday === 1 ? "Birthday tomorrow" : `Birthday in ${person.daysUntilBirthday} days`}
                     </p>
                   </div>
                   <a href={`/for/${person.username}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs transition-colors flex-shrink-0">
@@ -290,6 +302,28 @@ export default function ActivityPage() {
                   </a>
                 </div>
               ))}
+              {upcomingOccasions.slice(0, 5).map(occ => {
+                const personForAvatar = people.find(p => p.username === occ.username);
+                return (
+                  <div key={occ.user_id + occ.name} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      {personForAvatar?.avatar ? <img src={personForAvatar.avatar} alt={occ.person_name || ""} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[#ECC8AE]">{(occ.person_name || occ.username)?.[0]?.toUpperCase() || "?"}</div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#111111] truncate">{occ.person_name || occ.username}</p>
+                      <p className={`text-xs font-medium flex items-center gap-1 ${occ.days_until === 0 ? "text-red-500" : occ.days_until <= 7 ? "text-[#C4824A]" : "text-[#5C3118]"}`}>
+                        <CalendarDays className="w-3 h-3 flex-shrink-0" />
+                        {occ.name} · {occ.days_until === 0 ? "today" : occ.days_until === 1 ? "tomorrow" : `in ${occ.days_until} days`}
+                      </p>
+                    </div>
+                    <a href={`/for/${occ.username}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white font-semibold rounded-full text-xs transition-colors flex-shrink-0">
+                      Gift <ArrowRight className="w-3 h-3" />
+                    </a>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

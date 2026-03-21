@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign } from "lucide-react";
+import { Search, Users, Cake, ArrowRight, Gift, Plus, X, Calendar, DollarSign, CalendarDays } from "lucide-react";
 
 interface Person {
   id: string;
@@ -13,6 +13,13 @@ interface Person {
   birthday: string | null;
   daysUntilBirthday: number | null;
   myLabel: string | null;
+}
+
+interface UpcomingOccasion {
+  id: string;
+  user_id: string;
+  name: string;
+  days_until: number;
 }
 
 interface SearchResult {
@@ -37,7 +44,7 @@ const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother
 
 function birthdayText(days: number | null): string {
   if (days === null) return "Birthday unknown";
-  if (days === 0) return "Birthday today! 🎉";
+  if (days === 0) return "Birthday today!";
   if (days === 1) return "Birthday tomorrow!";
   return `Birthday in ${days} days`;
 }
@@ -56,6 +63,7 @@ export default function MyPeoplePage() {
 
   // People state
   const [people, setPeople] = useState<Person[]>([]);
+  const [occasionsMap, setOccasionsMap] = useState<Record<string, UpcomingOccasion[]>>({});
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
@@ -81,7 +89,18 @@ export default function MyPeoplePage() {
   useEffect(() => {
     if (!isLoaded) return;
     if (!user) { router.push("/sign-in"); return; }
-    fetch("/api/follows/network").then(r => r.json()).then(d => setPeople(d.people || [])).finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/follows/network").then(r => r.json()),
+      fetch("/api/occasions/upcoming").then(r => r.json()),
+    ]).then(([peopleData, occasionData]) => {
+      setPeople(peopleData.people || []);
+      const map: Record<string, UpcomingOccasion[]> = {};
+      for (const occ of occasionData.occasions || []) {
+        if (!map[occ.user_id]) map[occ.user_id] = [];
+        map[occ.user_id].push(occ);
+      }
+      setOccasionsMap(map);
+    }).finally(() => setLoading(false));
   }, [isLoaded, user, router]);
 
   useEffect(() => {
@@ -256,6 +275,12 @@ export default function MyPeoplePage() {
                           <Cake className="w-3.5 h-3.5 flex-shrink-0" />
                           {birthdayText(person.daysUntilBirthday)}
                         </p>
+                        {(occasionsMap[person.id] || []).map(occ => (
+                          <span key={occ.id} className="inline-flex items-center gap-1 text-xs mt-0.5 text-[#5C3118] font-semibold">
+                            <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+                            {occ.name} · {occ.days_until === 0 ? "today" : `in ${occ.days_until}d`}
+                          </span>
+                        ))}
                       </div>
                     </div>
                     <div className="flex gap-2">
