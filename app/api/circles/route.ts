@@ -66,7 +66,10 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: "Failed to create" }, { status: 500 });
+  if (error) {
+    console.error("[circles POST]", error);
+    return NextResponse.json({ error: error.message || "Failed to create" }, { status: 500 });
+  }
 
   await supabaseAdmin.from("gift_circle_members").insert({
     circle_id: circle.id,
