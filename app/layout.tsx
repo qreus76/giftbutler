@@ -13,22 +13,22 @@ const dmSerif = DM_Serif_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"),
-  title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
-  description: "Drop hints about your life. Share your link. Get gifts you actually want.",
+  title: "GiftButler — No more guessing. Just the right gift.",
+  description: "Drop hints. Share your link. Get gifts you actually want.",
   icons: {
     icon: { url: "/logo.png", type: "image/png" },
     apple: { url: "/logo.png", type: "image/png" },
   },
   openGraph: {
-    title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
-    description: "Drop hints about your life. Share your link. Get gifts you actually want.",
+    title: "GiftButler — No more guessing. Just the right gift.",
+    description: "Drop hints. Share your link. Get gifts you actually want.",
     siteName: "GiftButler",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "GiftButler" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
-    description: "Drop hints about your life. Share your link. Get gifts you actually want.",
+    title: "GiftButler — No more guessing. Just the right gift.",
+    description: "Drop hints. Share your link. Get gifts you actually want.",
     images: ["/opengraph-image"],
   },
 };

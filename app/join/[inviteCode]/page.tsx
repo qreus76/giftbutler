@@ -39,6 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       siteName: "GiftButler",
+      url: `/join/${inviteCode}`,
       images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "GiftButler" }],
     },
     twitter: {

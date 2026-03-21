@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, bio, id")
+    .select("name, bio")
     .eq("username", username)
     .single();
 
@@ -23,13 +23,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = profile.bio
     ? `${name} has shared hints about what they love. Find the perfect gift — personalized by AI.`
     : `Find the perfect gift for ${name}. They've left hints about their interests and wishes.`;
-
-  let avatarUrl: string | undefined;
-  try {
-    const clerk = await clerkClient();
-    const clerkUser = await clerk.users.getUser(profile.id);
-    if (clerkUser.hasImage) avatarUrl = clerkUser.imageUrl;
-  } catch { /* no avatar */ }
 
   const ogImage = `/for/${username}/opengraph-image`;
 

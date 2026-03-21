@@ -61,8 +61,8 @@ export default function OgImage() {
               gap: "4px",
             }}
           >
-            <span>Stop guessing.</span>
-            <span>Start gifting.</span>
+            <span>No more guessing.</span>
+            <span>Just the right gift.</span>
           </div>
 
           {/* Subtext */}
@@ -73,7 +73,7 @@ export default function OgImage() {
               display: "flex",
             }}
           >
-            Share your link. Get gifts you actually want.
+            Drop hints. Share your link. Get gifts you actually want.
           </div>
         </div>
 

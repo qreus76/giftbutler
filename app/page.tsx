@@ -4,9 +4,11 @@ import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const metadata: Metadata = {
+  title: "GiftButler — No more guessing. Just the right gift.",
+  description: "Drop hints. Share your link. Get gifts you actually want.",
   openGraph: {
-    title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
-    description: "Drop hints about your life. Share your link. Get gifts you actually want.",
+    title: "GiftButler — No more guessing. Just the right gift.",
+    description: "Drop hints. Share your link. Get gifts you actually want.",
     url: "/",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "GiftButler — No more guessing. Just the right gift." }],
   },
