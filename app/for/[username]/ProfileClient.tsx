@@ -142,11 +142,12 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   }, [addingOccasion]);
 
   useEffect(() => {
-    const msgCount = 7;
     if (!generating) { setLoadingMsgIdx(0); setMsgVisible(true); return; }
+    // Start at a random offset so repeat searches feel different
+    setLoadingMsgIdx(Math.floor(Math.random() * LOADING_MESSAGES.length));
     const interval = setInterval(() => {
       setMsgVisible(false);
-      setTimeout(() => { setLoadingMsgIdx(i => (i + 1) % msgCount); setMsgVisible(true); }, 300);
+      setTimeout(() => { setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length); setMsgVisible(true); }, 300);
     }, 2500);
     return () => clearInterval(interval);
   }, [generating]);
@@ -372,6 +373,19 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
     "Matching gifts to their interests...",
     "Curating something special...",
     "Putting it all together...",
+    `Getting to know ${displayName} a little better...`,
+    "Scanning for the unexpected but perfect option...",
+    "Thinking beyond the obvious...",
+    "Filtering out what everyone else would buy...",
+    "Finding something they'd actually be excited about...",
+    "Connecting the dots between their hints...",
+    "Weighing quality over quantity...",
+    "Thinking about what would make them smile...",
+    "Considering their lifestyle and interests...",
+    "Looking for that 'how did you know?' moment...",
+    "Making sure it fits the occasion...",
+    "Double-checking it's within budget...",
+    "Almost ready to reveal the picks...",
   ];
 
   return (
