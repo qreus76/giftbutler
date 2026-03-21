@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { RefreshCw } from "lucide-react";
 
 export default function RefreshButton() {
   const router = useRouter();
@@ -17,9 +18,10 @@ export default function RefreshButton() {
     <button
       onClick={handleRefresh}
       disabled={refreshing}
-      className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-400 hover:text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E0E0D8] hover:bg-[#F0F0E8] text-[#888888] hover:text-[#111111] text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 shadow-card"
     >
-      {refreshing ? "Refreshing..." : "↻ Refresh"}
+      <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+      {refreshing ? "Refreshing..." : "Refresh"}
     </button>
   );
 }

@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import { LayoutDashboard, BarChart2, Users, Activity, ArrowLeft } from "lucide-react";
 
 const ADMIN_IDS = (process.env.ADMIN_USER_IDS || "").split(",").map(id => id.trim()).filter(Boolean);
 
 const NAV = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/health", label: "Health" },
+  { href: "/admin",            label: "Overview",  icon: LayoutDashboard },
+  { href: "/admin/analytics",  label: "Analytics", icon: BarChart2 },
+  { href: "/admin/users",      label: "Users",     icon: Users },
+  { href: "/admin/health",     label: "Health",    icon: Activity },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -16,37 +17,40 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!userId || !ADMIN_IDS.includes(userId)) redirect("/");
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100">
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-48 min-h-screen bg-stone-900 border-r border-stone-800 flex flex-col px-3 py-6 flex-shrink-0">
-          <div className="mb-8 px-3">
-            <p className="text-xs font-bold text-amber-400 uppercase tracking-widest">GiftButler</p>
-            <p className="text-xs text-stone-500 mt-0.5">Admin</p>
+    <div className="min-h-screen bg-[#EAEAE0]">
+      {/* Top nav */}
+      <header className="sticky top-0 z-20 bg-white border-b border-[#E0E0D8] shadow-sm">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-[#111111] text-base">GiftButler</span>
+              <span className="text-[#CCCCCC]">/</span>
+              <span className="text-sm font-semibold text-[#888888]">Admin</span>
+            </div>
+            <Link href="/home" className="flex items-center gap-1.5 text-xs font-medium text-[#888888] hover:text-[#111111] transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to app
+            </Link>
           </div>
-          <nav className="flex flex-col gap-1">
-            {NAV.map(({ href, label }) => (
+          {/* Nav tabs — horizontally scrollable on mobile */}
+          <nav className="flex gap-1 overflow-x-auto pb-px -mb-px scrollbar-none">
+            {NAV.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
-                className="px-3 py-2 rounded-xl text-sm font-medium text-stone-300 hover:text-white hover:bg-stone-800 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-3 text-sm font-semibold text-[#888888] hover:text-[#111111] border-b-2 border-transparent hover:border-[#111111] transition-colors whitespace-nowrap"
               >
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {label}
               </Link>
             ))}
           </nav>
-          <div className="mt-auto px-3">
-            <Link href="/dashboard" className="text-xs text-stone-600 hover:text-stone-400 transition-colors">
-              ← Back to app
-            </Link>
-          </div>
-        </aside>
+        </div>
+      </header>
 
-        {/* Main content */}
-        <main className="flex-1 p-8 min-h-screen">
-          {children}
-        </main>
-      </div>
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        {children}
+      </main>
     </div>
   );
 }

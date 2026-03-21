@@ -16,9 +16,9 @@ function parseReferrer(ref: string | null): string {
   }
 }
 
-function Bar({ pct, color = "bg-amber-400" }: { pct: number; color?: string }) {
+function Bar({ pct, color = "bg-[#111111]" }: { pct: number; color?: string }) {
   return (
-    <div className="h-2 bg-stone-800 rounded-full overflow-hidden flex-1">
+    <div className="h-2 bg-[#F0F0E8] rounded-full overflow-hidden flex-1">
       <div className={`h-full ${color} rounded-full`} style={{ width: `${Math.min(pct, 100)}%` }} />
     </div>
   );
@@ -26,8 +26,8 @@ function Bar({ pct, color = "bg-amber-400" }: { pct: number; color?: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">{title}</p>
+    <div className="bg-white rounded-2xl shadow-card p-5">
+      <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">{title}</p>
       {children}
     </div>
   );
@@ -84,7 +84,6 @@ export default async function AdminAnalyticsPage({
       visit_count: Number(d.visit_count),
       claim_count: Number(d.claim_count),
     }));
-  // Convert to rate (%) for the line chart
   const conversionSeries = conversionRawSeries.map((d) => ({
     date: d.date,
     count: d.visit_count > 0 ? parseFloat(((d.claim_count / d.visit_count) * 100).toFixed(2)) : 0,
@@ -99,7 +98,6 @@ export default async function AdminAnalyticsPage({
   );
   const recentRecs = recentRecsResult.data ?? [];
 
-  // Parse referrer hostnames
   const referrerMap: Record<string, number> = {};
   for (const r of referrersRaw) {
     const key = parseReferrer(r.referrer);
@@ -120,20 +118,17 @@ export default async function AdminAnalyticsPage({
   const maxDevice = devices[0]?.count || 1;
 
   const deviceLabels: Record<string, string> = {
-    ios: "iOS",
-    android: "Android",
-    tablet: "Tablet",
-    mobile: "Mobile (other)",
-    desktop: "Desktop",
-    unknown: "Unknown",
+    ios: "iOS", android: "Android", tablet: "Tablet",
+    mobile: "Mobile (other)", desktop: "Desktop", unknown: "Unknown",
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytics</h1>
-          <p className="text-stone-500 text-sm mt-1">Funnel and traffic data for {periodLabel}</p>
+          <h1 className="text-2xl font-bold text-[#111111]">Analytics</h1>
+          <p className="text-[#888888] text-sm mt-0.5">Funnel and traffic data for {periodLabel}</p>
         </div>
         <Suspense>
           <DateRangePicker days={days} />
@@ -141,71 +136,62 @@ export default async function AdminAnalyticsPage({
       </div>
 
       {/* Funnel */}
-      <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 mb-6">
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-5">
+      <div className="bg-white rounded-2xl shadow-card p-5">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-5">
           Conversion Funnel — {periodLabel.charAt(0).toUpperCase() + periodLabel.slice(1)}
         </p>
         <div className="grid grid-cols-3 gap-4 mb-5">
           <div>
-            <p className="text-3xl font-bold text-white">{visits.toLocaleString()}</p>
-            <p className="text-xs text-stone-500 mt-1">Profile visits</p>
+            <p className="text-3xl font-bold text-[#111111]">{visits.toLocaleString()}</p>
+            <p className="text-xs text-[#888888] mt-1">Profile visits</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-white">{recs.toLocaleString()}</p>
-            <p className="text-xs text-stone-500 mt-1">Gift searches</p>
-            <p className="text-xs text-amber-400 mt-0.5">{visitsToRecs}% of visits</p>
+            <p className="text-3xl font-bold text-[#111111]">{recs.toLocaleString()}</p>
+            <p className="text-xs text-[#888888] mt-1">Gift searches</p>
+            <p className="text-xs text-[#C4824A] font-semibold mt-0.5">{visitsToRecs}% of visits</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-white">{claims.toLocaleString()}</p>
-            <p className="text-xs text-stone-500 mt-1">Gifts claimed</p>
-            <p className="text-xs text-amber-400 mt-0.5">{recsToClaimsRate}% of searches · {visitsToClaims}% of visits</p>
+            <p className="text-3xl font-bold text-[#111111]">{claims.toLocaleString()}</p>
+            <p className="text-xs text-[#888888] mt-1">Gifts claimed</p>
+            <p className="text-xs text-[#4A7C59] font-semibold mt-0.5">{recsToClaimsRate}% of searches · {visitsToClaims}% of visits</p>
           </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-20 text-right text-xs text-stone-500">Visits</div>
-            <div className="flex-1 h-3 bg-amber-400 rounded-full" />
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-20 text-right text-xs text-stone-500">Searches</div>
-            <div className="flex-1 h-3 bg-stone-700 rounded-full overflow-hidden">
-              <div className="h-full bg-amber-400/70 rounded-full" style={{ width: `${visits > 0 ? (recs / visits) * 100 : 0}%` }} />
+        <div className="flex flex-col gap-2">
+          {[
+            { label: "Visits",   width: 100 },
+            { label: "Searches", width: visits > 0 ? (recs / visits) * 100 : 0 },
+            { label: "Claims",   width: visits > 0 ? (claims / visits) * 100 : 0 },
+          ].map(({ label, width }) => (
+            <div key={label} className="flex items-center gap-3">
+              <div className="w-16 text-right text-xs text-[#888888] flex-shrink-0">{label}</div>
+              <div className="flex-1 h-2.5 bg-[#F0F0E8] rounded-full overflow-hidden">
+                <div className="h-full bg-[#111111] rounded-full transition-all" style={{ width: `${width}%` }} />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-20 text-right text-xs text-stone-500">Claims</div>
-            <div className="flex-1 h-3 bg-stone-700 rounded-full overflow-hidden">
-              <div className="h-full bg-amber-400/40 rounded-full" style={{ width: `${visits > 0 ? (claims / visits) * 100 : 0}%` }} />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Conversion rate over time */}
-      <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 mb-6">
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
+      {/* Conversion rate chart */}
+      <div className="bg-white rounded-2xl shadow-card p-5">
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-1">
           Claim Rate (%) — {periodLabel.charAt(0).toUpperCase() + periodLabel.slice(1)}
         </p>
-        <p className="text-xs text-stone-600 mb-3">Percentage of profile visits that resulted in a gift claim</p>
-        <LineChart
-          data={conversionSeries}
-          color="#a78bfa"
-          gradientId="conversion-grad"
-          formatY={(v) => `${v}%`}
-        />
+        <p className="text-xs text-[#CCCCCC] mb-4">Percentage of profile visits that resulted in a gift claim</p>
+        <LineChart data={conversionSeries} color="#9B7FD4" gradientId="conversion-grad" formatY={(v) => `${v}%`} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Section title={`Top Profiles by Views (${periodLabel})`}>
-          {topVisited.length === 0 ? <p className="text-stone-600 text-sm">No data yet.</p> : (
+          {topVisited.length === 0 ? <p className="text-[#CCCCCC] text-sm">No data yet.</p> : (
             <div className="flex flex-col gap-3">
               {topVisited.map((p) => (
                 <div key={p.username} className="flex items-center gap-3">
-                  <div className="w-28 text-right flex-shrink-0">
-                    <p className="text-xs font-medium text-white truncate">@{p.username}</p>
+                  <div className="w-24 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-[#111111] truncate">@{p.username}</p>
                   </div>
-                  <Bar pct={(p.visit_count / maxVisited) * 100} />
-                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{Number(p.visit_count).toLocaleString()}</span>
+                  <Bar pct={(p.visit_count / maxVisited) * 100} color="bg-[#C4824A]" />
+                  <span className="text-xs text-[#888888] w-8 text-right flex-shrink-0">{Number(p.visit_count).toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -213,15 +199,15 @@ export default async function AdminAnalyticsPage({
         </Section>
 
         <Section title="Top Profiles by Claims (all time)">
-          {topClaimed.length === 0 ? <p className="text-stone-600 text-sm">No data yet.</p> : (
+          {topClaimed.length === 0 ? <p className="text-[#CCCCCC] text-sm">No data yet.</p> : (
             <div className="flex flex-col gap-3">
               {topClaimed.map((p) => (
                 <div key={p.username} className="flex items-center gap-3">
-                  <div className="w-28 text-right flex-shrink-0">
-                    <p className="text-xs font-medium text-white truncate">@{p.username}</p>
+                  <div className="w-24 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-[#111111] truncate">@{p.username}</p>
                   </div>
-                  <Bar pct={(p.claim_count / maxClaimed) * 100} color="bg-green-400" />
-                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{Number(p.claim_count).toLocaleString()}</span>
+                  <Bar pct={(p.claim_count / maxClaimed) * 100} color="bg-[#4A7C59]" />
+                  <span className="text-xs text-[#888888] w-8 text-right flex-shrink-0">{Number(p.claim_count).toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -229,15 +215,15 @@ export default async function AdminAnalyticsPage({
         </Section>
 
         <Section title={`Traffic Sources (${periodLabel})`}>
-          {referrers.length === 0 ? <p className="text-stone-600 text-sm">No data yet — fills in as visitors arrive.</p> : (
+          {referrers.length === 0 ? <p className="text-[#CCCCCC] text-sm">No data yet.</p> : (
             <div className="flex flex-col gap-3">
               {referrers.map(([source, count]) => (
                 <div key={source} className="flex items-center gap-3">
-                  <div className="w-32 text-right flex-shrink-0">
-                    <p className="text-xs font-medium text-white truncate">{source}</p>
+                  <div className="w-28 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-[#111111] truncate">{source}</p>
                   </div>
-                  <Bar pct={(count / maxReferrer) * 100} color="bg-blue-400" />
-                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{count.toLocaleString()}</span>
+                  <Bar pct={(count / maxReferrer) * 100} color="bg-[#5B8FC4]" />
+                  <span className="text-xs text-[#888888] w-8 text-right flex-shrink-0">{count.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -245,15 +231,15 @@ export default async function AdminAnalyticsPage({
         </Section>
 
         <Section title={`Device Types (${periodLabel})`}>
-          {devices.length === 0 ? <p className="text-stone-600 text-sm">No data yet — fills in as visitors arrive.</p> : (
+          {devices.length === 0 ? <p className="text-[#CCCCCC] text-sm">No data yet.</p> : (
             <div className="flex flex-col gap-3">
               {devices.map((d) => (
                 <div key={d.device_type} className="flex items-center gap-3">
-                  <div className="w-32 text-right flex-shrink-0">
-                    <p className="text-xs font-medium text-white">{deviceLabels[d.device_type] ?? d.device_type}</p>
+                  <div className="w-28 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-[#111111]">{deviceLabels[d.device_type] ?? d.device_type}</p>
                   </div>
-                  <Bar pct={(d.count / maxDevice) * 100} color="bg-orange-400" />
-                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{d.count.toLocaleString()}</span>
+                  <Bar pct={(d.count / maxDevice) * 100} color="bg-[#9B7FD4]" />
+                  <span className="text-xs text-[#888888] w-8 text-right flex-shrink-0">{d.count.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -261,15 +247,15 @@ export default async function AdminAnalyticsPage({
         </Section>
 
         <Section title="Gift Occasions (all time)">
-          {occasions.length === 0 ? <p className="text-stone-600 text-sm">No claims yet.</p> : (
+          {occasions.length === 0 ? <p className="text-[#CCCCCC] text-sm">No claims yet.</p> : (
             <div className="flex flex-col gap-3">
               {occasions.map((o) => (
                 <div key={o.occasion} className="flex items-center gap-3">
-                  <div className="w-32 text-right flex-shrink-0">
-                    <p className="text-xs font-medium text-white truncate capitalize">{o.occasion}</p>
+                  <div className="w-28 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-[#111111] truncate capitalize">{o.occasion}</p>
                   </div>
-                  <Bar pct={(o.count / maxOccasion) * 100} color="bg-pink-400" />
-                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{Number(o.count).toLocaleString()}</span>
+                  <Bar pct={(o.count / maxOccasion) * 100} color="bg-[#C45B8A]" />
+                  <span className="text-xs text-[#888888] w-8 text-right flex-shrink-0">{Number(o.count).toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -277,15 +263,15 @@ export default async function AdminAnalyticsPage({
         </Section>
 
         <Section title="Budget Ranges Searched (all time)">
-          {budgets.length === 0 ? <p className="text-stone-600 text-sm">No searches yet.</p> : (
+          {budgets.length === 0 ? <p className="text-[#CCCCCC] text-sm">No searches yet.</p> : (
             <div className="flex flex-col gap-3">
               {budgets.map((b) => (
                 <div key={b.budget} className="flex items-center gap-3">
-                  <div className="w-32 text-right flex-shrink-0">
-                    <p className="text-xs font-medium text-white truncate">{b.budget}</p>
+                  <div className="w-28 text-right flex-shrink-0">
+                    <p className="text-xs font-medium text-[#111111] truncate">{b.budget}</p>
                   </div>
-                  <Bar pct={(b.count / maxBudget) * 100} color="bg-purple-400" />
-                  <span className="text-xs text-stone-400 w-10 text-right flex-shrink-0">{Number(b.count).toLocaleString()}</span>
+                  <Bar pct={(b.count / maxBudget) * 100} color="bg-[#C4824A]" />
+                  <span className="text-xs text-[#888888] w-8 text-right flex-shrink-0">{Number(b.count).toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -293,17 +279,17 @@ export default async function AdminAnalyticsPage({
         </Section>
 
         <Section title="Recent Gift Searches">
-          {recentRecs.length === 0 ? <p className="text-stone-600 text-sm">No searches yet.</p> : (
-            <div className="flex flex-col gap-3">
+          {recentRecs.length === 0 ? <p className="text-[#CCCCCC] text-sm">No searches yet.</p> : (
+            <div className="flex flex-col divide-y divide-[#F0F0E8]">
               {recentRecs.map((r, i) => (
-                <div key={i} className="flex items-start justify-between gap-3">
+                <div key={i} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
                   <div className="min-w-0">
-                    <p className="text-sm text-white">@{r.profile_username}</p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-sm font-medium text-[#111111]">@{r.profile_username}</p>
+                    <p className="text-xs text-[#888888]">
                       {r.relationship} · {r.budget}{r.occasion ? ` · ${r.occasion}` : ""}
                     </p>
                   </div>
-                  <p className="text-xs text-stone-600 flex-shrink-0">{timeAgo(r.created_at)}</p>
+                  <p className="text-xs text-[#CCCCCC] flex-shrink-0">{timeAgo(r.created_at)}</p>
                 </div>
               ))}
             </div>

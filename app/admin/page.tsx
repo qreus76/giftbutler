@@ -18,17 +18,17 @@ function StatCard({
   label: string; value: string | number; sub?: string; trend?: string | null; trendPositive?: boolean;
 }) {
   return (
-    <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">{label}</p>
+    <div className="bg-white rounded-2xl shadow-card p-5">
+      <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-1">{label}</p>
       <div className="flex items-end gap-2">
-        <p className="text-3xl font-bold text-white">{value}</p>
+        <p className="text-3xl font-bold text-[#111111]">{value}</p>
         {trend && (
-          <span className={`text-xs font-semibold mb-1 ${trendPositive ? "text-green-400" : "text-red-400"}`}>
+          <span className={`text-xs font-semibold mb-1 ${trendPositive ? "text-emerald-600" : "text-red-500"}`}>
             {trend}
           </span>
         )}
       </div>
-      {sub && <p className="text-xs text-stone-500 mt-1">{sub}</p>}
+      {sub && <p className="text-xs text-[#888888] mt-1">{sub}</p>}
     </div>
   );
 }
@@ -111,14 +111,14 @@ export default async function AdminOverviewPage({
   const claimsTrend = pct(comparison.claims_current, comparison.claims_previous);
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Overview</h1>
-          <p className="text-stone-500 text-sm mt-1">Trends vs. previous {days === 365 ? "year" : `${days} days`}</p>
+          <h1 className="text-2xl font-bold text-[#111111]">Overview</h1>
+          <p className="text-[#888888] text-sm mt-0.5">Trends vs. previous {days === 365 ? "year" : `${days} days`}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Suspense>
             <DateRangePicker days={days} />
           </Suspense>
@@ -127,102 +127,100 @@ export default async function AdminOverviewPage({
       </div>
 
       {/* All-time totals */}
-      <p className="text-xs font-semibold text-stone-600 uppercase tracking-widest mb-3">All Time</p>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Users" value={stats.total_users.toLocaleString()} />
-        <StatCard label="Total Hints" value={stats.total_hints.toLocaleString()} sub={`${avgHints} per user`} />
-        <StatCard label="Total Claims" value={stats.total_claims.toLocaleString()} />
-        <StatCard label="Avg Hints / User" value={avgHints} />
-      </div>
-
-      {/* Period stats with comparison */}
-      <p className="text-xs font-semibold text-stone-600 uppercase tracking-widest mb-3">
-        {periodLabel.charAt(0).toUpperCase() + periodLabel.slice(1)} vs previous period
-      </p>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          label="New Signups"
-          value={comparison.signups_current.toLocaleString()}
-          trend={signupsTrend}
-          trendPositive={comparison.signups_current >= comparison.signups_previous}
-        />
-        <StatCard
-          label="Active Users"
-          value={activeUsers.toLocaleString()}
-          sub="added a hint"
-        />
-        <StatCard
-          label="Profile Views"
-          value={comparison.visits_current.toLocaleString()}
-          trend={visitsTrend}
-          trendPositive={comparison.visits_current >= comparison.visits_previous}
-        />
-        <StatCard
-          label="Gifts Claimed"
-          value={comparison.claims_current.toLocaleString()}
-          trend={claimsTrend}
-          trendPositive={comparison.claims_current >= comparison.claims_previous}
-        />
-      </div>
-
-      {/* Time series charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
-            New Signups — {periodLabel}
-          </p>
-          <LineChart data={signupsSeries} color="#fbbf24" gradientId="signups-grad" />
-        </div>
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
-            Profile Views — {periodLabel}
-          </p>
-          <LineChart data={visitsSeries} color="#60a5fa" gradientId="visits-grad" />
-        </div>
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">
-            Gifts Claimed — {periodLabel}
-          </p>
-          <LineChart data={claimsSeries} color="#34d399" gradientId="claims-grad" />
+      <div>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-widest mb-3">All Time</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="Total Users"      value={stats.total_users.toLocaleString()} />
+          <StatCard label="Total Hints"      value={stats.total_hints.toLocaleString()} sub={`${avgHints} per user`} />
+          <StatCard label="Total Claims"     value={stats.total_claims.toLocaleString()} />
+          <StatCard label="Avg Hints / User" value={avgHints} />
         </div>
       </div>
 
-      {/* Recent activity feeds */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">Recent Signups</p>
+      {/* Period stats */}
+      <div>
+        <p className="text-xs font-semibold text-[#888888] uppercase tracking-widest mb-3">
+          {periodLabel.charAt(0).toUpperCase() + periodLabel.slice(1)} vs previous period
+        </p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard
+            label="New Signups"
+            value={comparison.signups_current.toLocaleString()}
+            trend={signupsTrend}
+            trendPositive={comparison.signups_current >= comparison.signups_previous}
+          />
+          <StatCard
+            label="Active Users"
+            value={activeUsers.toLocaleString()}
+            sub="added a hint"
+          />
+          <StatCard
+            label="Profile Views"
+            value={comparison.visits_current.toLocaleString()}
+            trend={visitsTrend}
+            trendPositive={comparison.visits_current >= comparison.visits_previous}
+          />
+          <StatCard
+            label="Gifts Claimed"
+            value={comparison.claims_current.toLocaleString()}
+            trend={claimsTrend}
+            trendPositive={comparison.claims_current >= comparison.claims_previous}
+          />
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {[
+          { title: "New Signups", data: signupsSeries, color: "#111111", id: "signups-grad" },
+          { title: "Profile Views", data: visitsSeries, color: "#C4824A", id: "visits-grad" },
+          { title: "Gifts Claimed", data: claimsSeries, color: "#4A7C59", id: "claims-grad" },
+        ].map(({ title, data, color, id }) => (
+          <div key={id} className="bg-white rounded-2xl shadow-card p-5">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">
+              {title} — {periodLabel}
+            </p>
+            <LineChart data={data} color={color} gradientId={id} />
+          </div>
+        ))}
+      </div>
+
+      {/* Recent activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl shadow-card p-5">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Recent Signups</p>
           {recentSignups.length === 0 ? (
-            <p className="text-stone-600 text-sm">No signups yet.</p>
+            <p className="text-[#CCCCCC] text-sm">No signups yet.</p>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col divide-y divide-[#F0F0E8]">
               {recentSignups.map((u) => (
-                <div key={u.username} className="flex items-center justify-between">
+                <div key={u.username} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                   <div>
-                    <p className="text-sm font-medium text-white">{u.name || u.username}</p>
-                    <p className="text-xs text-stone-500">@{u.username}</p>
+                    <p className="text-sm font-medium text-[#111111]">{u.name || u.username}</p>
+                    <p className="text-xs text-[#888888]">@{u.username}</p>
                   </div>
-                  <p className="text-xs text-stone-600">{timeAgo(u.created_at)}</p>
+                  <p className="text-xs text-[#CCCCCC]">{timeAgo(u.created_at)}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">Recent Claims</p>
+        <div className="bg-white rounded-2xl shadow-card p-5">
+          <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-4">Recent Claims</p>
           {recentClaims.length === 0 ? (
-            <p className="text-stone-600 text-sm">No claims yet.</p>
+            <p className="text-[#CCCCCC] text-sm">No claims yet.</p>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col divide-y divide-[#F0F0E8]">
               {recentClaims.map((c, i) => (
-                <div key={i} className="flex items-start justify-between gap-3">
+                <div key={i} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
                   <div className="min-w-0">
-                    <p className="text-sm text-white truncate">{c.gift_description}</p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-sm text-[#111111] truncate">{c.gift_description}</p>
+                    <p className="text-xs text-[#888888]">
                       for @{c.recipient_username}{c.occasion ? ` · ${c.occasion}` : ""}
                     </p>
                   </div>
-                  <p className="text-xs text-stone-600 flex-shrink-0">{timeAgo(c.created_at)}</p>
+                  <p className="text-xs text-[#CCCCCC] flex-shrink-0">{timeAgo(c.created_at)}</p>
                 </div>
               ))}
             </div>
