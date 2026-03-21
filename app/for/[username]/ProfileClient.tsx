@@ -769,21 +769,21 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                         {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
                       </div>
                       <p className="text-[#888888] text-xs leading-relaxed mb-3">{rec.why}</p>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
                         <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
-                          className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+                          className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
                           Find this gift <ArrowRight className="w-3.5 h-3.5" />
                         </a>
                         {confirmUnclaim === rec.title ? (
-                          <div className="flex gap-2">
-                            <button onClick={() => unclaimGift(rec.title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-sm transition-colors">Release claim</button>
+                          <>
+                            <button onClick={() => unclaimGift(rec.title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-sm transition-colors">Release</button>
                             <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-sm transition-colors">Keep</button>
-                          </div>
+                          </>
                         ) : (
                           <button
                             onClick={() => iMineThis ? setConfirmUnclaim(rec.title) : claimGift(rec.title)}
                             disabled={!iMineThis && (alreadyClaimed || claiming === rec.title)}
-                            className="w-full py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
+                            className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
                             {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
                           </button>
                         )}
