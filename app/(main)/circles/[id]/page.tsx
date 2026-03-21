@@ -101,7 +101,8 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   async function shareInviteLink() {
     const url = `${window.location.origin}/join/${circle?.invite_code}`;
     if (navigator.share && window.innerWidth < 768) {
-      try { await navigator.share({ title: `Join ${circle?.name}`, text: `Join our Gift Circle on GiftButler — $${circle?.budget} budget!`, url }); } catch { /* cancelled */ }
+      const budgetText = circle?.budget ? ` — $${circle.budget} budget` : "";
+      try { await navigator.share({ title: `Join ${circle?.name}`, text: `Join our Gift Circle on GiftButler${budgetText}!`, url }); } catch { /* cancelled */ }
     } else {
       navigator.clipboard.writeText(url).catch(() => {
         window.prompt("Copy this link:", url);

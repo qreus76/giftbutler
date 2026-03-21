@@ -14,95 +14,81 @@ export default function OgImage() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#EAEAE0",
         }}
       >
-        {/* Amber accent bar */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: "8px",
-            backgroundColor: "#fbbf24",
-            display: "flex",
-          }}
-        />
-
-        {/* Center content */}
+        {/* Card */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
-            padding: "0 80px",
+            backgroundColor: "#ffffff",
+            borderRadius: "32px",
+            padding: "64px 80px",
+            maxWidth: "900px",
+            width: "100%",
           }}
         >
+          {/* Logo pill */}
           <div
             style={{
-              fontSize: "20px",
-              fontWeight: 700,
-              color: "#78716c",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "#ECC8AE",
+              borderRadius: "9999px",
+              padding: "10px 28px",
+              marginBottom: "36px",
+            }}
+          >
+            <span style={{ fontSize: "22px", fontWeight: 800, color: "#5C3118", letterSpacing: "0.05em" }}>
+              GiftButler
+            </span>
+          </div>
+
+          {/* Headline */}
+          <div
+            style={{
+              fontSize: "64px",
+              fontWeight: 800,
+              color: "#111111",
+              lineHeight: 1.1,
               marginBottom: "24px",
               display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
-            GiftButler
+            <span>Stop guessing.</span>
+            <span>Start gifting.</span>
           </div>
+
+          {/* Subtext */}
           <div
             style={{
-              fontSize: "68px",
-              fontWeight: 800,
-              color: "#1c1917",
-              lineHeight: 1.1,
-              marginBottom: "12px",
+              fontSize: "26px",
+              color: "#888888",
               display: "flex",
             }}
           >
-            Stop answering
-          </div>
-          <div
-            style={{
-              fontSize: "68px",
-              fontWeight: 800,
-              color: "#1c1917",
-              lineHeight: 1.1,
-              marginBottom: "32px",
-              display: "flex",
-            }}
-          >
-            &ldquo;what do you want?&rdquo;
-          </div>
-          <div
-            style={{
-              fontSize: "28px",
-              color: "#78716c",
-              display: "flex",
-            }}
-          >
-            Drop hints. Share your link. Get gifts you actually want.
+            Share your link. Get gifts you actually want.
           </div>
         </div>
 
-        {/* Bottom tag */}
+        {/* Domain */}
         <div
           style={{
             position: "absolute",
-            bottom: "48px",
+            bottom: "36px",
+            fontSize: "20px",
+            fontWeight: 600,
+            color: "#AAAAAA",
             display: "flex",
-            alignItems: "center",
-            backgroundColor: "#fef3c7",
-            borderRadius: "9999px",
-            padding: "10px 28px",
           }}
         >
-          <span style={{ fontSize: "18px", fontWeight: 700, color: "#92400e" }}>
-            Free forever · AI-powered · giftbutler.io
-          </span>
+          giftbutler.io
         </div>
       </div>
     ),
