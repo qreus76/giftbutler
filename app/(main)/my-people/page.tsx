@@ -290,9 +290,13 @@ export default function MyPeoplePage() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-semibold text-[#111111]">{person.name}</p>
                           {person.myLabel && <span className="text-xs text-[#888888]">· {person.myLabel}</span>}
-                          {person.status === "pending" && (
+                          {person.status === "pending" ? (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#888888] bg-[#F0F0E8] px-2 py-0.5 rounded-full">
-                              <Clock className="w-3 h-3" /> Pending
+                              <Clock className="w-3 h-3" /> Not yet confirmed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                              <Check className="w-3 h-3" /> Connected
                             </span>
                           )}
                         </div>
