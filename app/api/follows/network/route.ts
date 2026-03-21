@@ -61,8 +61,9 @@ export async function GET() {
     })
   );
 
-  // Sort: people with birthdays first (nearest first), then no birthday
+  // Sort: accepted before pending; within accepted, nearest birthday first
   people.sort((a, b) => {
+    if (a.status !== b.status) return a.status === "accepted" ? -1 : 1;
     if (a.daysUntilBirthday === null && b.daysUntilBirthday === null) return 0;
     if (a.daysUntilBirthday === null) return 1;
     if (b.daysUntilBirthday === null) return -1;

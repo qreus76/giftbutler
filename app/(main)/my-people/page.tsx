@@ -430,9 +430,13 @@ export default function MyPeoplePage() {
               </div>
             )}
 
-            {!loading && people.length > 0 && (
+            {!loading && people.length > 0 && (() => {
+              const accepted = people.filter(p => p.status === "accepted");
+              const pending = people.filter(p => p.status === "pending");
+              return (
               <div className="space-y-3">
-                {people.map(person => (
+                {accepted.length > 0 && <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide px-1">Connected</p>}
+                {accepted.map(person => (
                   <div key={person.id} className="bg-white rounded-2xl shadow-card p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
@@ -444,15 +448,6 @@ export default function MyPeoplePage() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-semibold text-[#111111]">{person.name}</p>
                           {person.myLabel && <span className="text-xs text-[#888888]">· {person.myLabel}</span>}
-                          {person.status === "pending" ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#888888] bg-[#F0F0E8] px-2 py-0.5 rounded-full">
-                              <Clock className="w-3 h-3" /> Not yet confirmed
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                              <Check className="w-3 h-3" /> Connected
-                            </span>
-                          )}
                         </div>
                         {(person.status === "accepted" || person.birthday !== null) && (
                           <p className={`text-xs mt-0.5 flex items-center gap-1 ${birthdayColor(person.daysUntilBirthday)}`}>
@@ -476,20 +471,63 @@ export default function MyPeoplePage() {
                         <>
                           <button onClick={() => removeConnection(person.username)} disabled={removing === person.username}
                             className="px-4 py-2.5 bg-red-500 text-white font-semibold rounded-full text-sm">
-                            {removing === person.username ? "..." : (person.status === "pending" ? "Cancel" : "Remove")}
+                            {removing === person.username ? "..." : "Remove"}
                           </button>
                           <button onClick={() => setConfirmRemove(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm">Keep</button>
                         </>
                       ) : (
-                        <button onClick={() => setConfirmRemove(person.username)} className="px-4 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">
-                          {person.status === "pending" ? "Cancel request" : "Remove"}
-                        </button>
+                        <button onClick={() => setConfirmRemove(person.username)} className="px-4 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">Remove</button>
                       )}
                     </div>
                   </div>
                 ))}
+
+                {pending.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide px-1 pt-2">Pending</p>
+                    {pending.map(person => (
+                      <div key={person.id} className="bg-white rounded-2xl shadow-card p-4 opacity-80">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                            {person.avatar ? <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" /> : (
+                              <div className="w-full h-full flex items-center justify-center text-lg font-bold text-[#2D4A1E] bg-[#C4D4B4]">{person.name?.[0]?.toUpperCase() || "?"}</div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-semibold text-[#111111]">{person.name}</p>
+                              {person.myLabel && <span className="text-xs text-[#888888]">· {person.myLabel}</span>}
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#888888] bg-[#F0F0E8] px-2 py-0.5 rounded-full">
+                                <Clock className="w-3 h-3" /> Not yet confirmed
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href={`/for/${person.username}`} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-sm transition-colors">
+                            Find a gift <ArrowRight className="w-3.5 h-3.5" />
+                          </a>
+                          {confirmRemove === person.username ? (
+                            <>
+                              <button onClick={() => removeConnection(person.username)} disabled={removing === person.username}
+                                className="px-4 py-2.5 bg-red-500 text-white font-semibold rounded-full text-sm">
+                                {removing === person.username ? "..." : "Cancel"}
+                              </button>
+                              <button onClick={() => setConfirmRemove(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm">Keep</button>
+                            </>
+                          ) : (
+                            <button onClick={() => setConfirmRemove(person.username)} className="px-4 py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">
+                              Cancel request
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
-            )}
+              );
+            })()}
           </>
         )}
 
