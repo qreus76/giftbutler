@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, Search, Users, Cake, ArrowRight, Gift } from "lucide-react";
+import { Copy, Check, Search, Users, Cake, ArrowRight, Gift, Share2 } from "lucide-react";
 
 const LABELS = ["Husband","Wife","Partner","Dad","Mom","Son","Daughter","Brother","Sister","Grandfather","Grandmother","Grandson","Granddaughter","Uncle","Aunt","Nephew","Niece","Cousin","Best Friend","Friend","Colleague","Other"];
 
@@ -77,6 +77,8 @@ export default function OnboardingPage() {
   const [customAnswer, setCustomAnswer] = useState("");
   const [showCustom, setShowCustom] = useState(false);
   const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"}/for/${username}`;
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => { setCanShare(!!navigator.share); }, []);
 
   function handleAnswer(value: string) {
     const newAnswers = [...answers, value];
@@ -254,16 +256,26 @@ export default function OnboardingPage() {
           <div className="bg-white rounded-2xl shadow-card p-4 mb-3 flex items-center justify-between gap-3">
             <p className="text-[#111111] font-medium text-sm truncate">giftbutler.io/for/{username}</p>
             <button onClick={copyLink} className="flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-xs flex-shrink-0">
-              {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy link</>}
+              {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : canShare ? <><Share2 className="w-3.5 h-3.5" /> Share link</> : <><Copy className="w-3.5 h-3.5" /> Copy link</>}
             </button>
           </div>
           <div className="flex flex-col gap-2 mb-5">
             {shareMessages.map((msg, i) => (
               <button key={i}
-                onClick={() => { navigator.clipboard.writeText(msg).catch(() => alert("Unable to copy.")); setCopiedMsgIndex(i); setTimeout(() => setCopiedMsgIndex(null), 2000); }}
+                onClick={async () => {
+                  if (canShare) {
+                    try { await navigator.share({ text: msg, url: profileUrl }); } catch { /* cancelled */ }
+                  } else {
+                    navigator.clipboard.writeText(msg).catch(() => alert("Unable to copy."));
+                    setCopiedMsgIndex(i);
+                    setTimeout(() => setCopiedMsgIndex(null), 2000);
+                  }
+                }}
                 className="text-left bg-white rounded-2xl shadow-card px-4 py-3 hover:bg-[#F5F5F0] transition-colors">
                 <p className="text-[#888888] text-xs leading-relaxed">{msg}</p>
-                <p className="text-[#111111] text-xs font-semibold mt-1.5 flex items-center gap-1">{copiedMsgIndex === i ? <><Check className="w-3 h-3" /> Copied!</> : "Copy this message →"}</p>
+                <p className="text-[#111111] text-xs font-semibold mt-1.5 flex items-center gap-1">
+                  {copiedMsgIndex === i ? <><Check className="w-3 h-3" /> Copied!</> : canShare ? <><Share2 className="w-3 h-3" /> Share this message</> : "Copy this message →"}
+                </p>
               </button>
             ))}
           </div>
