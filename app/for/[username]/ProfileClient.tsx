@@ -743,7 +743,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                     See all {filtered.length} results
                   </button>
                 )}
-                <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => { finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); relationshipRef.current?.focus(); }, 100); }}
+                <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => relationshipRef.current?.focus(), 400); }}
                   className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
                   Refine search
                 </button>
