@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2, Gift, Sparkles, Lightbulb, CalendarDays, Plus } from "lucide-react";
+import { Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2, Gift, Sparkles, Lightbulb, CalendarDays, Plus, Check } from "lucide-react";
 import BottomTabBar from "@/app/components/BottomTabBar";
 import { useUser } from "@clerk/nextjs";
 import type { Profile, Hint, Occasion } from "@/lib/supabase";
