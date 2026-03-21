@@ -608,7 +608,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                           onClick={() => iMineThis ? setConfirmUnclaim(claimKey) : claimGift(claimKey)}
                           disabled={!iMineThis && (alreadyClaimed || claiming === claimKey)}
                           className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors">
-                          {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm on it"}
+                          {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
                         </button>
                       )}
                     </div>
