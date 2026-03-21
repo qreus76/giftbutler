@@ -145,11 +145,17 @@ Rules:
 - category must be exactly one of: product, experience, subscription, consumable
 - If no hints are provided, make thoughtful suggestions based on the relationship and what makes that relationship special`;
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 2048,
-    messages: [{ role: "user", content: prompt }],
-  });
+  let message;
+  try {
+    message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 2048,
+      messages: [{ role: "user", content: prompt }],
+    });
+  } catch (e) {
+    console.error("[recommend] Anthropic API error:", e);
+    return NextResponse.json({ error: "AI service unavailable — please try again" }, { status: 503 });
+  }
 
   const content = message.content[0];
   if (content.type !== "text") {
@@ -158,7 +164,9 @@ Rules:
 
   let recommendations;
   try {
-    const jsonMatch = content.text.match(/\[[\s\S]*\]/);
+    // Strip markdown code fences Claude occasionally adds
+    const cleaned = content.text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
+    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error("No JSON found");
     const parsed = JSON.parse(jsonMatch[0]);
     recommendations = parsed.map((r: { title: string; why: string; priceRange: string; searchQuery: string; category: string }) => ({
