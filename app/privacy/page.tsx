@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy — GiftButler",
   description: "How GiftButler collects, uses, and protects your information.",
+  twitter: { card: "summary" },
 };
 
 export default function PrivacyPage() {

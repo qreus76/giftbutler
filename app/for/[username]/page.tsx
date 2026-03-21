@@ -31,6 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (clerkUser.hasImage) avatarUrl = clerkUser.imageUrl;
   } catch { /* no avatar */ }
 
+  const ogImage = `/for/${username}/opengraph-image`;
+
   return {
     title: `Gift ideas for ${name} — GiftButler`,
     description,
@@ -39,13 +41,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       siteName: "GiftButler",
       type: "profile",
-      ...(avatarUrl ? { images: [{ url: avatarUrl, width: 400, height: 400, alt: name }] } : {}),
+      url: `/for/${username}`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `Gift ideas for ${name}` }],
     },
     twitter: {
-      card: avatarUrl ? "summary" : "summary",
+      card: "summary_large_image",
       title: `What to get ${name}`,
       description,
-      ...(avatarUrl ? { images: [avatarUrl] } : {}),
+      images: [ogImage],
     },
   };
 }

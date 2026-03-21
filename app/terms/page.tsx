@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Service — GiftButler",
   description: "Terms of Service for GiftButler.",
+  twitter: { card: "summary" },
 };
 
 export default function TermsPage() {

@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/for/", "/explore", "/privacy", "/terms"],
-        disallow: ["/dashboard", "/onboarding", "/api/"],
+        allow: ["/", "/for/", "/join/", "/explore", "/privacy", "/terms"],
+        disallow: ["/dashboard", "/onboarding", "/admin/", "/api/"],
       },
     ],
     sitemap: "https://giftbutler.io/sitemap.xml",

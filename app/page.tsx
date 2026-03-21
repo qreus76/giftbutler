@@ -5,9 +5,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export const metadata: Metadata = {
   openGraph: {
-    images: [{ url: "/present_giving.png", width: 1200, height: 1600, alt: "GiftButler — No more guessing. Just the right gift." }],
+    title: "GiftButler — Stop answering 'what do you want?' Just send your link.",
+    description: "Drop hints about your life. Share your link. Get gifts you actually want.",
+    url: "/",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "GiftButler — No more guessing. Just the right gift." }],
   },
-  twitter: { card: "summary_large_image", images: ["/present_giving.png"] },
+  twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };
 
 async function getProfileCount(): Promise<number> {
