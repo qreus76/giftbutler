@@ -64,6 +64,52 @@ type VisibilityLevel = "public" | "connections" | "private";
 
 const VISIBILITY_CYCLE: VisibilityLevel[] = ["public", "connections", "private"];
 
+// Returns next occurrence of a known holiday as ISO date string, or null
+function getNextHolidayDate(name: string): string | null {
+  const n = name.trim().toLowerCase().replace(/'/g, "'");
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const toISO = (d: Date) => d.toISOString().split("T")[0];
+  function nextFixed(month: number, day: number) {
+    let d = new Date(today.getFullYear(), month, day);
+    if (d < today) d = new Date(today.getFullYear() + 1, month, day);
+    return toISO(d);
+  }
+  function nextNth(month: number, n: number, wd: number) {
+    for (let y = today.getFullYear(); y <= today.getFullYear() + 1; y++) {
+      let count = 0;
+      for (let d = 1; d <= 31; d++) {
+        const dt = new Date(y, month, d);
+        if (dt.getMonth() !== month) break;
+        if (dt.getDay() === wd && ++count === n && dt >= today) return toISO(dt);
+      }
+    }
+    return null;
+  }
+  function nextLast(month: number, wd: number) {
+    for (let y = today.getFullYear(); y <= today.getFullYear() + 1; y++) {
+      let last: Date | null = null;
+      for (let d = 1; d <= 31; d++) {
+        const dt = new Date(y, month, d);
+        if (dt.getMonth() !== month) break;
+        if (dt.getDay() === wd) last = dt;
+      }
+      if (last && last >= today) return toISO(last);
+    }
+    return null;
+  }
+  if (n === "christmas" || n === "christmas day") return nextFixed(11, 25);
+  if (n === "valentine's day" || n === "valentines day") return nextFixed(1, 14);
+  if (n === "halloween") return nextFixed(9, 31);
+  if (n === "new year's day" || n === "new years day" || n === "new year") return nextFixed(0, 1);
+  if (n === "independence day" || n === "4th of july" || n === "july 4th") return nextFixed(6, 4);
+  if (n === "mother's day" || n === "mothers day") return nextNth(4, 2, 0);
+  if (n === "father's day" || n === "fathers day") return nextNth(5, 3, 0);
+  if (n === "thanksgiving") return nextNth(10, 4, 4);
+  if (n === "memorial day") return nextLast(4, 1);
+  if (n === "labor day") return nextNth(8, 1, 1);
+  return null;
+}
+
 interface Props {
   username: string;
   initialProfile: Profile;
@@ -154,6 +200,22 @@ export default function ProfileClient({
   const [occasionError, setOccasionError] = useState("");
   const [confirmDeleteOccasion, setConfirmDeleteOccasion] = useState<string | null>(null);
 
+  // Edit occasion
+  const [editingOccasionId, setEditingOccasionId] = useState<string | null>(null);
+  const [editOccasionName, setEditOccasionName] = useState("");
+  const [editOccasionDate, setEditOccasionDate] = useState("");
+  const [editOccasionVisibility, setEditOccasionVisibility] = useState<VisibilityLevel>("public");
+  const [editOccasionSaving, setEditOccasionSaving] = useState(false);
+  const [editOccasionError, setEditOccasionError] = useState("");
+
+  // Holiday auto-date
+  const [addHolidayAutoDate, setAddHolidayAutoDate] = useState<string | null>(null);
+  const [editHolidayAutoDate, setEditHolidayAutoDate] = useState<string | null>(null);
+
+  // Discovery loading animation
+  const [discoveryMsgIdx, setDiscoveryMsgIdx] = useState(0);
+  const [discoveryMsgVisible, setDiscoveryMsgVisible] = useState(true);
+
   // Follow
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted" | "rejected">("none");
   const [showLabelPicker, setShowLabelPicker] = useState(false);
@@ -234,6 +296,31 @@ export default function ProfileClient({
     }, 2500);
     return () => clearInterval(interval);
   }, [generating]);
+
+  useEffect(() => {
+    if (!discoveryGenerating) { setDiscoveryMsgIdx(0); setDiscoveryMsgVisible(true); return; }
+    setDiscoveryMsgIdx(Math.floor(Math.random() * LOADING_MESSAGES.length));
+    const interval = setInterval(() => {
+      setDiscoveryMsgVisible(false);
+      setTimeout(() => { setDiscoveryMsgIdx(i => (i + 1) % LOADING_MESSAGES.length); setDiscoveryMsgVisible(true); }, 300);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [discoveryGenerating]);
+
+  useEffect(() => {
+    const auto = getNextHolidayDate(newOccasionName);
+    setAddHolidayAutoDate(auto);
+    if (auto) setNewOccasionDate(auto);
+    else if (!addHolidayAutoDate) { /* already cleared */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newOccasionName]);
+
+  useEffect(() => {
+    const auto = getNextHolidayDate(editOccasionName);
+    setEditHolidayAutoDate(auto);
+    if (auto) setEditOccasionDate(auto);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editOccasionName]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -495,6 +582,34 @@ export default function ProfileClient({
       body: JSON.stringify({ visibility: newVis }),
     });
     if (!res.ok) setOccasions(prevOccasions);
+  }
+
+  function openEditOccasion(occ: Occasion) {
+    setEditOccasionName(occ.name);
+    setEditOccasionDate(occ.date || "");
+    setEditOccasionVisibility((occ.visibility as VisibilityLevel) || "public");
+    setEditOccasionError("");
+    setEditingOccasionId(occ.id);
+  }
+
+  async function saveEditOccasion() {
+    if (!editingOccasionId || !editOccasionName.trim()) return;
+    setEditOccasionSaving(true); setEditOccasionError("");
+    const prevOccasions = occasions;
+    const dateToSave = editHolidayAutoDate || editOccasionDate || null;
+    setOccasions(prev => prev.map(o => o.id === editingOccasionId
+      ? { ...o, name: editOccasionName.trim(), date: dateToSave, visibility: editOccasionVisibility }
+      : o
+    ));
+    try {
+      const res = await fetch(`/api/occasions/${editingOccasionId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editOccasionName.trim(), date: dateToSave, visibility: editOccasionVisibility }),
+      });
+      if (!res.ok) { setOccasions(prevOccasions); setEditOccasionError("Failed to save — try again"); return; }
+      setEditingOccasionId(null);
+    } catch { setOccasions(prevOccasions); setEditOccasionError("Failed to save — try again"); }
+    finally { setEditOccasionSaving(false); }
   }
 
   async function shareProfile() {
@@ -953,10 +1068,25 @@ export default function ProfileClient({
                       className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
                   </div>
                   {discoveryError && <p className="text-red-600 text-xs">{discoveryError}</p>}
-                  {discoveryRecs.length === 0 && (
-                    <button onClick={generateSelfDiscovery} disabled={!discoveryBudget || discoveryGenerating}
+                  {discoveryGenerating && (
+                    <div className="bg-[#F5F5F0] rounded-2xl p-6 text-center">
+                      <div className="relative w-16 h-16 mx-auto mb-4">
+                        <div className="absolute inset-0 rounded-full bg-[#ECC8AE] animate-ping opacity-20" />
+                        <div className="absolute inset-1 rounded-full bg-[#ECC8AE] animate-ping opacity-30" style={{ animationDelay: "0.4s", animationDuration: "1.2s" }} />
+                        <div className="relative w-16 h-16 rounded-full bg-[#ECC8AE] flex items-center justify-center">
+                          <Sparkles className="w-7 h-7 text-[#5C3118]" />
+                        </div>
+                      </div>
+                      <p className="text-sm font-bold text-[#111111] mb-0.5 transition-opacity duration-300" style={{ opacity: discoveryMsgVisible ? 1 : 0 }}>
+                        {LOADING_MESSAGES[discoveryMsgIdx]}
+                      </p>
+                      <p className="text-xs text-[#888888]">Finding gifts you&apos;d genuinely love</p>
+                    </div>
+                  )}
+                  {!discoveryGenerating && discoveryRecs.length === 0 && (
+                    <button onClick={generateSelfDiscovery} disabled={!discoveryBudget}
                       className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2">
-                      {discoveryGenerating ? "Finding gifts..." : <><Sparkles className="w-4 h-4" /> Find gifts I&apos;d love</>}
+                      <Sparkles className="w-4 h-4" /> Find gifts I&apos;d love
                     </button>
                   )}
                   {discoveryRecs.length > 0 && (
@@ -966,14 +1096,20 @@ export default function ProfileClient({
                           <p className="font-semibold text-[#111111] text-sm leading-snug">{rec.title}</p>
                           <p className="text-xs text-[#888888] mt-0.5">{rec.priceRange} · {rec.category}</p>
                           <p className="text-xs text-[#888888] mt-1 leading-relaxed">{rec.why}</p>
-                          {savedDiscoveryRecs.has(i) ? (
-                            <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-2"><Check className="w-3 h-3" /> Saved to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}</p>
-                          ) : (
-                            <button onClick={() => saveDiscoveryRec(rec, i)}
-                              className="mt-2 px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-full transition-colors">
-                              Save to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}
-                            </button>
-                          )}
+                          <div className="flex gap-2 mt-2.5">
+                            <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E0E0D8] hover:border-[#111111] text-[#111111] text-xs font-semibold rounded-full transition-colors">
+                              Shop <ExternalLink className="w-3 h-3" />
+                            </a>
+                            {savedDiscoveryRecs.has(i) ? (
+                              <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Saved to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}</p>
+                            ) : (
+                              <button onClick={() => saveDiscoveryRec(rec, i)}
+                                className="px-3 py-1.5 bg-[#111111] hover:bg-[#333333] text-white text-xs font-bold rounded-full transition-colors">
+                                Save to {selectedAddList === "hints" ? "Hints" : occasions.find(o => o.id === selectedAddList)?.name || "list"}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                       <button onClick={() => { setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); }}
@@ -1009,6 +1145,7 @@ export default function ProfileClient({
                           updateOccasionVisibility(occ.id, VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]);
                         }}
                       />
+                      <button onClick={() => openEditOccasion(occ)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                       {confirmDeleteOccasion === occ.id ? (
                         <div className="flex items-center gap-1">
                           <button onClick={() => deleteOccasion(occ.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
@@ -1435,7 +1572,7 @@ export default function ProfileClient({
       {/* Add occasion sheet */}
       {isOwner && addingOccasion && (() => {
         const isBirthday = newOccasionName.trim().toLowerCase().includes("birthday");
-        const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); };
+        const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); setAddHolidayAutoDate(null); };
         return (
           <>
             <style>{`
@@ -1490,8 +1627,18 @@ export default function ProfileClient({
                         <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
                           Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
                         </label>
-                        <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
+                        {addHolidayAutoDate ? (
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4] text-sm">
+                            <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
+                            <span className="text-[#2D4A1E] font-semibold">
+                              {new Date(addHolidayAutoDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                            </span>
+                            <span className="text-[#2D4A1E]/60 text-xs">auto-set</span>
+                          </div>
+                        ) : (
+                          <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
+                        )}
                       </div>
                     )}
                     {!isBirthday && (
@@ -1516,6 +1663,93 @@ export default function ProfileClient({
                     <button onClick={addOccasion} disabled={!newOccasionName.trim() || isBirthday || savingOccasion}
                       className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
                       {savingOccasion ? "Saving..." : "Create list"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+      {/* Edit occasion sheet */}
+      {isOwner && editingOccasionId && (() => {
+        const isBirthday = editOccasionName.trim().toLowerCase().includes("birthday");
+        const closeSheet = () => { setEditingOccasionId(null); setEditOccasionError(""); setEditHolidayAutoDate(null); };
+        return (
+          <>
+            <div className="gb-backdrop fixed inset-0 z-50 bg-black/40" onClick={closeSheet} />
+            <div className="gb-sheet fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
+              <div className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="pt-3 pb-1 flex justify-center md:hidden">
+                  <div className="w-10 h-1 bg-[#E0E0D8] rounded-full" />
+                </div>
+                <div className="px-6 pt-4 pb-6 overflow-y-auto" style={{ maxHeight: "85svh", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
+                  <div className="flex items-center justify-between mb-5">
+                    <p className="text-lg font-bold text-[#111111]">Edit list</p>
+                    <button onClick={closeSheet} className="p-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] rounded-full text-[#888888] hover:text-[#111111] transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">List name</label>
+                      <input type="text" value={editOccasionName} onChange={e => setEditOccasionName(e.target.value)}
+                        placeholder="e.g. Graduation, Mother's Day..."
+                        autoComplete="off"
+                        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                      />
+                      {isBirthday && (
+                        <p className="text-xs text-[#C4824A] mt-1.5 flex items-center gap-1">
+                          <Cake className="w-3.5 h-3.5 flex-shrink-0" />
+                          Your birthday is already on your profile — update it in <a href="/profile/edit" className="underline font-semibold">Edit Profile</a>.
+                        </p>
+                      )}
+                    </div>
+                    {!isBirthday && (
+                      <div>
+                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
+                          Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
+                        </label>
+                        {editHolidayAutoDate ? (
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4] text-sm">
+                            <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
+                            <span className="text-[#2D4A1E] font-semibold">
+                              {new Date(editHolidayAutoDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                            </span>
+                            <span className="text-[#2D4A1E]/60 text-xs">auto-set</span>
+                          </div>
+                        ) : (
+                          <input type="date" value={editOccasionDate} onChange={e => setEditOccasionDate(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
+                        )}
+                      </div>
+                    )}
+                    {!isBirthday && (
+                      <div>
+                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-2">Who can see this list?</label>
+                        <div className="flex gap-2">
+                          {VISIBILITY_CYCLE.map(v => {
+                            const cfg = VISIBILITY_CONFIG[v];
+                            const Icon = cfg.icon;
+                            return (
+                              <button key={v} type="button" onClick={() => setEditOccasionVisibility(v)}
+                                className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 text-xs font-semibold transition-all ${editOccasionVisibility === v ? "border-[#111111] bg-[#F5F5F0]" : "border-[#E0E0D8] bg-white hover:border-[#AAAAAA]"}`}>
+                                <Icon className="w-4 h-4" />
+                                {cfg.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {editOccasionError && <p className="text-red-500 text-xs">{editOccasionError}</p>}
+                    <button onClick={saveEditOccasion} disabled={!editOccasionName.trim() || isBirthday || editOccasionSaving}
+                      className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                      {editOccasionSaving ? "Saving..." : "Save changes"}
+                    </button>
+                    <button onClick={() => { setConfirmDeleteOccasion(editingOccasionId); setEditingOccasionId(null); }}
+                      className="w-full py-2.5 text-red-500 hover:text-red-700 text-sm font-semibold transition-colors">
+                      Delete this list
                     </button>
                   </div>
                 </div>
