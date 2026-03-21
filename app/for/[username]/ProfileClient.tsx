@@ -380,7 +380,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
   const textHints = hintsToShow.filter(h => !h.url);
   const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
   const displayName = profile.name || username;
-  const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder && textHints.length > 0;
+  const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder && hintsToShow.length > 0;
 
   const LOADING_MESSAGES = [
     `Reading ${displayName}'s hints...`,
