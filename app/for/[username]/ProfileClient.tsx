@@ -469,12 +469,21 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         </div>
 
-        {/* Birthday badge */}
+        {/* Birthday badge — clickable for visitors to pre-fill the gift finder */}
         {daysUntilBirthday !== null && daysUntilBirthday <= 60 && (
-          <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
-            <Cake className="w-3.5 h-3.5" />
-            {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
-          </div>
+          isOwner ? (
+            <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+              <Cake className="w-3.5 h-3.5" />
+              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+            </div>
+          ) : (
+            <button
+              onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+              className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
+              <Cake className="w-3.5 h-3.5" />
+              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : `Birthday in ${daysUntilBirthday} days`}
+            </button>
+          )
         )}
 
         {/* Occasion chips */}
@@ -1080,7 +1089,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           <button onClick={() => setAddingOccasion(true)}
             className="w-full px-4 py-3.5 bg-[#ECC8AE] rounded-2xl text-left hover:bg-[#E4B89C] transition-colors">
             <p className="text-sm font-semibold text-[#5C3118] flex items-center gap-1.5"><CalendarDays className="w-4 h-4" /> Add an occasion</p>
-            <p className="text-xs text-[#5C3118]/70 mt-0.5">Birthday? Christmas? Visitors can tap it to find the perfect gift for that moment.</p>
+            <p className="text-xs text-[#5C3118]/70 mt-0.5">Christmas? Anniversary? Visitors can tap it to find the perfect gift for that moment.</p>
           </button>
         )}
 
