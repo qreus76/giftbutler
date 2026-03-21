@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, DM_Serif_Display } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { RotateCcw } from "lucide-react";
@@ -11,6 +11,12 @@ const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
   variable: "--font-dm-serif",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"),
