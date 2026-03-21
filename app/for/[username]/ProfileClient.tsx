@@ -641,6 +641,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                   value={occasion}
                   onChange={e => setOccasion(e.target.value)}
                   placeholder="Birthday, Graduation, Mother's Day..."
+                  autoComplete="off"
                   className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]"
                 />
                 {!occasion && (
@@ -1087,6 +1088,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
                         onChange={e => setNewOccasionName(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && !isBirthday && addOccasion()}
                         placeholder="e.g. Graduation, Mother's Day..."
+                        autoComplete="off"
                         className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                       />
                       {!newOccasionName && (
