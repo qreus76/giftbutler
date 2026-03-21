@@ -309,8 +309,8 @@ export default function MyPeoplePage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <a href={`/for/${person.username}`} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 font-semibold rounded-full text-sm transition-colors ${person.status === "pending" ? "bg-[#F0F0E8] text-[#AAAAAA] pointer-events-none" : "bg-[#111111] hover:bg-[#333333] text-white"}`}>
-                        {person.status === "pending" ? "Awaiting confirmation" : <>{`Find a gift`} <ArrowRight className="w-3.5 h-3.5" /></>}
+                      <a href={`/for/${person.username}`} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-full text-sm transition-colors">
+                        Find a gift <ArrowRight className="w-3.5 h-3.5" />
                       </a>
                       {confirmRemove === person.username ? (
                         <>
