@@ -514,7 +514,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
               <Link href="/profile/edit"
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
                 <Pencil className="w-3.5 h-3.5" />
-                Edit
+                Edit profile
               </Link>
             </>
           )}
