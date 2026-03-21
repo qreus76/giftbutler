@@ -469,58 +469,65 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
           </div>
         </div>
 
-        {/* Birthday badge — always shown when birthday is set; clickable for visitors */}
-        {daysUntilBirthday !== null && (
-          isOwner ? (
-            <div className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
-              <Cake className="w-3.5 h-3.5" />
-              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
-            </div>
-          ) : (
-            <button
-              onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
-              className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-              <Cake className="w-3.5 h-3.5" />
-              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
-            </button>
-          )
-        )}
+        {/* Occasions section — birthday + manual occasions */}
+        {(daysUntilBirthday !== null || occasions.length > 0 || (isLoaded && isOwner)) && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-[#888888] uppercase tracking-wide mb-2">
+              {isOwner ? "Your occasions" : "Find a gift for..."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {/* Birthday chip */}
+              {daysUntilBirthday !== null && (
+                isOwner ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+                    <Cake className="w-3.5 h-3.5" />
+                    {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setOccasion("Birthday"); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
+                    <Cake className="w-3.5 h-3.5" />
+                    {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
+                  </button>
+                )
+              )}
 
-        {/* Occasion chips */}
-        {(occasions.length > 0 || (isLoaded && isOwner)) && (
-          <div className="flex flex-wrap gap-2 mt-1 mb-4">
-            {occasions.map(occ => {
-              const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
-              const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
-              if (isOwner) {
+              {/* Manual occasion chips */}
+              {occasions.map(occ => {
+                const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
+                const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
+                if (isOwner) {
+                  return (
+                    <div key={occ.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+                      <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{occ.name}</span>
+                      {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `${daysUntil}d`}</span>}
+                      <button onClick={() => deleteOccasion(occ.id)} className="ml-0.5 text-[#5C3118]/40 hover:text-[#5C3118] transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                }
                 return (
-                  <div key={occ.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
+                  <button key={occ.id}
+                    onClick={() => { setOccasion(occ.name); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
                     <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{occ.name}</span>
-                    {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `${daysUntil}d`}</span>}
-                    <button onClick={() => deleteOccasion(occ.id)} className="ml-0.5 text-[#5C3118]/40 hover:text-[#5C3118] transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                    {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `in ${daysUntil}d`}</span>}
+                  </button>
                 );
-              }
-              return (
-                <button key={occ.id}
-                  onClick={() => { setOccasion(occ.name); window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => setShowFinder(true), 500); }}
+              })}
+
+              {isOwner && (
+                <button onClick={() => setAddingOccasion(true)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                  <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>{occ.name}</span>
-                  {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `in ${daysUntil}d`}</span>}
+                  <Plus className="w-3.5 h-3.5" />
+                  Add occasion
                 </button>
-              );
-            })}
-            {isOwner && (
-              <button onClick={() => setAddingOccasion(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                <Plus className="w-3.5 h-3.5" />
-                Add occasion
-              </button>
-            )}
+              )}
+            </div>
           </div>
         )}
 
