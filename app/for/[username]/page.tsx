@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 import ProfileClient from "./ProfileClient";
 
 interface Props {
@@ -55,7 +55,27 @@ export default async function ProfilePage({ params }: Props) {
     .eq("username", username)
     .single();
 
-  if (!profile) notFound();
+  if (!profile) {
+    // Check if this was a previously valid username — redirect to the new one
+    const { data: history } = await supabaseAdmin
+      .from("username_history")
+      .select("user_id")
+      .eq("old_username", username)
+      .order("changed_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (history) {
+      const { data: current } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", history.user_id)
+        .single();
+      if (current?.username) redirect(`/for/${current.username}`);
+    }
+
+    notFound();
+  }
 
   // Get Clerk profile photo if available
   let avatarUrl: string | null = null;

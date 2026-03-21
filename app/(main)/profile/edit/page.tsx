@@ -13,6 +13,7 @@ export default function EditProfilePage() {
   const [birthday, setBirthday] = useState("");
   const [username, setUsername] = useState("");
   const [currentUsername, setCurrentUsername] = useState("");
+  const [usernameLockedUntil, setUsernameLockedUntil] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -26,6 +27,11 @@ export default function EditProfilePage() {
         setBirthday(data.profile.birthday || "");
         setUsername(data.profile.username || "");
         setCurrentUsername(data.profile.username || "");
+        if (data.profile.username_changed_at) {
+          const changedAt = new Date(data.profile.username_changed_at);
+          const nextAllowed = new Date(changedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+          if (new Date() < nextAllowed) setUsernameLockedUntil(nextAllowed);
+        }
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -100,13 +106,22 @@ export default function EditProfilePage() {
                 <input
                   type="text"
                   value={username}
-                  onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                  className="flex-1 text-[#111111] text-base focus:outline-none font-medium"
+                  onChange={e => !usernameLockedUntil && setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                  disabled={!!usernameLockedUntil}
+                  className="flex-1 text-[#111111] text-base focus:outline-none font-medium disabled:text-[#888888]"
                 />
               </div>
-              {username !== currentUsername && (
-                <p className="text-xs text-[#C4824A] mt-1.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3 flex-shrink-0" /> Your old link will stop working after saving.</p>
-              )}
+              {usernameLockedUntil ? (
+                <p className="text-xs text-[#888888] mt-1.5 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                  Next change available {usernameLockedUntil.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              ) : username !== currentUsername ? (
+                <p className="text-xs text-[#888888] mt-1.5 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                  Old links will automatically redirect to your new username.
+                </p>
+              ) : null}
             </div>
           </div>
 

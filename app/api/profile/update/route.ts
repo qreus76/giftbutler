@@ -9,6 +9,8 @@ const RESERVED_USERNAMES = new Set([
   "giftbutler", "butler", "gift", "gifts", "not-found", "404", "500",
 ]);
 
+const USERNAME_CHANGE_COOLDOWN_DAYS = 30;
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,19 +53,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "That username is reserved — try another" }, { status: 400 });
     }
 
-    // Check availability (exclude current user)
-    const { data: existing } = await supabase
+    // Fetch current profile to check cooldown and get old username
+    const { data: currentProfile } = await supabase
       .from("profiles")
-      .select("id")
-      .eq("username", clean)
-      .neq("id", userId)
+      .select("username, username_changed_at")
+      .eq("id", userId)
       .single();
 
-    if (existing) {
-      return NextResponse.json({ error: "Username already taken — try another" }, { status: 400 });
-    }
+    if (currentProfile && clean !== currentProfile.username) {
+      // Enforce cooldown
+      if (currentProfile.username_changed_at) {
+        const changedAt = new Date(currentProfile.username_changed_at);
+        const cooldownMs = USERNAME_CHANGE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+        const nextAllowed = new Date(changedAt.getTime() + cooldownMs);
+        if (new Date() < nextAllowed) {
+          const dateStr = nextAllowed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+          return NextResponse.json(
+            { error: `You can change your username again on ${dateStr}` },
+            { status: 429 }
+          );
+        }
+      }
 
-    updates.username = clean;
+      // Check availability (exclude current user)
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", clean)
+        .neq("id", userId)
+        .single();
+
+      if (existing) {
+        return NextResponse.json({ error: "Username already taken — try another" }, { status: 400 });
+      }
+
+      // Log old username to history
+      await supabaseAdmin
+        .from("username_history")
+        .insert({ user_id: userId, old_username: currentProfile.username });
+
+      updates.username = clean;
+      updates.username_changed_at = new Date().toISOString();
+    }
   }
 
   const { error } = await supabaseAdmin
