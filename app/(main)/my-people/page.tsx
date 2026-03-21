@@ -333,7 +333,7 @@ export default function MyPeoplePage() {
                       type="text"
                       value={circleName}
                       onChange={e => setCircleName(e.target.value)}
-                      placeholder="e.g. Smith Family Christmas"
+                      placeholder="e.g. Sarah's Baby Shower, Smith Family Christmas"
                       maxLength={60}
                       className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                     />
@@ -389,7 +389,7 @@ export default function MyPeoplePage() {
               <div className="text-center py-12 bg-white rounded-2xl shadow-card">
                 <Gift className="w-12 h-12 text-[#CCCCCC] mx-auto mb-3" />
                 <p className="font-semibold text-[#111111] mb-1">No Gift Circles yet</p>
-                <p className="text-[#888888] text-sm">Create one for your next Secret Santa or holiday exchange.</p>
+                <p className="text-[#888888] text-sm">Plan a surprise party, coordinate a group gift, or run a Secret Santa — all without spoiling it.</p>
               </div>
             )}
 

@@ -1025,7 +1025,7 @@ export default function ProfileClient({ username, initialProfile, initialHints, 
 
       {/* Add occasion — bottom sheet (mobile) / centered modal (desktop) */}
       {isOwner && addingOccasion && (() => {
-        const isBirthday = newOccasionName.trim().toLowerCase() === "birthday";
+        const isBirthday = newOccasionName.trim().toLowerCase().includes("birthday");
         const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); };
         return (
           <>
