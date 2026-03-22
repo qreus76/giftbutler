@@ -462,12 +462,19 @@ export default function ProfileClient({
   const [editProductOccasionId, setEditProductOccasionId] = useState<string>("hints");
   const [editProductSaving, setEditProductSaving] = useState(false);
 
-  // Collapsible lists (owner view)
-  const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
+  // Collapsible lists (owner view) — persisted; empty = all collapsed by default
+  const LIST_EXPANDED_KEY = `gb_lists_expanded_${username}`;
+  const [expandedLists, setExpandedLists] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(LIST_EXPANDED_KEY);
+      return saved ? new Set<string>(JSON.parse(saved)) : new Set<string>();
+    } catch { return new Set<string>(); }
+  });
   function toggleList(id: string) {
-    setCollapsedLists(prev => {
+    setExpandedLists(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { /* unavailable */ }
       return next;
     });
   }
@@ -1368,7 +1375,7 @@ export default function ProfileClient({
               const occTextHints = occHints.filter(h => !h.url);
               const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
               const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
-              const isCollapsed = collapsedLists.has(occ.id);
+              const isCollapsed = !expandedLists.has(occ.id);
               return (
                 <div key={occ.id} id={`list-${occ.id}`} className="bg-white rounded-2xl shadow-card overflow-hidden">
                   <div className={`px-4 py-3.5 flex items-center justify-between ${!isCollapsed ? "border-b border-[#F0F0E8]" : ""}`}>
@@ -1424,9 +1431,9 @@ export default function ProfileClient({
 
             {/* Hints list section */}
             <div id="list-hints" className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className={`px-4 py-3.5 flex items-center justify-between ${!collapsedLists.has("hints") ? "border-b border-[#F0F0E8]" : ""}`}>
+              <div className={`px-4 py-3.5 flex items-center justify-between ${expandedLists.has("hints") ? "border-b border-[#F0F0E8]" : ""}`}>
                 <button onClick={() => toggleList("hints")} className="flex items-center gap-2 flex-1 text-left">
-                  {collapsedLists.has("hints") ? <ChevronRight className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" />}
+                  {!expandedLists.has("hints") ? <ChevronRight className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" />}
                   <span className="font-bold text-[#111111] text-sm">Hints</span>
                   {generalHints.length > 0 && <span className="text-xs text-[#888888]">{generalHints.length}</span>}
                 </button>
@@ -1444,7 +1451,7 @@ export default function ProfileClient({
                 </div>
               </div>
 
-              {!collapsedLists.has("hints") && (generalProductHints.length === 0 && generalTextHints.length === 0 ? (
+              {expandedLists.has("hints") && (generalProductHints.length === 0 && generalTextHints.length === 0 ? (
                 <div className="p-6 text-center">
                   <p className="font-bold text-[#111111] text-sm mb-1">Drop hints for AI-powered suggestions</p>
                   <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
@@ -1461,7 +1468,7 @@ export default function ProfileClient({
               ))}
 
               {/* Progress nudge */}
-              {!collapsedLists.has("hints") && generalTextHints.length >= 1 && generalTextHints.length < 5 && (
+              {expandedLists.has("hints") && generalTextHints.length >= 1 && generalTextHints.length < 5 && (
                 <div className="mx-4 mb-4 mt-1 bg-[#C4D4B4] rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs font-bold text-[#2D4A1E]">{generalTextHints.length < 3 ? "Getting started" : "Almost there"}</p>
