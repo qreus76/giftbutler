@@ -272,7 +272,7 @@ export default function OnboardingPage() {
           <h2 className="text-2xl font-bold text-[#111111] mb-2">When&apos;s your birthday?</h2>
           <p className="text-[#888888] text-sm mb-8">We&apos;ll remind you to share your profile before your birthday.</p>
           <div className="bg-white rounded-2xl shadow-card p-5 mb-4">
-            <input type="date" value={birthdayInput} max={new Date(Date.now() + 86400000).toISOString().split("T")[0]} min="1900-01-01" onChange={e => setBirthdayInput(e.target.value)}
+            <input type="date" value={birthdayInput} max={new Date().toISOString().split("T")[0]} min="1900-01-01" onChange={e => setBirthdayInput(e.target.value)}
               className="w-full text-[#111111] text-base focus:outline-none" />
           </div>
           <button onClick={saveBirthday} disabled={savingBirthday || !birthdayInput}
