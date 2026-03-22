@@ -72,6 +72,7 @@ export default function OnboardingPage() {
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [sendError, setSendError] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isQuiz = step < QUIZ_STEPS.length;
   const currentQuiz = QUIZ_STEPS[step];
@@ -142,13 +143,19 @@ export default function OnboardingPage() {
   async function sendFollowRequest(searchUsername: string) {
     if (!selectedLabel) return;
     setSendingRequest(true);
-    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: searchUsername, label: selectedLabel }) });
-    setSentRequests(prev => [...prev, searchUsername]);
-    setSearchResults([]);
-    setSelectedResult(null);
-    setSearchQuery("");
-    setSelectedLabel("");
+    setSendError("");
+    const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: searchUsername, label: selectedLabel }) });
     setSendingRequest(false);
+    if (res.ok) {
+      setSentRequests(prev => [...prev, searchUsername]);
+      setSearchResults([]);
+      setSelectedResult(null);
+      setSearchQuery("");
+      setSelectedLabel("");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setSendError(data.error || "Couldn't send request — try again");
+    }
   }
 
   async function copyLink() {
@@ -247,6 +254,7 @@ export default function OnboardingPage() {
                           className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
                           {sendingRequest ? "Sending..." : "Send request"}
                         </button>
+                        {sendError && <p className="text-red-500 text-xs mt-1.5 text-center">{sendError}</p>}
                       </div>
                     )}
                   </div>
