@@ -462,9 +462,6 @@ export default function ProfileClient({
   const [editProductOccasionId, setEditProductOccasionId] = useState<string>("hints");
   const [editProductSaving, setEditProductSaving] = useState(false);
 
-  // Add hint sheet
-  const [addingHint, setAddingHint] = useState(false);
-
   // Collapsible lists (owner view)
   const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
   function toggleList(id: string) {
@@ -555,22 +552,6 @@ export default function ProfileClient({
   ];
 
   // ── Effects ───────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!addingHint) return;
-    const scrollY = window.scrollY;
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [addingHint]);
-
   useEffect(() => {
     if (!addingOccasion) return;
     const scrollY = window.scrollY;
@@ -889,7 +870,6 @@ export default function ProfileClient({
       if (!res.ok) throw new Error(data.error || "Failed to add");
       setHints([data, ...hints]);
       setHintUrl(""); setEnrichedProduct(null); setHintMode("text");
-      setAddingHint(false);
     } catch (e: unknown) {
       setAddError(e instanceof Error ? e.message : "Failed to add — try again");
     } finally { setAdding(false); }
@@ -1159,6 +1139,228 @@ export default function ProfileClient({
         {/* ═══ OWNER VIEW ══════════════════════════════════════════════════════ */}
         {isOwner && (
           <>
+            {/* Add to wishlist form */}
+            <div className="bg-white rounded-2xl shadow-card p-5">
+              {/* List picker */}
+              {(occasions.length > 0 || hintCategory !== "avoid") && (
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-2">Add to list</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setSelectedAddList("hints")}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedAddList === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                      Hints
+                    </button>
+                    {occasions.map(o => (
+                      <button key={o.id} onClick={() => setSelectedAddList(o.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedAddList === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                        {o.name}
+                      </button>
+                    ))}
+                    <button onClick={() => setAddingOccasion(true)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F0F0E8] text-[#888888] hover:bg-[#E0E0D8] hover:text-[#111111] transition-all flex items-center gap-1">
+                      <Plus className="w-3 h-3" /> New list
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode tabs */}
+              <div className="flex gap-1 p-1 bg-[#F0F0E8] rounded-xl mb-4">
+                {([
+                  { id: "text",     label: "Describe",     Icon: Lightbulb },
+                  { id: "link",     label: "Paste a link", Icon: Link2 },
+                  { id: "discover", label: "Discover",     Icon: Sparkles },
+                ] as const).map(({ id, label, Icon }) => (
+                  <button key={id} onClick={() => setHintMode(id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === id ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
+                    <Icon className="w-3.5 h-3.5" /> {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ─── Describe mode ─── */}
+              {hintMode === "text" && (
+                <form onSubmit={addHint} className="flex flex-col gap-3">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {HINT_CATEGORIES.map(c => (
+                      <button key={c.id} type="button" onClick={() => setHintCategory(c.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={newHint}
+                    onChange={e => setNewHint(e.target.value)}
+                    placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || ""}
+                    maxLength={280}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none resize-none"
+                  />
+                  <div className="flex items-center justify-end">
+                    <span className={`text-xs ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</span>
+                  </div>
+                  {addError && <p className="text-red-500 text-xs">{addError}</p>}
+                  <button type="submit" disabled={!newHint.trim() || adding}
+                    className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                    {adding ? "Adding..." : "Add hint"}
+                  </button>
+                </form>
+              )}
+
+              {/* ─── Link mode ─── */}
+              {hintMode === "link" && (
+                <div className="flex flex-col gap-3">
+                  {!enrichedProduct ? (
+                    <>
+                      <input type="url" value={hintUrl} onChange={e => setHintUrl(e.target.value)}
+                        placeholder="Paste a product link..."
+                        autoComplete="off"
+                        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                      />
+                      {enrichError && <p className="text-red-500 text-xs">{enrichError}</p>}
+                      <button onClick={enrichUrl} disabled={!hintUrl.trim() || enriching}
+                        className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                        {enriching ? "Reading link..." : "Look up item"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex gap-3 p-3 bg-[#F5F5F0] rounded-xl">
+                        {enrichedProduct.image && (
+                          <img src={enrichedProduct.image} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#111111] text-sm leading-snug line-clamp-2">{enrichedProduct.title}</p>
+                          {enrichedProduct.price && <p className="text-sm font-bold text-[#111111] mt-0.5">{enrichedProduct.price}</p>}
+                        </div>
+                      </div>
+                      {addError && <p className="text-red-500 text-xs">{addError}</p>}
+                      <button onClick={addLinkHint} disabled={adding}
+                        className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
+                        {adding ? "Saving..." : "Save to wishlist"}
+                      </button>
+                      <button onClick={() => { setEnrichedProduct(null); setHintUrl(""); setEnrichError(""); }}
+                        className="w-full py-2 text-[#888888] hover:text-[#111111] text-sm font-semibold transition-colors">
+                        Use a different link
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ─── Discover mode ─── */}
+              {hintMode === "discover" && (() => {
+                const listOccasion = selectedAddList !== "hints" ? (occasions.find(o => o.id === selectedAddList)?.name ?? "") : "";
+                const effectiveOccasion = listOccasion || discoveryOccasion;
+                return (
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Budget</label>
+                      <select value={discoveryBudget} onChange={e => setDiscoveryBudget(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
+                        <option value="">Select budget...</option>
+                        <option value="under $25">Under $25</option>
+                        <option value="$25-$50">$25 – $50</option>
+                        <option value="$50-$100">$50 – $100</option>
+                        <option value="$100-$200">$100 – $200</option>
+                        <option value="over $200">$200+</option>
+                      </select>
+                    </div>
+                    {listOccasion ? (
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4]">
+                        <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
+                        <span className="text-sm font-semibold text-[#2D4A1E]">{listOccasion}</span>
+                        <span className="text-xs text-[#2D4A1E]/60">from selected list</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
+                          Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
+                        </label>
+                        <input type="text" value={discoveryOccasion} onChange={e => setDiscoveryOccasion(e.target.value)}
+                          placeholder="Birthday, Christmas..."
+                          autoComplete="off"
+                          className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]"
+                        />
+                        {!discoveryOccasion && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {Array.from(new Set(["Birthday","Christmas","Mother's Day","Father's Day","Valentine's Day","Graduation",...occasions.map(o => o.name)])).map(s => (
+                              <button key={s} type="button" onClick={() => setDiscoveryOccasion(s)}
+                                className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {discoveryError && <p className="text-red-500 text-xs">{discoveryError}</p>}
+                    {discoveryGenerating ? (
+                      <div className="py-6 text-center">
+                        <div className="flex justify-center gap-2 mb-3">
+                          {[0, 1, 2].map(i => (
+                            <div key={i} className="w-2.5 h-2.5 rounded-full bg-[#C4D4B4] animate-bounce" style={{ animationDelay: `${i * 160}ms` }} />
+                          ))}
+                        </div>
+                        <p className="text-sm font-semibold text-[#111111] transition-opacity duration-300" style={{ opacity: discoveryMsgVisible ? 1 : 0 }}>
+                          {LOADING_MESSAGES[discoveryMsgIdx]}
+                        </p>
+                      </div>
+                    ) : discoveryRecs.length > 0 ? (
+                      <div className="flex flex-col gap-3">
+                        {discoveryRecs.map((rec, idx) => {
+                          const saved = savedDiscoveryRecs.has(idx);
+                          const targetList = discoveryRecTargetList[idx] ?? selectedAddList;
+                          return (
+                            <div key={idx} className="bg-[#F5F5F0] rounded-2xl p-3">
+                              <p className="font-semibold text-[#111111] text-sm leading-snug mb-0.5">{rec.title}</p>
+                              <p className="text-base font-bold text-[#111111] mb-1">{rec.priceRange}</p>
+                              <p className="text-xs text-[#888888] leading-relaxed mb-2">{rec.why}</p>
+                              {occasions.length > 0 && (
+                                <div className="flex gap-1.5 flex-wrap mb-2">
+                                  <span className="text-xs text-[#888888] self-center flex-shrink-0">Save to:</span>
+                                  <button onClick={() => setDiscoveryRecTargetList(prev => ({ ...prev, [idx]: "hints" }))}
+                                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${targetList === "hints" ? "bg-[#111111] text-white" : "bg-[#E0E0D8] text-[#111111] hover:bg-[#D0D0C8]"}`}>
+                                    Hints
+                                  </button>
+                                  {occasions.map(o => (
+                                    <button key={o.id} onClick={() => setDiscoveryRecTargetList(prev => ({ ...prev, [idx]: o.id }))}
+                                      className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${targetList === o.id ? "bg-[#111111] text-white" : "bg-[#E0E0D8] text-[#111111] hover:bg-[#D0D0C8]"}`}>
+                                      {o.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="flex gap-2">
+                                <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
+                                  className="flex-1 py-2 bg-[#111111] text-white font-bold rounded-full text-xs text-center flex items-center justify-center gap-1">
+                                  View <ExternalLink className="w-3 h-3" />
+                                </a>
+                                <button onClick={() => saveDiscoveryRec(rec, idx)} disabled={saved}
+                                  className="flex-1 py-2 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-xs transition-colors">
+                                  {saved ? <span className="flex items-center justify-center gap-1"><Check className="w-3 h-3" /> Saved</span> : "Save"}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <button onClick={() => { setDiscoveryRecs([]); setDiscoveryRecTargetList({}); setSavedDiscoveryRecs(new Set()); }}
+                          className="w-full py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">
+                          Try different options
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => generateSelfDiscovery(effectiveOccasion || undefined)} disabled={!discoveryBudget}
+                        className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2">
+                        <Sparkles className="w-4 h-4" /> Discover gift ideas
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Occasion list sections */}
             {occasions.map(occ => {
               const occHints = hints.filter(h => (h.occasion_id ?? null) === occ.id && h.category !== "avoid");
@@ -1286,7 +1488,7 @@ export default function ProfileClient({
 
             {/* Avoid nudge */}
             {avoidHints.length === 0 && hints.length > 0 && (
-              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); setHintMode("text"); setAddingHint(true); }}
+              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); setHintMode("text"); }}
                 className="w-full px-4 py-3.5 bg-white rounded-2xl shadow-card text-left hover:bg-[#F0F0E8] transition-colors border-2 border-dashed border-[#E0E0D8] hover:border-red-300">
                 <p className="text-sm font-semibold text-[#888888] hover:text-red-500">+ What should people NOT get you?</p>
                 <p className="text-xs text-[#AAAAAA] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
@@ -1641,16 +1843,6 @@ export default function ProfileClient({
 
       {isLoaded && user && <BottomTabBar myUsername={myUsername} />}
 
-      {/* Floating Add hint button */}
-      {isOwner && !addingHint && (
-        <button
-          onClick={() => setAddingHint(true)}
-          className="fixed z-10 flex items-center gap-2 px-5 py-3 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full shadow-lg transition-colors"
-          style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px) + 12px)", left: "50%", transform: "translateX(-50%)" }}>
-          <Plus className="w-4 h-4" /> Add hint
-        </button>
-      )}
-
       {/* Add occasion sheet */}
       {isOwner && addingOccasion && (() => {
         const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); setAddHolidayAutoDate(null); };
@@ -1825,254 +2017,6 @@ export default function ProfileClient({
                       Delete this list
                     </button>
                   </div>
-                </div>
-              </div>
-            </div>
-          </>
-        );
-      })()}
-      {/* Add hint sheet */}
-      {isOwner && addingHint && (() => {
-        const closeSheet = () => {
-          setAddingHint(false);
-          setNewHint("");
-          setHintUrl("");
-          setEnrichedProduct(null);
-          setEnrichError("");
-          setAddError("");
-        };
-        const listOccasion = selectedAddList !== "hints" ? (occasions.find(o => o.id === selectedAddList)?.name ?? "") : "";
-        const effectiveDiscoverOccasion = listOccasion || discoveryOccasion;
-        return (
-          <>
-            <div className="gb-backdrop fixed inset-0 z-50 bg-black/40" onClick={closeSheet} />
-            <div className="gb-sheet fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
-              <div className="pointer-events-auto w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="pt-3 pb-1 flex justify-center md:hidden">
-                  <div className="w-10 h-1 bg-[#E0E0D8] rounded-full" />
-                </div>
-                <div className="px-6 pt-4 pb-6 overflow-y-auto" style={{ maxHeight: "85svh", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-lg font-bold text-[#111111]">Add a hint</p>
-                    <button onClick={closeSheet} className="p-1.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] rounded-full text-[#888888] hover:text-[#111111] transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* List picker */}
-                  <div className="mb-4">
-                    <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-2">Add to list</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      <button onClick={() => setSelectedAddList("hints")}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedAddList === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                        Hints
-                      </button>
-                      {occasions.map(o => (
-                        <button key={o.id} onClick={() => setSelectedAddList(o.id)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedAddList === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                          {o.name}
-                        </button>
-                      ))}
-                      <button onClick={() => { setAddingHint(false); setAddingOccasion(true); }}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F0F0E8] text-[#888888] hover:bg-[#E0E0D8] hover:text-[#111111] transition-all flex items-center gap-1">
-                        <Plus className="w-3 h-3" /> New list
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Mode tabs */}
-                  <div className="flex gap-1 p-1 bg-[#F0F0E8] rounded-xl mb-4">
-                    {([
-                      { id: "text",     label: "Describe",     Icon: Lightbulb },
-                      { id: "link",     label: "Paste a link", Icon: Link2 },
-                      { id: "discover", label: "Discover",     Icon: Sparkles },
-                    ] as const).map(({ id, label, Icon }) => (
-                      <button key={id} onClick={() => setHintMode(id)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === id ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
-                        <Icon className="w-3.5 h-3.5" /> {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* ─── Describe mode ─── */}
-                  {hintMode === "text" && (
-                    <form onSubmit={addHint} className="flex flex-col gap-3">
-                      <div className="flex gap-1.5 flex-wrap">
-                        {HINT_CATEGORIES.map(c => (
-                          <button key={c.id} type="button" onClick={() => setHintCategory(c.id)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${hintCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                            {c.label}
-                          </button>
-                        ))}
-                      </div>
-                      <textarea
-                        value={newHint}
-                        onChange={e => setNewHint(e.target.value)}
-                        placeholder={HINT_CATEGORIES.find(c => c.id === hintCategory)?.placeholder || ""}
-                        maxLength={280}
-                        rows={3}
-                        autoFocus
-                        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none resize-none"
-                      />
-                      <div className="flex items-center justify-end">
-                        <span className={`text-xs ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</span>
-                      </div>
-                      {addError && <p className="text-red-500 text-xs">{addError}</p>}
-                      <button type="submit" disabled={!newHint.trim() || adding}
-                        className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
-                        {adding ? "Adding..." : "Add hint"}
-                      </button>
-                    </form>
-                  )}
-
-                  {/* ─── Link mode ─── */}
-                  {hintMode === "link" && (
-                    <div className="flex flex-col gap-3">
-                      {!enrichedProduct ? (
-                        <>
-                          <input type="url" value={hintUrl} onChange={e => setHintUrl(e.target.value)}
-                            placeholder="Paste a product link..."
-                            autoComplete="off"
-                            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
-                          />
-                          {enrichError && <p className="text-red-500 text-xs">{enrichError}</p>}
-                          <button onClick={enrichUrl} disabled={!hintUrl.trim() || enriching}
-                            className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
-                            {enriching ? "Reading link..." : "Look up item"}
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex gap-3 p-3 bg-[#F5F5F0] rounded-xl">
-                            {enrichedProduct.image && (
-                              <img src={enrichedProduct.image} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-[#111111] text-sm leading-snug line-clamp-2">{enrichedProduct.title}</p>
-                              {enrichedProduct.price && <p className="text-sm font-bold text-[#111111] mt-0.5">{enrichedProduct.price}</p>}
-                            </div>
-                          </div>
-                          {addError && <p className="text-red-500 text-xs">{addError}</p>}
-                          <button onClick={addLinkHint} disabled={adding}
-                            className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
-                            {adding ? "Saving..." : "Save to wishlist"}
-                          </button>
-                          <button onClick={() => { setEnrichedProduct(null); setHintUrl(""); setEnrichError(""); }}
-                            className="w-full py-2.5 text-[#888888] hover:text-[#111111] text-sm font-semibold transition-colors">
-                            Use a different link
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ─── Discover mode ─── */}
-                  {hintMode === "discover" && (
-                    <div className="flex flex-col gap-3">
-                      <div>
-                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">Budget</label>
-                        <select value={discoveryBudget} onChange={e => setDiscoveryBudget(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
-                          <option value="">Select budget...</option>
-                          <option value="under $25">Under $25</option>
-                          <option value="$25-$50">$25 – $50</option>
-                          <option value="$50-$100">$50 – $100</option>
-                          <option value="$100-$200">$100 – $200</option>
-                          <option value="over $200">$200+</option>
-                        </select>
-                      </div>
-                      {listOccasion ? (
-                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4]">
-                          <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
-                          <span className="text-sm font-semibold text-[#2D4A1E]">{listOccasion}</span>
-                          <span className="text-xs text-[#2D4A1E]/60">from selected list</span>
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
-                            Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
-                          </label>
-                          <input type="text" value={discoveryOccasion} onChange={e => setDiscoveryOccasion(e.target.value)}
-                            placeholder="Birthday, Christmas..."
-                            autoComplete="off"
-                            className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]"
-                          />
-                          {!discoveryOccasion && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {Array.from(new Set(["Birthday","Christmas","Mother's Day","Father's Day","Valentine's Day","Graduation",...occasions.map(o => o.name)])).map(s => (
-                                <button key={s} type="button" onClick={() => setDiscoveryOccasion(s)}
-                                  className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {discoveryError && <p className="text-red-500 text-xs">{discoveryError}</p>}
-                      {discoveryGenerating ? (
-                        <div className="py-6 text-center">
-                          <div className="flex justify-center gap-2 mb-3">
-                            {[0, 1, 2].map(i => (
-                              <div key={i} className="w-2.5 h-2.5 rounded-full bg-[#C4D4B4] animate-bounce" style={{ animationDelay: `${i * 160}ms` }} />
-                            ))}
-                          </div>
-                          <p className="text-sm font-semibold text-[#111111] transition-opacity duration-300" style={{ opacity: discoveryMsgVisible ? 1 : 0 }}>
-                            {LOADING_MESSAGES[discoveryMsgIdx]}
-                          </p>
-                        </div>
-                      ) : discoveryRecs.length > 0 ? (
-                        <div className="flex flex-col gap-3">
-                          {discoveryRecs.map((rec, idx) => {
-                            const saved = savedDiscoveryRecs.has(idx);
-                            const targetList = discoveryRecTargetList[idx] ?? selectedAddList;
-                            return (
-                              <div key={idx} className="bg-[#F5F5F0] rounded-2xl p-3">
-                                <p className="font-semibold text-[#111111] text-sm leading-snug mb-0.5">{rec.title}</p>
-                                <p className="text-base font-bold text-[#111111] mb-1">{rec.priceRange}</p>
-                                <p className="text-xs text-[#888888] leading-relaxed mb-2">{rec.why}</p>
-                                {occasions.length > 0 && (
-                                  <div className="flex gap-1.5 flex-wrap mb-2">
-                                    <span className="text-xs text-[#888888] self-center flex-shrink-0">Save to:</span>
-                                    <button onClick={() => setDiscoveryRecTargetList(prev => ({ ...prev, [idx]: "hints" }))}
-                                      className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${targetList === "hints" ? "bg-[#111111] text-white" : "bg-[#E0E0D8] text-[#111111] hover:bg-[#D0D0C8]"}`}>
-                                      Hints
-                                    </button>
-                                    {occasions.map(o => (
-                                      <button key={o.id} onClick={() => setDiscoveryRecTargetList(prev => ({ ...prev, [idx]: o.id }))}
-                                        className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${targetList === o.id ? "bg-[#111111] text-white" : "bg-[#E0E0D8] text-[#111111] hover:bg-[#D0D0C8]"}`}>
-                                        {o.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                                <div className="flex gap-2">
-                                  <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
-                                    className="flex-1 py-2 bg-[#111111] text-white font-bold rounded-full text-xs text-center flex items-center justify-center gap-1">
-                                    View <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                  <button onClick={() => saveDiscoveryRec(rec, idx)} disabled={saved}
-                                    className="flex-1 py-2 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-xs transition-colors">
-                                    {saved ? <span className="flex items-center justify-center gap-1"><Check className="w-3 h-3" /> Saved</span> : "Save"}
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          <button onClick={() => { setDiscoveryRecs([]); setDiscoveryRecTargetList({}); setSavedDiscoveryRecs(new Set()); }}
-                            className="w-full py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">
-                            Try different options
-                          </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => generateSelfDiscovery(effectiveDiscoverOccasion || undefined)} disabled={!discoveryBudget}
-                          className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2">
-                          <Sparkles className="w-4 h-4" /> Discover gift ideas
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
