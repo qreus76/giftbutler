@@ -432,16 +432,25 @@ export default function ProfileClient({
   }
 
   async function saveDiscoveryRec(rec: GiftRecommendation, idx: number) {
+    // Optimistically mark as saving so button disables
+    setSavedDiscoveryRecs(prev => new Set(prev).add(idx));
     const targetList = discoveryRecTargetList[idx] ?? selectedAddList;
     const occId = targetList !== "hints" ? targetList : null;
-    const res = await fetch("/api/hints", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: rec.title, category: "want", url: rec.searchUrl, product_title: rec.title, product_price: rec.priceRange, occasion_id: occId }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setHints(prev => [data, ...prev]);
-      setSavedDiscoveryRecs(prev => new Set(prev).add(idx));
+    try {
+      const res = await fetch("/api/hints", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: rec.title, category: "want", url: rec.searchUrl, product_title: rec.title, product_price: rec.priceRange, occasion_id: occId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHints(prev => [data, ...prev]);
+      } else {
+        setSavedDiscoveryRecs(prev => { const s = new Set(prev); s.delete(idx); return s; });
+        setDiscoveryError(data.error || "Couldn't save — try again");
+      }
+    } catch {
+      setSavedDiscoveryRecs(prev => { const s = new Set(prev); s.delete(idx); return s; });
+      setDiscoveryError("Couldn't save — check your connection");
     }
   }
 
@@ -670,7 +679,7 @@ export default function ProfileClient({
     } else {
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
+      setTimeout(() => setShareCopied(false), 3000);
     }
   }
 
@@ -720,7 +729,7 @@ export default function ProfileClient({
         disabled={!iMineThis && (alreadyClaimed || claiming === title)}
         className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors"
       >
-        {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Taken</span> : "I'm getting this"}
+        {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> I&apos;m getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Someone&apos;s on it</span> : "I'm getting this"}
       </button>
     );
   }
@@ -936,7 +945,7 @@ export default function ProfileClient({
               </div>
             ) : (
               <button
-                onClick={() => { setOccasion("Birthday"); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                onClick={() => { setOccasion("Birthday"); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
                 <Cake className="w-3.5 h-3.5" />
                 {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
@@ -953,7 +962,7 @@ export default function ProfileClient({
               const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
               return (
                 <button key={occ.id}
-                  onClick={() => { setOccasion(occ.name); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                  onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
                   <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{occ.name}</span>
@@ -1067,15 +1076,15 @@ export default function ProfileClient({
 
               {/* Mode tabs */}
               <div className="flex bg-[#F5F5F0] rounded-xl p-1 gap-1 mb-4">
-                <button onClick={() => { setHintMode("text"); setEnrichError(""); setEnrichedProduct(null); setDiscoveryRecs([]); }}
+                <button onClick={() => { setHintMode("text"); setEnrichError(""); setEnrichedProduct(null); setDiscoveryRecs([]); setAddError(""); }}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "text" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
                   Describe it
                 </button>
-                <button onClick={() => { setHintMode("link"); setAddError(""); setNewHint(""); setDiscoveryRecs([]); }}
+                <button onClick={() => { setHintMode("link"); setAddError(""); setEnrichError(""); setEnrichedProduct(null); setNewHint(""); setDiscoveryRecs([]); }}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "link" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
                   <Link2 className="w-3.5 h-3.5" /> Paste a link
                 </button>
-                <button onClick={() => { setHintMode("discover"); setAddError(""); setNewHint(""); }}
+                <button onClick={() => { setHintMode("discover"); setAddError(""); setEnrichError(""); setEnrichedProduct(null); setNewHint(""); }}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${hintMode === "discover" ? "bg-white text-[#111111] shadow-sm" : "text-[#888888] hover:text-[#111111]"}`}>
                   <Sparkles className="w-3.5 h-3.5" /> Discover
                 </button>
@@ -1276,9 +1285,12 @@ export default function ProfileClient({
                       />
                       <button onClick={() => openEditOccasion(occ)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                       {confirmDeleteOccasion === occ.id ? (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => deleteOccasion(occ.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                          <button onClick={() => setConfirmDeleteOccasion(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="text-xs text-[#888888]">Hints move to your general list</p>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => deleteOccasion(occ.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                            <button onClick={() => setConfirmDeleteOccasion(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                          </div>
                         </div>
                       ) : (
                         <button onClick={() => setConfirmDeleteOccasion(occ.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
@@ -1287,7 +1299,8 @@ export default function ProfileClient({
                   </div>
                   {occHints.length === 0 ? (
                     <div className="px-4 py-5 text-center">
-                      <p className="text-xs text-[#CCCCCC]">No items yet — select <strong>{occ.name}</strong> above and add hints or paste a link</p>
+                      <p className="text-xs text-[#CCCCCC]">Nothing here yet</p>
+                      <p className="text-xs text-[#CCCCCC] mt-1">Pick <strong>{occ.name}</strong> in the list above, then add hints or paste a link</p>
                     </div>
                   ) : (
                     <div>
@@ -1420,7 +1433,7 @@ export default function ProfileClient({
                     )}
                   </div>
                   <button
-                    onClick={() => { setOccasion(occ.name); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                    onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                     className="mt-3 w-full py-2.5 bg-[#ECC8AE] hover:bg-[#E4B89C] text-[#5C3118] font-bold rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
                     <Sparkles className="w-3.5 h-3.5" /> Find a {occ.name} gift with AI
                   </button>
@@ -1784,6 +1797,7 @@ export default function ProfileClient({
                           </div>
                         ) : (
                           <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
+                            min={new Date().toISOString().split("T")[0]}
                             className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
                         )}
                       </div>
@@ -1867,6 +1881,7 @@ export default function ProfileClient({
                           </div>
                         ) : (
                           <input type="date" value={editOccasionDate} onChange={e => setEditOccasionDate(e.target.value)}
+                            min={new Date().toISOString().split("T")[0]}
                             className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
                         )}
                       </div>
