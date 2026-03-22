@@ -380,11 +380,12 @@ interface Props {
   initialOccasions: Occasion[];
   avatarUrl: string | null;
   viewerRelationship: "owner" | "connections" | "pending" | "none";
+  birthday: string | null;
 }
 
 export default function ProfileClient({
   username, initialProfile, initialHints, initialClaims, initialOccasions,
-  avatarUrl, viewerRelationship,
+  avatarUrl, viewerRelationship, birthday,
 }: Props) {
   const { user, isLoaded } = useUser();
   const isOwner = viewerRelationship === "owner";
@@ -613,8 +614,8 @@ export default function ProfileClient({
 
   useEffect(() => {
     let auto = getNextHolidayDate(newOccasionName);
-    if (!auto && newOccasionName.trim().toLowerCase().includes("birthday") && profile.birthday) {
-      const parts = profile.birthday.split("-");
+    if (!auto && newOccasionName.trim().toLowerCase().includes("birthday") && birthday) {
+      const parts = birthday.split("-");
       const month = parseInt(parts[1]) - 1;
       const day = parseInt(parts[2]);
       const today = new Date(); today.setHours(0, 0, 0, 0);

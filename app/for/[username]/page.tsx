@@ -182,6 +182,7 @@ export default async function ProfilePage({ params }: Props) {
       initialOccasions={visibleOccasions}
       avatarUrl={avatarUrl}
       viewerRelationship={viewerRelationship}
+      birthday={profile.birthday ?? null}
     />
   );
 }
