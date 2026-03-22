@@ -727,8 +727,8 @@ export default function ProfileClient({
       if (saved) { const data = JSON.parse(saved); sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, myClaims: newClaims })); }
     } catch { /* unavailable */ }
     fetch("/api/claims", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipient_username: username, gift_description: title, occasion }) })
-      .then(r => { if (!r.ok) { setMyClaims(myClaims); setExistingClaims(existingClaims); } else { setNotifyPromptTitle(title); } })
-      .catch(() => { setMyClaims(myClaims); setExistingClaims(existingClaims); })
+      .then(r => { if (!r.ok) { setMyClaims(myClaims); setExistingClaims(existingClaims); setActionError("Couldn't save claim — try again"); setTimeout(() => setActionError(""), 3000); } else { setNotifyPromptTitle(title); } })
+      .catch(() => { setMyClaims(myClaims); setExistingClaims(existingClaims); setActionError("Couldn't save claim — try again"); setTimeout(() => setActionError(""), 3000); })
       .finally(() => setClaiming(null));
   }
 
@@ -967,7 +967,10 @@ export default function ProfileClient({
   return (
     <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
       {actionError && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">{actionError}</div>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError("")} className="text-white/70 hover:text-white transition-colors"><X className="w-3.5 h-3.5" /></button>
+        </div>
       )}
 
       {/* Header */}
@@ -1258,7 +1261,7 @@ export default function ProfileClient({
                       className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
                     {!discoveryOccasion && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {["Birthday", "Christmas", "Mother's Day", "Father's Day", "Anniversary", "Just Because", ...occasions.map(o => o.name)].map(s => (
+                        {Array.from(new Set(["Birthday", "Christmas", "Mother's Day", "Father's Day", "Anniversary", "Just Because", ...occasions.map(o => o.name)])).map(s => (
                           <button key={s} type="button" onClick={() => setDiscoveryOccasion(s)}
                             className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
                             {s}
@@ -1281,6 +1284,12 @@ export default function ProfileClient({
                         {LOADING_MESSAGES[discoveryMsgIdx]}
                       </p>
                       <p className="text-xs text-[#888888]">Finding gifts you&apos;d genuinely love</p>
+                    </div>
+                  )}
+                  {!discoveryGenerating && discoveryRecs.length === 0 && hints.length === 0 && (
+                    <div className="bg-[#F5F5F0] rounded-xl p-3 flex items-start gap-2">
+                      <Lightbulb className="w-3.5 h-3.5 text-[#888888] flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-[#888888]">Add some hints first — without context, suggestions will be generic.</p>
                     </div>
                   )}
                   {!discoveryGenerating && discoveryRecs.length === 0 && (
@@ -1321,7 +1330,7 @@ export default function ProfileClient({
                           </div>
                         </div>
                       ))}
-                      <button onClick={() => { setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); }}
+                      <button onClick={() => { setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); setDiscoveryRecTargetList({}); }}
                         className="w-full py-2 text-xs text-[#888888] hover:text-[#111111] transition-colors">
                         Try different options
                       </button>
@@ -1491,10 +1500,13 @@ export default function ProfileClient({
               const occProducts = occHints.filter(h => h.url);
               const occTextHints = occHints.filter(h => !h.url);
               if (occHints.length === 0) return null;
+              const occDaysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
+              const occIsUpcoming = occDaysUntil !== null && occDaysUntil >= 0 && occDaysUntil <= 60;
               return (
                 <div key={occ.id}>
                   <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5">
                     <CalendarDays className="w-3.5 h-3.5" /> {occ.name}
+                    {occIsUpcoming && <span className="font-normal normal-case">{occDaysUntil === 0 ? "· today" : `· in ${occDaysUntil}d`}</span>}
                   </p>
                   <div className="flex flex-col gap-3">
                     {occProducts.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} {...productHintCardProps} />)}
@@ -1742,7 +1754,7 @@ export default function ProfileClient({
                     )}
                     <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
                       className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
-                      Try again
+                      Search again
                     </button>
                   </div>
                 </div>
