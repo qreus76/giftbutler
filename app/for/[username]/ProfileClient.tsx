@@ -832,6 +832,13 @@ export default function ProfileClient({
     const newOccId = editHintOccasionId === "hints" ? null : editHintOccasionId;
     setHints(hints.map(h => h.id === id ? { ...h, content: editContent.trim(), category: editCategory, occasion_id: newOccId } : h));
     setEditingHintId(null);
+    const targetList = editCategory === "avoid" ? "avoid" : (editHintOccasionId !== "hints" ? editHintOccasionId : "hints");
+    setExpandedLists(prev => {
+      if (prev.has(targetList)) return prev;
+      const next = new Set(prev); next.add(targetList);
+      try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { }
+      return next;
+    });
     try {
       const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editContent.trim(), category: editCategory, occasion_id: newOccId }) });
       if (!res.ok) setHints(prev);
@@ -851,6 +858,13 @@ export default function ProfileClient({
     const newOccId = editProductOccasionId === "hints" ? null : editProductOccasionId;
     setHints(hints.map(h => h.id === id ? { ...h, product_title: editProductTitle.trim(), content: editProductTitle.trim(), occasion_id: newOccId } : h));
     setEditingProductHintId(null);
+    const targetList = editProductOccasionId !== "hints" ? editProductOccasionId : "hints";
+    setExpandedLists(prev => {
+      if (prev.has(targetList)) return prev;
+      const next = new Set(prev); next.add(targetList);
+      try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { }
+      return next;
+    });
     try {
       const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editProductTitle.trim(), occasion_id: newOccId }) });
       if (!res.ok) setHints(prev);
@@ -1157,8 +1171,8 @@ export default function ProfileClient({
           <>
             {/* Add to wishlist form */}
             <div ref={addHintFormRef} className="bg-white rounded-2xl shadow-card p-5">
-              {/* List picker */}
-              {(occasions.length > 0 || hintCategory !== "avoid") && (
+              {/* List picker — hidden when avoid is selected since those always go to the general list */}
+              {hintCategory !== "avoid" && occasions.length > 0 && (
                 <div className="mb-4">
                   <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-2">Add to list</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -1340,6 +1354,12 @@ export default function ProfileClient({
                       </div>
                     ) : discoveryRecs.length > 0 ? (
                       <div className="flex flex-col gap-3">
+                        {savedDiscoveryRecs.size === discoveryRecs.length && (
+                          <div className="flex items-center justify-center gap-2 py-3 text-[#2D4A1E] bg-[#C4D4B4] rounded-2xl">
+                            <Check className="w-4 h-4" />
+                            <p className="text-sm font-bold">All saved to your list!</p>
+                          </div>
+                        )}
                         {discoveryRecs.map((rec, idx) => {
                           const saved = savedDiscoveryRecs.has(idx);
                           if (saved) return null;
