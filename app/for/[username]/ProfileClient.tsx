@@ -901,7 +901,13 @@ export default function ProfileClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setOccasions(prev => [...prev, data]);
-      setSelectedAddList(data.id); // auto-select the new list
+      setSelectedAddList(data.id);
+      // Auto-expand the new list so the owner sees the empty state
+      setExpandedLists(prev => {
+        const next = new Set(prev); next.add(data.id);
+        try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { }
+        return next;
+      });
       setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); setAddingOccasion(false);
     } catch { setOccasionError("Failed to save — try again"); } finally { setSavingOccasion(false); }
   }
@@ -1207,9 +1213,11 @@ export default function ProfileClient({
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none resize-none"
                   />
-                  <div className="flex items-center justify-end">
-                    <span className={`text-xs ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</span>
-                  </div>
+                  {newHint.length > 0 && (
+                    <div className="flex items-center justify-end">
+                      <span className={`text-xs ${newHint.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - newHint.length}</span>
+                    </div>
+                  )}
                   {addError && <p className="text-red-500 text-xs">{addError}</p>}
                   <button type="submit" disabled={!newHint.trim() || adding}
                     className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
@@ -1548,13 +1556,15 @@ export default function ProfileClient({
             {/* Gift Finder area — always first so visitors never have to scroll past hints */}
             <div ref={finderRef}>
               {/* CTA card — shown when finder is closed and no results yet */}
-              {recommendations.length === 0 && !showFinder && !generating && (hintsToShow.length > 0 || occasions.length > 0) && (
+              {recommendations.length === 0 && !showFinder && !generating && (
                 <div className="bg-[#B8CED0] rounded-2xl p-4">
                   <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
                   <p className="text-[#1A3D42] text-sm leading-relaxed mb-3">
                     {generalTextHints.length > 0
                       ? `${displayName} dropped ${generalTextHints.length} gift hint${generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they'd genuinely love.`
-                      : `${displayName} saved specific items they want. Use our AI to find more ideas based on their taste.`}
+                      : hintsToShow.length > 0
+                        ? `${displayName} saved specific items they want. Use our AI to find more ideas based on their taste.`
+                        : `Find the perfect gift for ${displayName}. Tell our AI your relationship and budget — it'll do the rest.`}
                   </p>
                   <button
                     onClick={() => setShowFinder(true)}
