@@ -529,8 +529,6 @@ export default function ProfileClient({
   const daysUntilBirthday = profile.birthday ? getDaysUntilBirthday(profile.birthday) : null;
   const displayName = profile.name || username;
 
-  const showFixedCTA = isLoaded && !isOwner && recommendations.length === 0 && !showFinder;
-
   function getDaysUntilDate(dateStr: string): number {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const target = new Date(dateStr + "T00:00:00");
@@ -1001,7 +999,7 @@ export default function ProfileClient({
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: showFixedCTA ? "calc(5rem + env(safe-area-inset-bottom,0px))" : "5rem" }}>
+    <main className="min-h-screen bg-[#EAEAE0]" style={{ paddingBottom: "5rem" }}>
       {actionError && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">
           <span>{actionError}</span>
@@ -1544,7 +1542,192 @@ export default function ProfileClient({
         {/* ═══ VISITOR VIEW ════════════════════════════════════════════════════ */}
         {!isOwner && (
           <>
-            {/* Occasion sections for visitors */}
+            {/* Gift Finder area — always first so visitors never have to scroll past hints */}
+            <div ref={finderRef}>
+              {/* CTA card — shown when finder is closed and no results yet */}
+              {recommendations.length === 0 && !showFinder && !generating && (hintsToShow.length > 0 || occasions.length > 0) && (() => {
+                try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
+              })() && (
+                <div className="bg-[#B8CED0] rounded-2xl p-4">
+                  <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
+                  <p className="text-[#1A3D42] text-sm leading-relaxed mb-3">
+                    {generalTextHints.length > 0
+                      ? `${displayName} dropped ${generalTextHints.length} gift hint${generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they'd genuinely love.`
+                      : `${displayName} saved specific items they want. Use our AI to find more ideas based on their taste.`}
+                  </p>
+                  <button
+                    onClick={() => setShowFinder(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#1A3D42] hover:bg-[#122c30] text-white font-bold rounded-full text-xs transition-colors">
+                    <Sparkles className="w-3 h-3" /> Find a gift <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* Loading */}
+              {showFinder && recommendations.length === 0 && generating && (
+                <div className="bg-white rounded-2xl shadow-card p-8 text-center overflow-hidden">
+                  <div className="relative w-24 h-24 mx-auto mb-6">
+                    <div className="absolute inset-0 rounded-full bg-[#ECC8AE] animate-ping opacity-20" />
+                    <div className="absolute inset-2 rounded-full bg-[#ECC8AE] animate-ping opacity-30" style={{ animationDelay: "0.4s", animationDuration: "1.2s" }} />
+                    <div className="relative w-24 h-24 rounded-full bg-[#ECC8AE] flex items-center justify-center">
+                      <Sparkles className="w-10 h-10 text-[#5C3118]" />
+                    </div>
+                  </div>
+                  <p className="text-base font-bold text-[#111111] mb-1 transition-opacity duration-300" style={{ opacity: msgVisible ? 1 : 0 }}>
+                    {LOADING_MESSAGES[loadingMsgIdx]}
+                  </p>
+                  <p className="text-xs text-[#888888] mb-6">GiftButler AI is reading all their hints at once</p>
+                  <div className="flex justify-center gap-2">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="w-2.5 h-2.5 rounded-full bg-[#ECC8AE] animate-bounce" style={{ animationDelay: `${i * 160}ms` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Form */}
+              {showFinder && recommendations.length === 0 && !generating && (
+                <div className="bg-white rounded-2xl shadow-card p-5">
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
+                    <button onClick={() => setShowFinder(false)} className="p-1.5 bg-[#F0F0E8] rounded-full text-[#888888] hover:text-[#111111]"><X className="w-4 h-4" /></button>
+                  </div>
+                  <div className="flex flex-col gap-4 mb-5">
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">I&apos;m their</label>
+                      <select ref={relationshipRef} value={relationship} onChange={e => setRelationship(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
+                        <option value="">Select relationship...</option>
+                        <optgroup label="Partner">
+                          {[["husband","Husband"],["wife","Wife"],["partner","Partner"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                        </optgroup>
+                        <optgroup label="Family">
+                          {[["dad","Dad"],["mom","Mom"],["son","Son"],["daughter","Daughter"],["brother","Brother"],["sister","Sister"],["grandfather","Grandfather"],["grandmother","Grandmother"],["grandson","Grandson"],["granddaughter","Granddaughter"],["uncle","Uncle"],["aunt","Aunt"],["nephew","Nephew"],["niece","Niece"],["cousin","Cousin"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                        </optgroup>
+                        <optgroup label="Friends & Others">
+                          {[["best friend","Best Friend"],["friend","Friend"],["colleague","Colleague"],["other","Other"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Budget</label>
+                      <select value={budget} onChange={e => setBudget(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
+                        <option value="">Select budget...</option>
+                        <option value="under $25">Under $25</option>
+                        <option value="$25-$50">$25 – $50</option>
+                        <option value="$50-$100">$50 – $100</option>
+                        <option value="$100-$200">$100 – $200</option>
+                        <option value="over $200">$200+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
+                      <input type="text" value={occasion} onChange={e => setOccasion(e.target.value)} placeholder="Birthday, Graduation, Mother's Day..." autoComplete="off"
+                        className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
+                      {!occasion && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {["Birthday","Mother's Day","Father's Day","Graduation","Anniversary","Wedding","Baby Shower","Holiday","Just Because"].map(s => (
+                            <button key={s} type="button" onClick={() => setOccasion(s)}
+                              className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
+                  <button onClick={generateGifts} disabled={!relationship || !budget}
+                    className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2">
+                    {generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
+                  </button>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {recommendations.length > 0 && (() => {
+                const availableCategories = ["all", ...Array.from(new Set(recommendations.map(r => r.category)))];
+                const filtered = categoryFilter === "all" ? recommendations : recommendations.filter(r => r.category === categoryFilter);
+                const visible = showAllRecs ? filtered : filtered.slice(0, 5);
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="font-bold text-[#111111]">Gift ideas for {displayName}</h2>
+                      <span className="text-xs text-[#888888]">{filtered.length} ideas</span>
+                    </div>
+                    {availableCategories.length > 2 && (
+                      <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-none">
+                        {availableCategories.map(cat => (
+                          <button key={cat} onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
+                            className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${categoryFilter === cat ? "bg-[#111111] text-white" : "bg-white text-[#111111] shadow-card hover:bg-[#F0F0E8]"}`}>
+                            {GIFT_CATEGORY_LABELS[cat] || cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-3">
+                      {visible.map((rec, i) => {
+                        const alreadyClaimed = isAlreadyClaimed(rec.title);
+                        const iMineThis = myClaims.includes(rec.title);
+                        return (
+                          <div key={i} className={`bg-white rounded-2xl shadow-card p-4 ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
+                            <h3 className="font-semibold text-[#111111] text-sm leading-snug mb-1">{rec.title}</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-base font-bold text-[#111111]">{rec.priceRange}</span>
+                              <span className="text-xs text-[#888888]">· {rec.category}</span>
+                              {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
+                            </div>
+                            <p className="text-[#888888] text-xs leading-relaxed mb-3">{rec.why}</p>
+                            <div className="flex gap-2">
+                              <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
+                                className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+                                Find this gift <ArrowRight className="w-3.5 h-3.5" />
+                              </a>
+                              {isLoaded && user && <ClaimButton title={rec.title} {...claimProps} />}
+                            </div>
+                            {notifyPromptTitle === rec.title && (
+                              <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
+                                <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
+                                <div className="flex gap-2 flex-shrink-0">
+                                  <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
+                                  <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
+                                </div>
+                              </div>
+                            )}
+                            {notifySent.has(rec.title) && <p className="mt-2 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {!showAllRecs && filtered.length > 5 && (
+                        <button onClick={() => setShowAllRecs(true)} className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm shadow-card transition-colors">
+                          See all {filtered.length} results
+                        </button>
+                      )}
+                      <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => relationshipRef.current?.focus(), 100); }}
+                        className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
+                        Try different options
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Sign-up CTA for visitors */}
+            {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
+              <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
+                <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
+                <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
+                <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                  Get started <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+
+            {/* Occasion sections */}
             {occasions.map(occ => {
               const occHints = hints.filter(h => (h.occasion_id ?? null) === occ.id && h.category !== "avoid");
               const occProducts = occHints.filter(h => h.url);
@@ -1567,7 +1750,7 @@ export default function ProfileClient({
                     )}
                   </div>
                   <button
-                    onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                    onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                     className="mt-3 w-full py-2.5 bg-[#ECC8AE] hover:bg-[#E4B89C] text-[#5C3118] font-bold rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
                     <Sparkles className="w-3.5 h-3.5" /> Find a {occ.name} gift with AI
                   </button>
@@ -1585,34 +1768,13 @@ export default function ProfileClient({
               </div>
             )}
 
-            {/* Hints section for visitors — teaser shown when there are any visible hints */}
-            {(generalTextHints.length > 0 || (generalProductHints.length > 0 && generalTextHints.length === 0)) && (
-              <div>
-                {recommendations.length === 0 && !showFinder && (() => {
-                  try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
-                })() && (
-                  <div className="bg-[#B8CED0] rounded-2xl p-4 mb-3">
-                    <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
-                    <p className="text-[#1A3D42] text-sm leading-relaxed mb-3">
-                      {generalTextHints.length > 0
-                        ? `${displayName} dropped ${generalTextHints.length} gift hint${generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they'd genuinely love.`
-                        : `${displayName} saved specific items they want. Use our AI to find more ideas based on their taste.`}
-                    </p>
-                    <button
-                      onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#1A3D42] hover:bg-[#122c30] text-white font-bold rounded-full text-xs transition-colors">
-                      <Sparkles className="w-3 h-3" /> Find a gift <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {generalTextHints.length > 0 && (
-                  <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-                    <div className="px-4 py-3.5 border-b border-[#F0F0E8]">
-                      <p className="text-sm font-bold text-[#111111]">{displayName}&apos;s hints</p>
-                    </div>
-                    {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
-                  </div>
-                )}
+            {/* Text hints */}
+            {generalTextHints.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                <div className="px-4 py-3.5 border-b border-[#F0F0E8]">
+                  <p className="text-sm font-bold text-[#111111]">{displayName}&apos;s hints</p>
+                </div>
+                {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
               </div>
             )}
 
@@ -1642,7 +1804,7 @@ export default function ProfileClient({
                       </Link>
                     )}
                     <p className="text-[#AAAAAA] text-xs mt-4">You can still find a gift — just without the personal touch.</p>
-                    <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                    <button onClick={() => setShowFinder(true)}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors mt-2">
                       Find a gift anyway <ArrowRight className="w-4 h-4" />
                     </button>
@@ -1650,175 +1812,12 @@ export default function ProfileClient({
                 ) : (
                   <>
                     <p className="text-[#888888] text-sm mb-4">You can still find gift ideas — just without the personal touch.</p>
-                    <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                    <button onClick={() => setShowFinder(true)}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                       Find a gift anyway <ArrowRight className="w-4 h-4" />
                     </button>
                   </>
                 )}
-              </div>
-            )}
-
-            {/* Gift Finder — loading */}
-            {showFinder && recommendations.length === 0 && generating && (
-              <div className="bg-white rounded-2xl shadow-card p-8 text-center overflow-hidden">
-                <div className="relative w-24 h-24 mx-auto mb-6">
-                  <div className="absolute inset-0 rounded-full bg-[#ECC8AE] animate-ping opacity-20" />
-                  <div className="absolute inset-2 rounded-full bg-[#ECC8AE] animate-ping opacity-30" style={{ animationDelay: "0.4s", animationDuration: "1.2s" }} />
-                  <div className="relative w-24 h-24 rounded-full bg-[#ECC8AE] flex items-center justify-center">
-                    <Sparkles className="w-10 h-10 text-[#5C3118]" />
-                  </div>
-                </div>
-                <p className="text-base font-bold text-[#111111] mb-1 transition-opacity duration-300" style={{ opacity: msgVisible ? 1 : 0 }}>
-                  {LOADING_MESSAGES[loadingMsgIdx]}
-                </p>
-                <p className="text-xs text-[#888888] mb-6">GiftButler AI is reading all their hints at once</p>
-                <div className="flex justify-center gap-2">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="w-2.5 h-2.5 rounded-full bg-[#ECC8AE] animate-bounce" style={{ animationDelay: `${i * 160}ms` }} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Gift Finder — form */}
-            {showFinder && recommendations.length === 0 && !generating && (
-              <div ref={finderRef} className="bg-white rounded-2xl shadow-card p-5">
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-[#111111]">Find the perfect gift</h2>
-                  <button onClick={() => setShowFinder(false)} className="p-1.5 bg-[#F0F0E8] rounded-full text-[#888888] hover:text-[#111111]"><X className="w-4 h-4" /></button>
-                </div>
-                <div className="flex flex-col gap-4 mb-5">
-                  <div>
-                    <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">I&apos;m their</label>
-                    <select ref={relationshipRef} value={relationship} onChange={e => setRelationship(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
-                      <option value="">Select relationship...</option>
-                      <optgroup label="Partner">
-                        {[["husband","Husband"],["wife","Wife"],["partner","Partner"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
-                      </optgroup>
-                      <optgroup label="Family">
-                        {[["dad","Dad"],["mom","Mom"],["son","Son"],["daughter","Daughter"],["brother","Brother"],["sister","Sister"],["grandfather","Grandfather"],["grandmother","Grandmother"],["grandson","Grandson"],["granddaughter","Granddaughter"],["uncle","Uncle"],["aunt","Aunt"],["nephew","Nephew"],["niece","Niece"],["cousin","Cousin"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
-                      </optgroup>
-                      <optgroup label="Friends & Others">
-                        {[["best friend","Best Friend"],["friend","Friend"],["colleague","Colleague"],["other","Other"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
-                      </optgroup>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Budget</label>
-                    <select value={budget} onChange={e => setBudget(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]">
-                      <option value="">Select budget...</option>
-                      <option value="under $25">Under $25</option>
-                      <option value="$25-$50">$25 – $50</option>
-                      <option value="$50-$100">$50 – $100</option>
-                      <option value="$100-$200">$100 – $200</option>
-                      <option value="over $200">$200+</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#888888] mb-1.5 block uppercase tracking-wide">Occasion <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span></label>
-                    <input type="text" value={occasion} onChange={e => setOccasion(e.target.value)} placeholder="Birthday, Graduation, Mother's Day..." autoComplete="off"
-                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
-                    {!occasion && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {["Birthday","Mother's Day","Father's Day","Graduation","Anniversary","Wedding","Baby Shower","Holiday","Just Because"].map(s => (
-                          <button key={s} type="button" onClick={() => setOccasion(s)}
-                            className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {generateError && <p className="text-red-600 text-sm mb-3">{generateError}</p>}
-                <button onClick={generateGifts} disabled={!relationship || !budget}
-                  className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2">
-                  {generateError ? "Try again" : <><span>Generate gift ideas</span><ArrowRight className="w-4 h-4" /></>}
-                </button>
-              </div>
-            )}
-
-            {/* Recommendations */}
-            {recommendations.length > 0 && (() => {
-              const availableCategories = ["all", ...Array.from(new Set(recommendations.map(r => r.category)))];
-              const filtered = categoryFilter === "all" ? recommendations : recommendations.filter(r => r.category === categoryFilter);
-              const visible = showAllRecs ? filtered : filtered.slice(0, 5);
-              return (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-[#111111]">Gift ideas for {displayName}</h2>
-                    <span className="text-xs text-[#888888]">{filtered.length} ideas</span>
-                  </div>
-                  {availableCategories.length > 2 && (
-                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-none">
-                      {availableCategories.map(cat => (
-                        <button key={cat} onClick={() => { setCategoryFilter(cat); setShowAllRecs(false); }}
-                          className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${categoryFilter === cat ? "bg-[#111111] text-white" : "bg-white text-[#111111] shadow-card hover:bg-[#F0F0E8]"}`}>
-                          {GIFT_CATEGORY_LABELS[cat] || cat}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-3">
-                    {visible.map((rec, i) => {
-                      const alreadyClaimed = isAlreadyClaimed(rec.title);
-                      const iMineThis = myClaims.includes(rec.title);
-                      return (
-                        <div key={i} className={`bg-white rounded-2xl shadow-card p-4 ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
-                          <h3 className="font-semibold text-[#111111] text-sm leading-snug mb-1">{rec.title}</h3>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-base font-bold text-[#111111]">{rec.priceRange}</span>
-                            <span className="text-xs text-[#888888]">· {rec.category}</span>
-                            {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
-                          </div>
-                          <p className="text-[#888888] text-xs leading-relaxed mb-3">{rec.why}</p>
-                          <div className="flex gap-2">
-                            <a href={rec.searchUrl} target="_blank" rel="noopener noreferrer"
-                              className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
-                              Find this gift <ArrowRight className="w-3.5 h-3.5" />
-                            </a>
-                            {isLoaded && user && <ClaimButton title={rec.title} {...claimProps} />}
-                          </div>
-                          {notifyPromptTitle === rec.title && (
-                            <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
-                              <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
-                              <div className="flex gap-2 flex-shrink-0">
-                                <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
-                                <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
-                              </div>
-                            </div>
-                          )}
-                          {notifySent.has(rec.title) && <p className="mt-2 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    {!showAllRecs && filtered.length > 5 && (
-                      <button onClick={() => setShowAllRecs(true)} className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm shadow-card transition-colors">
-                        See all {filtered.length} results
-                      </button>
-                    )}
-                    <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
-                      className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
-                      Try different options
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Sign-up CTA for visitors */}
-            {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
-              <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
-                <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
-                <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
-                <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-                  Get started <ArrowRight className="w-4 h-4" />
-                </a>
               </div>
             )}
 
@@ -1852,20 +1851,6 @@ export default function ProfileClient({
           </p>
         </div>
       </div>
-
-      {/* Fixed bottom CTA */}
-      {showFixedCTA && (
-        <div className="fixed left-0 right-0 z-10 bg-white/90 backdrop-blur-sm border-t border-[#E8E8E0] px-4"
-          style={{ bottom: user ? "56px" : "0px", paddingBottom: user ? "12px" : "env(safe-area-inset-bottom, 12px)", paddingTop: "12px" }}>
-          <div className="max-w-xl mx-auto">
-            <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
-              className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-base transition-colors flex items-center justify-center gap-2">
-              {hintsToShow.length > 0 ? `Find ${displayName} a gift` : `Find a gift for ${displayName}`}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {isLoaded && user && <BottomTabBar myUsername={myUsername} />}
 
