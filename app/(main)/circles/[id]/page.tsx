@@ -66,7 +66,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   const [saveError, setSaveError] = useState("");
   const [confirmDraw, setConfirmDraw] = useState(false);
 
-  useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
+  useEffect(() => { setIsMobile(navigator.maxTouchPoints > 0); }, []);
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -137,7 +137,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
 
   async function shareInviteLink() {
     const url = `${window.location.origin}/join/${circle?.invite_code}`;
-    if (navigator.share && window.innerWidth < 768) {
+    if (navigator.share && navigator.maxTouchPoints > 0) {
       const budgetText = circle?.budget ? ` — $${circle.budget} budget` : "";
       try { await navigator.share({ title: `Join ${circle?.name}`, text: `Join our Gift Circle on GiftButler${budgetText}!`, url }); } catch { /* cancelled */ }
     } else {
