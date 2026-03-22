@@ -677,13 +677,13 @@ export default function ProfileClient({
     } finally { setGenerating(false); }
   }
 
-  async function generateSelfDiscovery() {
+  async function generateSelfDiscovery(occasionOverride?: string) {
     if (!discoveryBudget) return;
     setDiscoveryGenerating(true); setDiscoveryError(""); setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); setDiscoveryRecTargetList({});
     try {
       const res = await fetch("/api/recommend", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, budget: discoveryBudget, occasion: discoveryOccasion || undefined, is_self_discovery: true }),
+        body: JSON.stringify({ username, budget: discoveryBudget, occasion: (occasionOverride ?? discoveryOccasion) || undefined, is_self_discovery: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");
@@ -1243,7 +1243,10 @@ export default function ProfileClient({
               )}
 
               {/* Discover with AI */}
-              {hintMode === "discover" && (
+              {hintMode === "discover" && (() => {
+                const listOccasion = selectedAddList !== "hints" ? (occasions.find(o => o.id === selectedAddList)?.name ?? "") : "";
+                const effectiveOccasion = listOccasion || discoveryOccasion;
+                return (
                 <div className="flex flex-col gap-3">
                   <p className="text-xs text-[#888888]">AI reads all your hints and finds gifts you&apos;d genuinely love — things you might not know existed yet.</p>
                   <div className="flex flex-col gap-3">
@@ -1256,18 +1259,28 @@ export default function ProfileClient({
                       <option value="$100-$200">$100 – $200</option>
                       <option value="over $200">$200+</option>
                     </select>
-                    <input value={discoveryOccasion} onChange={e => setDiscoveryOccasion(e.target.value)}
-                      placeholder="For any occasion, or specify one..."
-                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
-                    {!discoveryOccasion && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {Array.from(new Set(["Birthday", "Christmas", "Mother's Day", "Father's Day", "Anniversary", "Just Because", ...occasions.map(o => o.name)])).map(s => (
-                          <button key={s} type="button" onClick={() => setDiscoveryOccasion(s)}
-                            className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
-                            {s}
-                          </button>
-                        ))}
+                    {listOccasion ? (
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4]">
+                        <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
+                        <span className="text-sm font-semibold text-[#2D4A1E]">{listOccasion}</span>
+                        <span className="text-xs text-[#2D4A1E]/60 ml-auto">from selected list</span>
                       </div>
+                    ) : (
+                      <>
+                        <input value={discoveryOccasion} onChange={e => setDiscoveryOccasion(e.target.value)}
+                          placeholder="For any occasion, or specify one..."
+                          className="w-full px-4 py-3 rounded-xl border border-[#E0E0D8] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] bg-[#F5F5F0]" />
+                        {!discoveryOccasion && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {Array.from(new Set(["Birthday", "Christmas", "Mother's Day", "Father's Day", "Anniversary", "Just Because", ...occasions.map(o => o.name)])).map(s => (
+                              <button key={s} type="button" onClick={() => setDiscoveryOccasion(s)}
+                                className="px-3 py-1.5 bg-[#F5F5F0] border border-[#E0E0D8] hover:border-[#111111] rounded-full text-xs font-semibold text-[#555555] hover:text-[#111111] transition-colors">
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   {discoveryError && <p className="text-red-600 text-xs">{discoveryError}</p>}
@@ -1293,7 +1306,7 @@ export default function ProfileClient({
                     </div>
                   )}
                   {!discoveryGenerating && discoveryRecs.length === 0 && (
-                    <button onClick={generateSelfDiscovery} disabled={!discoveryBudget}
+                    <button onClick={() => generateSelfDiscovery(effectiveOccasion || undefined)} disabled={!discoveryBudget}
                       className="w-full py-3 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors flex items-center justify-center gap-2">
                       <Sparkles className="w-4 h-4" /> Find gifts I&apos;d love
                     </button>
@@ -1337,7 +1350,8 @@ export default function ProfileClient({
                     </div>
                   )}
                 </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Occasion list sections */}
