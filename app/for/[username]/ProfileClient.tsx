@@ -841,8 +841,8 @@ export default function ProfileClient({
     });
     try {
       const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editContent.trim(), category: editCategory, occasion_id: newOccId }) });
-      if (!res.ok) setHints(prev);
-    } catch { setHints(prev); } finally { setHintSaving(false); }
+      if (!res.ok) { setHints(prev); setActionError("Couldn't save — try again"); setTimeout(() => setActionError(""), 3000); }
+    } catch { setHints(prev); setActionError("Couldn't save — try again"); setTimeout(() => setActionError(""), 3000); } finally { setHintSaving(false); }
   }
 
   function startEditProductHint(hint: Hint) {
@@ -867,8 +867,8 @@ export default function ProfileClient({
     });
     try {
       const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editProductTitle.trim(), occasion_id: newOccId }) });
-      if (!res.ok) setHints(prev);
-    } catch { setHints(prev); } finally { setEditProductSaving(false); }
+      if (!res.ok) { setHints(prev); setActionError("Couldn't save — try again"); setTimeout(() => setActionError(""), 3000); }
+    } catch { setHints(prev); setActionError("Couldn't save — try again"); setTimeout(() => setActionError(""), 3000); } finally { setEditProductSaving(false); }
   }
 
   async function deleteHint(id: string) {
@@ -2021,6 +2021,7 @@ export default function ProfileClient({
                       <input type="text" value={editOccasionName} onChange={e => setEditOccasionName(e.target.value)}
                         placeholder="e.g. Graduation, Mother's Day..."
                         autoComplete="off"
+                        autoFocus
                         className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                       />
                       {isBirthday && (
