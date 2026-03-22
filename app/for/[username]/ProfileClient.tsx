@@ -961,7 +961,7 @@ export default function ProfileClient({
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ hints_visibility: newVis }),
     });
-    if (!res.ok) setHintsVisibility(prev);
+    if (!res.ok) { setHintsVisibility(prev); setActionError("Couldn't update visibility — try again"); setTimeout(() => setActionError(""), 3000); }
   }
 
   async function updateOccasionVisibility(id: string, newVis: VisibilityLevel) {
@@ -971,7 +971,7 @@ export default function ProfileClient({
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visibility: newVis }),
     });
-    if (!res.ok) setOccasions(prevOccasions);
+    if (!res.ok) { setOccasions(prevOccasions); setActionError("Couldn't update visibility — try again"); setTimeout(() => setActionError(""), 3000); }
   }
 
   function openEditOccasion(occ: Occasion) {
