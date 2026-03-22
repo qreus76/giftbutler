@@ -594,7 +594,16 @@ export default function ProfileClient({
   }, [discoveryGenerating]);
 
   useEffect(() => {
-    const auto = getNextHolidayDate(newOccasionName);
+    let auto = getNextHolidayDate(newOccasionName);
+    if (!auto && newOccasionName.trim().toLowerCase().includes("birthday") && profile.birthday) {
+      const parts = profile.birthday.split("-");
+      const month = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      let next = new Date(today.getFullYear(), month, day);
+      if (next < today) next = new Date(today.getFullYear() + 1, month, day);
+      auto = next.toISOString().split("T")[0];
+    }
     setAddHolidayAutoDate(auto);
     if (auto) setNewOccasionDate(auto);
     else setNewOccasionDate("");
@@ -1010,22 +1019,15 @@ export default function ProfileClient({
           </div>
         </div>
 
-        {/* Birthday chip (always shown if birthday set) */}
-        {daysUntilBirthday !== null && (
+        {/* Birthday chip — visitors only; owner manages it via their Birthday list */}
+        {daysUntilBirthday !== null && !isOwner && (
           <div className="mb-4">
-            {isOwner ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] rounded-full text-xs font-semibold text-[#5C3118]">
-                <Cake className="w-3.5 h-3.5" />
-                {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
-              </div>
-            ) : (
-              <button
-                onClick={() => { setOccasion("Birthday"); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                <Cake className="w-3.5 h-3.5" />
-                {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
-              </button>
-            )}
+            <button
+              onClick={() => { setOccasion("Birthday"); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
+              <Cake className="w-3.5 h-3.5" />
+              {daysUntilBirthday === 0 ? "Birthday today!" : daysUntilBirthday === 1 ? "Birthday tomorrow!" : daysUntilBirthday <= 60 ? `Birthday in ${daysUntilBirthday} days` : "Birthday"}
+            </button>
           </div>
         )}
 
@@ -1829,7 +1831,6 @@ export default function ProfileClient({
 
       {/* Add occasion sheet */}
       {isOwner && addingOccasion && (() => {
-        const isBirthday = newOccasionName.trim().toLowerCase().includes("birthday");
         const closeSheet = () => { setAddingOccasion(false); setNewOccasionName(""); setNewOccasionDate(""); setNewOccasionVisibility("public"); setAddHolidayAutoDate(null); };
         return (
           <>
@@ -1858,14 +1859,14 @@ export default function ProfileClient({
                     <div>
                       <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">List name</label>
                       <input type="text" value={newOccasionName} onChange={e => setNewOccasionName(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && !isBirthday && addOccasion()}
-                        placeholder="e.g. Graduation, Mother's Day..."
+                        onKeyDown={e => e.key === "Enter" && addOccasion()}
+                        placeholder="e.g. Birthday, Graduation, Mother's Day..."
                         autoComplete="off"
                         className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                       />
                       {!newOccasionName && (
                         <div className="flex flex-wrap gap-1.5 mt-2.5">
-                          {["Mother's Day","Father's Day","Graduation","Wedding","Anniversary","Baby Shower","Retirement","Holiday","Housewarming","Christmas"].map(s => (
+                          {["Birthday","Mother's Day","Father's Day","Graduation","Wedding","Anniversary","Baby Shower","Retirement","Holiday","Housewarming","Christmas"].map(s => (
                             <button key={s} type="button" onClick={() => setNewOccasionName(s)}
                               className="px-3 py-1.5 bg-white border border-[#E0E0D8] hover:border-[#ECC8AE] hover:bg-[#FDF5EE] rounded-full text-xs font-semibold text-[#555555] hover:text-[#5C3118] transition-colors">
                               {s}
@@ -1873,36 +1874,27 @@ export default function ProfileClient({
                           ))}
                         </div>
                       )}
-                      {isBirthday && (
-                        <p className="text-xs text-[#C4824A] mt-1.5 flex items-center gap-1">
-                          <Cake className="w-3.5 h-3.5 flex-shrink-0" />
-                          Your birthday is already on your profile — update it in <a href="/profile/edit" className="underline font-semibold">Edit Profile</a>.
-                        </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
+                        Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
+                      </label>
+                      {addHolidayAutoDate ? (
+                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4] text-sm">
+                          <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
+                          <span className="text-[#2D4A1E] font-semibold">
+                            {new Date(addHolidayAutoDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          </span>
+                          <span className="text-[#2D4A1E]/60 text-xs">auto-set</span>
+                        </div>
+                      ) : (
+                        <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
+                          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
                       )}
                     </div>
-                    {!isBirthday && (
-                      <div>
-                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-1.5">
-                          Date <span className="font-normal text-[#CCCCCC] normal-case">(optional)</span>
-                        </label>
-                        {addHolidayAutoDate ? (
-                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#C4D4B4] text-sm">
-                            <CalendarDays className="w-4 h-4 text-[#2D4A1E] flex-shrink-0" />
-                            <span className="text-[#2D4A1E] font-semibold">
-                              {new Date(addHolidayAutoDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                            </span>
-                            <span className="text-[#2D4A1E]/60 text-xs">auto-set</span>
-                          </div>
-                        ) : (
-                          <input type="date" value={newOccasionDate} onChange={e => setNewOccasionDate(e.target.value)}
-                            min={new Date().toISOString().split("T")[0]}
-                            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111] appearance-none" />
-                        )}
-                      </div>
-                    )}
-                    {!isBirthday && (
-                      <div>
-                        <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-2">Who can see this list?</label>
+                    <div>
+                      <label className="text-xs font-bold text-[#888888] uppercase tracking-wide block mb-2">Who can see this list?</label>
                         <div className="flex gap-2">
                           {VISIBILITY_CYCLE.map(v => {
                             const cfg = VISIBILITY_CONFIG[v];
@@ -1917,9 +1909,8 @@ export default function ProfileClient({
                           })}
                         </div>
                       </div>
-                    )}
                     {occasionError && <p className="text-red-500 text-xs">{occasionError}</p>}
-                    <button onClick={addOccasion} disabled={!newOccasionName.trim() || isBirthday || savingOccasion}
+                    <button onClick={addOccasion} disabled={!newOccasionName.trim() || savingOccasion}
                       className="w-full py-3.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-sm transition-colors">
                       {savingOccasion ? "Saving..." : "Create list"}
                     </button>
