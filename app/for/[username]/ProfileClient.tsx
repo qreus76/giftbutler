@@ -1545,9 +1545,7 @@ export default function ProfileClient({
             {/* Gift Finder area — always first so visitors never have to scroll past hints */}
             <div ref={finderRef}>
               {/* CTA card — shown when finder is closed and no results yet */}
-              {recommendations.length === 0 && !showFinder && !generating && (hintsToShow.length > 0 || occasions.length > 0) && (() => {
-                try { return !sessionStorage.getItem(`gb_recs_${username}`); } catch { return true; }
-              })() && (
+              {recommendations.length === 0 && !showFinder && !generating && (hintsToShow.length > 0 || occasions.length > 0) && (
                 <div className="bg-[#B8CED0] rounded-2xl p-4">
                   <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
                   <p className="text-[#1A3D42] text-sm leading-relaxed mb-3">
@@ -1716,17 +1714,6 @@ export default function ProfileClient({
               })()}
             </div>
 
-            {/* Sign-up CTA for visitors */}
-            {isLoaded && !user && (recommendations.length > 0 || showFinder) && (
-              <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
-                <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
-                <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
-                <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-                  Get started <ArrowRight className="w-4 h-4" />
-                </a>
-              </div>
-            )}
-
             {/* Occasion sections */}
             {occasions.map(occ => {
               const occHints = hints.filter(h => (h.occasion_id ?? null) === occ.id && h.category !== "avoid");
@@ -1818,6 +1805,17 @@ export default function ProfileClient({
                     </button>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* Sign-up CTA for visitors — after they've seen the profile */}
+            {isLoaded && !user && (
+              <div className="bg-[#ECC8AE] rounded-2xl p-5 text-center">
+                <p className="text-[#111111] font-bold text-sm mb-1">Create your own gift profile — free</p>
+                <p className="text-[#5C3118] text-xs mb-4">Share your link. Get gifts you actually want.</p>
+                <a href="/sign-up" className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
+                  Get started <ArrowRight className="w-4 h-4" />
+                </a>
               </div>
             )}
 
