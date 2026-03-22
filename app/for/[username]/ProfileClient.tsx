@@ -193,6 +193,12 @@ export default function ProfileClient({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editHintOccasionId, setEditHintOccasionId] = useState<string>("hints");
 
+  // Edit product hints
+  const [editingProductHintId, setEditingProductHintId] = useState<string | null>(null);
+  const [editProductTitle, setEditProductTitle] = useState("");
+  const [editProductOccasionId, setEditProductOccasionId] = useState<string>("hints");
+  const [editProductSaving, setEditProductSaving] = useState(false);
+
   // Occasions
   const [addingOccasion, setAddingOccasion] = useState(false);
   const [newOccasionName, setNewOccasionName] = useState("");
@@ -329,7 +335,7 @@ export default function ProfileClient({
     const auto = getNextHolidayDate(newOccasionName);
     setAddHolidayAutoDate(auto);
     if (auto) setNewOccasionDate(auto);
-    else if (!addHolidayAutoDate) { /* already cleared */ }
+    else setNewOccasionDate("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newOccasionName]);
 
@@ -517,6 +523,25 @@ export default function ProfileClient({
       const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editContent.trim(), category: editCategory, occasion_id: newOccId }) });
       if (!res.ok) setHints(prev);
     } catch { setHints(prev); } finally { setHintSaving(false); }
+  }
+
+  function startEditProductHint(hint: Hint) {
+    setEditingProductHintId(hint.id);
+    setEditProductTitle(hint.product_title || hint.content);
+    setEditProductOccasionId(hint.occasion_id ?? "hints");
+  }
+
+  async function saveProductHint(id: string) {
+    if (!editProductTitle.trim()) return;
+    setEditProductSaving(true);
+    const prev = hints;
+    const newOccId = editProductOccasionId === "hints" ? null : editProductOccasionId;
+    setHints(hints.map(h => h.id === id ? { ...h, product_title: editProductTitle.trim(), content: editProductTitle.trim(), occasion_id: newOccId } : h));
+    setEditingProductHintId(null);
+    try {
+      const res = await fetch(`/api/hints/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editProductTitle.trim(), occasion_id: newOccId }) });
+      if (!res.ok) setHints(prev);
+    } catch { setHints(prev); } finally { setEditProductSaving(false); }
   }
 
   async function deleteHint(id: string) {
@@ -719,23 +744,62 @@ export default function ProfileClient({
             {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
           </div>
         </div>
-        <div className="px-4 pb-4 flex gap-2">
-          <a href={hint.url!} target="_blank" rel="noopener noreferrer"
-            className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
-            View item <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-          {showClaim && <ClaimButton title={claimKey} />}
-          {!showClaim && isOwner && (
-            confirmDeleteId === hint.id ? (
-              <>
-                <button onClick={() => deleteHint(hint.id)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Delete</button>
-                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 bg-[#EAEAE0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Cancel</button>
-              </>
-            ) : (
-              <button onClick={() => setConfirmDeleteId(hint.id)} className="p-2.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-            )
-          )}
-        </div>
+        {isOwner && editingProductHintId === hint.id ? (
+          <div className="px-4 pb-4 flex flex-col gap-2">
+            <input
+              value={editProductTitle}
+              onChange={e => setEditProductTitle(e.target.value)}
+              autoFocus
+              className="w-full px-3 py-2 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+            />
+            {occasions.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="text-xs text-[#888888] self-center">List:</span>
+                <button onClick={() => setEditProductOccasionId("hints")}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editProductOccasionId === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                  Hints
+                </button>
+                {occasions.map(o => (
+                  <button key={o.id} onClick={() => setEditProductOccasionId(o.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editProductOccasionId === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                    {o.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button onClick={() => saveProductHint(hint.id)} disabled={!editProductTitle.trim() || editProductSaving}
+                className="flex-1 py-2 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs transition-colors">
+                {editProductSaving ? "Saving..." : "Save"}
+              </button>
+              <button onClick={() => setEditingProductHintId(null)}
+                className="flex-1 py-2 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="px-4 pb-4 flex gap-2">
+            <a href={hint.url!} target="_blank" rel="noopener noreferrer"
+              className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+              View item <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            {showClaim && <ClaimButton title={claimKey} />}
+            {!showClaim && isOwner && (
+              confirmDeleteId === hint.id ? (
+                <>
+                  <button onClick={() => deleteHint(hint.id)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Delete</button>
+                  <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 bg-[#EAEAE0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Cancel</button>
+                </>
+              ) : (
+                <div className="flex gap-1">
+                  <button onClick={() => startEditProductHint(hint)} className="p-2.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setConfirmDeleteId(hint.id)} className="p-2.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                </div>
+              )
+            )}
+          </div>
+        )}
         {notifyPromptTitle === claimKey && (
           <div className="mx-4 mb-4 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
             <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
@@ -1199,6 +1263,7 @@ export default function ProfileClient({
                     <div className="flex items-center gap-2 min-w-0">
                       <CalendarDays className="w-4 h-4 text-[#888888] flex-shrink-0" />
                       <span className="font-bold text-[#111111] text-sm truncate">{occ.name}</span>
+                      {occHints.length > 0 && <span className="text-xs text-[#888888] flex-shrink-0">{occHints.length}</span>}
                       {isUpcoming && <span className="text-xs text-[#888888] flex-shrink-0">{daysUntil === 0 ? "· today" : `· in ${daysUntil}d`}</span>}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -1299,7 +1364,7 @@ export default function ProfileClient({
 
             {/* Avoid nudge */}
             {avoidHints.length === 0 && hints.length > 0 && (
-              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); }}
+              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); setHintMode("text"); }}
                 className="w-full px-4 py-3.5 bg-white rounded-2xl shadow-card text-left hover:bg-[#F0F0E8] transition-colors border-2 border-dashed border-[#E0E0D8] hover:border-red-300">
                 <p className="text-sm font-semibold text-[#888888] hover:text-red-500">+ What should people NOT get you?</p>
                 <p className="text-xs text-[#AAAAAA] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
@@ -1381,11 +1446,16 @@ export default function ProfileClient({
                 })() && (
                   <div className="bg-[#B8CED0] rounded-2xl p-4 mb-3">
                     <p className="text-xs font-bold text-[#1A3D42] mb-1 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> GiftButler AI</p>
-                    <p className="text-[#1A3D42] text-sm leading-relaxed">
+                    <p className="text-[#1A3D42] text-sm leading-relaxed mb-3">
                       {generalTextHints.length > 0
                         ? `${displayName} dropped ${generalTextHints.length} gift hint${generalTextHints.length !== 1 ? "s" : ""}. Our AI reads them all together to suggest gifts they'd genuinely love.`
                         : `${displayName} saved specific items they want. Use our AI to find more ideas based on their taste.`}
                     </p>
+                    <button
+                      onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-[#1A3D42] hover:bg-[#122c30] text-white font-bold rounded-full text-xs transition-colors">
+                      <Sparkles className="w-3 h-3" /> Find a gift <ArrowRight className="w-3 h-3" />
+                    </button>
                   </div>
                 )}
                 {generalTextHints.length > 0 && (
@@ -1585,7 +1655,7 @@ export default function ProfileClient({
                         See all {filtered.length} results
                       </button>
                     )}
-                    <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
+                    <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
                       className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
                       Try again
                     </button>
