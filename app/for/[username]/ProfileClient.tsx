@@ -395,7 +395,7 @@ export default function ProfileClient({
   const [hints, setHints] = useState<Hint[]>(initialHints);
   const [occasions, setOccasions] = useState<Occasion[]>(initialOccasions);
   const [hintsVisibility, setHintsVisibility] = useState<VisibilityLevel>(
-    (initialProfile.hints_visibility as VisibilityLevel) || "connections"
+    (initialProfile.hints_visibility as VisibilityLevel) || "public"
   );
 
   const STORAGE_KEY = `gb_recs_${username}`;
@@ -1024,9 +1024,14 @@ export default function ProfileClient({
   async function sendFollowRequest() {
     if (!selectedLabel) return;
     setFollowLoading(true);
-    await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
-    setFollowStatus("pending");
-    setShowLabelPicker(false);
+    const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
+    if (res.ok) {
+      setFollowStatus("pending");
+      setShowLabelPicker(false);
+    } else {
+      setActionError("Couldn't send request — try again");
+      setTimeout(() => setActionError(""), 3000);
+    }
     setFollowLoading(false);
   }
 
