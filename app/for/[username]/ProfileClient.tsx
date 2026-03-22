@@ -424,6 +424,7 @@ export default function ProfileClient({
 
   // Share
   const [shareCopied, setShareCopied] = useState(false);
+  const [listCopied, setListCopied] = useState<string | null>(null);
   const [myUsername, setMyUsername] = useState("");
 
   // Add hint form
@@ -954,6 +955,13 @@ export default function ProfileClient({
     }
   }
 
+  async function shareList(anchor: string) {
+    const url = `${window.location.origin}/for/${username}#${anchor}`;
+    try { await navigator.clipboard.writeText(url); } catch { /* unavailable */ }
+    setListCopied(anchor);
+    setTimeout(() => setListCopied(null), 3000);
+  }
+
   async function sendFollowRequest() {
     if (!selectedLabel) return;
     setFollowLoading(true);
@@ -1057,11 +1065,11 @@ export default function ProfileClient({
               <button onClick={shareProfile}
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                 <Share className="w-3.5 h-3.5" />
-                {shareCopied ? "Copied!" : "Share my list"}
+                {shareCopied ? "Copied!" : "Share"}
               </button>
               <Link href="/profile/edit"
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
-                <Pencil className="w-3.5 h-3.5" /> Edit profile
+                <Pencil className="w-3.5 h-3.5" /> Edit
               </Link>
             </>
           )}
@@ -1364,7 +1372,7 @@ export default function ProfileClient({
               const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
               const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
               return (
-                <div key={occ.id} className="bg-white rounded-2xl shadow-card overflow-hidden">
+                <div key={occ.id} id={`list-${occ.id}`} className="bg-white rounded-2xl shadow-card overflow-hidden">
                   <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <CalendarDays className="w-4 h-4 text-[#888888] flex-shrink-0" />
@@ -1373,6 +1381,9 @@ export default function ProfileClient({
                       {isUpcoming && <span className="text-xs text-[#888888] flex-shrink-0">{daysUntil === 0 ? "· today" : `· in ${daysUntil}d`}</span>}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => shareList(`list-${occ.id}`)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors" title="Copy link to this list">
+                        {listCopied === `list-${occ.id}` ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Link2 className="w-3.5 h-3.5" />}
+                      </button>
                       <VisibilityToggle
                         visibility={occ.visibility as VisibilityLevel || "public"}
                         onToggle={() => {
@@ -1414,20 +1425,25 @@ export default function ProfileClient({
             })}
 
             {/* Hints list section */}
-            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            <div id="list-hints" className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="w-4 h-4 text-[#888888]" />
                   <span className="font-bold text-[#111111] text-sm">Hints</span>
                   {generalHints.length > 0 && <span className="text-xs text-[#888888]">{generalHints.length}</span>}
                 </div>
-                <VisibilityToggle
+                <div className="flex items-center gap-2">
+                  <button onClick={() => shareList("list-hints")} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors" title="Copy link to hints">
+                    {listCopied === "list-hints" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Link2 className="w-3.5 h-3.5" />}
+                  </button>
+                  <VisibilityToggle
                   visibility={hintsVisibility}
                   onToggle={() => {
                     const idx = VISIBILITY_CYCLE.indexOf(hintsVisibility);
                     updateHintsVisibility(VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]);
                   }}
                 />
+                </div>
               </div>
 
               {generalProductHints.length === 0 && generalTextHints.length === 0 ? (
