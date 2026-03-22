@@ -733,6 +733,13 @@ export default function ProfileClient({
       const data = await res.json();
       if (res.ok) {
         setHints(prev => [data, ...prev]);
+        const targetList = occId ? occId : "hints";
+        setExpandedLists(prev => {
+          if (prev.has(targetList)) return prev;
+          const next = new Set(prev); next.add(targetList);
+          try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { }
+          return next;
+        });
       } else {
         setSavedDiscoveryRecs(prev => { const s = new Set(prev); s.delete(idx); return s; });
         setDiscoveryError(data.error || "Couldn't save — try again");
@@ -885,6 +892,13 @@ export default function ProfileClient({
       if (!res.ok) throw new Error(data.error || "Failed to add");
       setHints([data, ...hints]);
       setHintUrl(""); setEnrichedProduct(null); setHintMode("text");
+      const targetList = selectedAddList !== "hints" ? selectedAddList : "hints";
+      setExpandedLists(prev => {
+        if (prev.has(targetList)) return prev;
+        const next = new Set(prev); next.add(targetList);
+        try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { }
+        return next;
+      });
     } catch (e: unknown) {
       setAddError(e instanceof Error ? e.message : "Failed to add — try again");
     } finally { setAdding(false); }
@@ -1070,7 +1084,6 @@ export default function ProfileClient({
           </div>
         )}
 
-        {/* Visitor: occasion chips as gift finder launchers */}
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
           {isOwner && (
@@ -1793,7 +1806,7 @@ export default function ProfileClient({
                       followStatus === "pending"
                         ? <p className="text-sm text-[#888888] font-semibold">Request sent — waiting for {displayName} to accept</p>
                         : followStatus !== "accepted" && (
-                          <button onClick={() => setShowLabelPicker(true)}
+                          <button onClick={() => { setShowLabelPicker(true); setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50); }}
                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                             Add to my people
                           </button>
@@ -1804,7 +1817,7 @@ export default function ProfileClient({
                       </Link>
                     )}
                     <p className="text-[#AAAAAA] text-xs mt-4">You can still find a gift — just without the personal touch.</p>
-                    <button onClick={() => setShowFinder(true)}
+                    <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors mt-2">
                       Find a gift anyway <ArrowRight className="w-4 h-4" />
                     </button>
@@ -1812,7 +1825,7 @@ export default function ProfileClient({
                 ) : (
                   <>
                     <p className="text-[#888888] text-sm mb-4">You can still find gift ideas — just without the personal touch.</p>
-                    <button onClick={() => setShowFinder(true)}
+                    <button onClick={() => { setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
                       Find a gift anyway <ArrowRight className="w-4 h-4" />
                     </button>
