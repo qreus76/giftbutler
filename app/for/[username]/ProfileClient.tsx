@@ -1936,6 +1936,7 @@ export default function ProfileClient({
                         onKeyDown={e => e.key === "Enter" && addOccasion()}
                         placeholder="e.g. Birthday, Graduation, Mother's Day..."
                         autoComplete="off"
+                        autoFocus
                         className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] placeholder-[#AAAAAA] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                       />
                       {!newOccasionName && (
