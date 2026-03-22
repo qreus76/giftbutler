@@ -401,6 +401,7 @@ export default function ProfileClient({
   const STORAGE_KEY = `gb_recs_${username}`;
   const relationshipRef = useRef<HTMLSelectElement>(null);
   const finderRef = useRef<HTMLDivElement>(null);
+  const addHintFormRef = useRef<HTMLDivElement>(null);
 
   // Gift finder state
   const [showFinder, setShowFinder] = useState(false);
@@ -1148,7 +1149,7 @@ export default function ProfileClient({
         {isOwner && (
           <>
             {/* Add to wishlist form */}
-            <div className="bg-white rounded-2xl shadow-card p-5">
+            <div ref={addHintFormRef} className="bg-white rounded-2xl shadow-card p-5">
               {/* List picker */}
               {(occasions.length > 0 || hintCategory !== "avoid") && (
                 <div className="mb-4">
@@ -1354,7 +1355,7 @@ export default function ProfileClient({
                             </div>
                           );
                         })}
-                        <button onClick={() => { setDiscoveryRecs([]); setDiscoveryRecTargetList({}); setSavedDiscoveryRecs(new Set()); }}
+                        <button onClick={() => { setDiscoveryRecs([]); setDiscoveryRecTargetList({}); setSavedDiscoveryRecs(new Set()); setTimeout(() => addHintFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                           className="w-full py-2.5 bg-[#F0F0E8] hover:bg-[#E0E0D8] text-[#888888] font-semibold rounded-full text-sm transition-colors">
                           Try different options
                         </button>
