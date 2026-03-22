@@ -79,7 +79,7 @@ export default function OnboardingPage() {
   const [showCustom, setShowCustom] = useState(false);
   const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://giftbutler.io"}/for/${username}`;
   const [canShare, setCanShare] = useState(false);
-  useEffect(() => { setCanShare(!!navigator.share); }, []);
+  useEffect(() => { setCanShare(!!navigator.share && navigator.maxTouchPoints > 0); }, []);
   const [referral, setReferral] = useState<string | null>(null);
   useEffect(() => {
     try {
