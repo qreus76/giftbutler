@@ -110,6 +110,268 @@ function getNextHolidayDate(name: string): string | null {
   return null;
 }
 
+// ─── Module-level sub-components ─────────────────────────────────────────────
+// These MUST live outside ProfileClient. Defining them inside the parent causes
+// React to see a new function reference every render → unmount/remount → lost focus.
+
+function VisibilityToggle({ visibility, onToggle }: { visibility: VisibilityLevel; onToggle: () => void }) {
+  const cfg = VISIBILITY_CONFIG[visibility] || VISIBILITY_CONFIG.public;
+  const Icon = cfg.icon;
+  return (
+    <button
+      onClick={onToggle}
+      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-colors hover:opacity-80 ${cfg.color} ${cfg.bg}`}
+      title="Change who can see this list"
+    >
+      <Icon className="w-3 h-3" /> {cfg.label}
+    </button>
+  );
+}
+
+interface ClaimButtonProps {
+  title: string;
+  existingClaims: ClaimRecord[];
+  myClaims: string[];
+  claiming: string | null;
+  confirmUnclaim: string | null;
+  occasion: string;
+  claimGift: (title: string) => void;
+  unclaimGift: (title: string) => void;
+  setConfirmUnclaim: (v: string | null) => void;
+}
+
+function ClaimButton({ title, existingClaims, myClaims, claiming, confirmUnclaim, occasion, claimGift, unclaimGift, setConfirmUnclaim }: ClaimButtonProps) {
+  const alreadyClaimed = existingClaims.some(c => c.description === title.toLowerCase() && (!c.occasion || !occasion || c.occasion === occasion));
+  const iMineThis = myClaims.includes(title);
+  if (confirmUnclaim === title) {
+    return (
+      <>
+        <button onClick={() => unclaimGift(title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Release</button>
+        <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Keep</button>
+      </>
+    );
+  }
+  return (
+    <button
+      onClick={() => iMineThis ? setConfirmUnclaim(title) : claimGift(title)}
+      disabled={!iMineThis && (alreadyClaimed || claiming === title)}
+      className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors"
+    >
+      {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> I&apos;m getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Someone&apos;s on it</span> : "I'm getting this"}
+    </button>
+  );
+}
+
+interface ProductHintCardProps {
+  hint: Hint;
+  showClaim?: boolean;
+  existingClaims: ClaimRecord[];
+  myClaims: string[];
+  claiming: string | null;
+  confirmUnclaim: string | null;
+  occasion: string;
+  claimGift: (title: string) => void;
+  unclaimGift: (title: string) => void;
+  setConfirmUnclaim: (v: string | null) => void;
+  isOwner: boolean;
+  editingProductHintId: string | null;
+  editProductTitle: string;
+  setEditProductTitle: (v: string) => void;
+  editProductOccasionId: string;
+  setEditProductOccasionId: (v: string) => void;
+  occasions: Occasion[];
+  editProductSaving: boolean;
+  saveProductHint: (id: string) => void;
+  setEditingProductHintId: (v: string | null) => void;
+  confirmDeleteId: string | null;
+  setConfirmDeleteId: (v: string | null) => void;
+  deleteHint: (id: string) => void;
+  startEditProductHint: (hint: Hint) => void;
+  notifyPromptTitle: string | null;
+  displayName: string;
+  sendNotify: () => void;
+  setNotifyPromptTitle: (v: string | null) => void;
+  notifySent: Set<string>;
+}
+
+function ProductHintCard({ hint, showClaim = false, existingClaims, myClaims, claiming, confirmUnclaim, occasion, claimGift, unclaimGift, setConfirmUnclaim, isOwner, editingProductHintId, editProductTitle, setEditProductTitle, editProductOccasionId, setEditProductOccasionId, occasions, editProductSaving, saveProductHint, setEditingProductHintId, confirmDeleteId, setConfirmDeleteId, deleteHint, startEditProductHint, notifyPromptTitle, displayName, sendNotify, setNotifyPromptTitle, notifySent }: ProductHintCardProps) {
+  const claimKey = hint.product_title || hint.content;
+  const alreadyClaimed = existingClaims.some(c => c.description === claimKey.toLowerCase() && (!c.occasion || !occasion || c.occasion === occasion));
+  const iMineThis = myClaims.includes(claimKey);
+  const claimProps: ClaimButtonProps = { title: claimKey, existingClaims, myClaims, claiming, confirmUnclaim, occasion, claimGift, unclaimGift, setConfirmUnclaim };
+  return (
+    <div className={`bg-white rounded-2xl shadow-card overflow-hidden ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
+      <div className="flex gap-3 p-4">
+        {hint.product_image && (
+          <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
+            <img src={hint.product_image} alt={hint.product_title || ""} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-[#111111] text-sm leading-snug mb-1 line-clamp-2">{hint.product_title || hint.content}</p>
+          {hint.product_price && <p className="text-base font-bold text-[#111111] mb-1">{hint.product_price}</p>}
+          {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
+        </div>
+      </div>
+      {isOwner && editingProductHintId === hint.id ? (
+        <div className="px-4 pb-4 flex flex-col gap-2">
+          <input
+            value={editProductTitle}
+            onChange={e => setEditProductTitle(e.target.value)}
+            autoFocus
+            className="w-full px-3 py-2 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+          />
+          {occasions.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              <span className="text-xs text-[#888888] self-center">List:</span>
+              <button onClick={() => setEditProductOccasionId("hints")}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editProductOccasionId === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                Hints
+              </button>
+              {occasions.map(o => (
+                <button key={o.id} onClick={() => setEditProductOccasionId(o.id)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editProductOccasionId === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                  {o.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button onClick={() => saveProductHint(hint.id)} disabled={!editProductTitle.trim() || editProductSaving}
+              className="flex-1 py-2 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs transition-colors">
+              {editProductSaving ? "Saving..." : "Save"}
+            </button>
+            <button onClick={() => setEditingProductHintId(null)}
+              className="flex-1 py-2 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 pb-4 flex gap-2">
+          <a href={hint.url!} target="_blank" rel="noopener noreferrer"
+            className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
+            View item <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+          {showClaim && <ClaimButton {...claimProps} />}
+          {!showClaim && isOwner && (
+            confirmDeleteId === hint.id ? (
+              <>
+                <button onClick={() => deleteHint(hint.id)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Delete</button>
+                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 bg-[#EAEAE0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Cancel</button>
+              </>
+            ) : (
+              <div className="flex gap-1">
+                <button onClick={() => startEditProductHint(hint)} className="p-2.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setConfirmDeleteId(hint.id)} className="p-2.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+              </div>
+            )
+          )}
+        </div>
+      )}
+      {notifyPromptTitle === claimKey && (
+        <div className="mx-4 mb-4 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
+          <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
+            <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
+          </div>
+        </div>
+      )}
+      {notifySent.has(claimKey) && <p className="mx-4 mb-4 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
+    </div>
+  );
+}
+
+interface TextHintRowProps {
+  hint: Hint;
+  isOwner: boolean;
+  editingHintId: string | null;
+  editContent: string;
+  setEditContent: (v: string) => void;
+  editCategory: string;
+  setEditCategory: (v: string) => void;
+  editHintOccasionId: string;
+  setEditHintOccasionId: (v: string) => void;
+  occasions: Occasion[];
+  hintSaving: boolean;
+  saveHint: (id: string) => void;
+  cancelEditHint: () => void;
+  confirmDeleteId: string | null;
+  setConfirmDeleteId: (v: string | null) => void;
+  deleteHint: (id: string) => void;
+  startEditHint: (hint: Hint) => void;
+}
+
+function TextHintRow({ hint, isOwner, editingHintId, editContent, setEditContent, editCategory, setEditCategory, editHintOccasionId, setEditHintOccasionId, occasions, hintSaving, saveHint, cancelEditHint, confirmDeleteId, setConfirmDeleteId, deleteHint, startEditHint }: TextHintRowProps) {
+  const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
+  return (
+    <div className="px-4 py-3.5 group border-b border-[#F0F0E8] last:border-0">
+      {isOwner && editingHintId === hint.id ? (
+        <div>
+          <div className="flex gap-1.5 flex-wrap mb-2">
+            {HINT_CATEGORIES.map(c => (
+              <button key={c.id} onClick={() => setEditCategory(c.id)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${editCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <textarea value={editContent} onChange={e => setEditContent(e.target.value)} maxLength={280} autoFocus rows={2}
+            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] focus:outline-none resize-none mb-2" />
+          {editCategory !== "avoid" && occasions.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap mb-2">
+              <span className="text-xs text-[#888888] self-center flex-shrink-0">List:</span>
+              <button onClick={() => setEditHintOccasionId("hints")}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editHintOccasionId === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                Hints
+              </button>
+              {occasions.map(o => (
+                <button key={o.id} onClick={() => setEditHintOccasionId(o.id)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editHintOccasionId === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                  {o.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <button onClick={() => saveHint(hint.id)} disabled={!editContent.trim() || hintSaving}
+                className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs">Save</button>
+              <button onClick={cancelEditHint} className="px-4 py-1.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs">Cancel</button>
+            </div>
+            <span className={`text-xs ${editContent.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - editContent.length}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full inline-block mb-1.5 ${cat.color}`}>{cat.label}</span>
+            <p className="text-[#111111] text-sm">{hint.content}</p>
+          </div>
+          {isOwner && (
+            <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              {confirmDeleteId === hint.id ? (
+                <>
+                  <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                  <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => startEditHint(hint)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface Props {
   username: string;
   initialProfile: Profile;
@@ -696,200 +958,10 @@ export default function ProfileClient({
     return existingClaims.some(c => c.description === title.toLowerCase() && (!c.occasion || !occasion || c.occasion === occasion));
   }
 
-  // ── Visibility toggle badge ───────────────────────────────────────────────────
-  function VisibilityToggle({ visibility, onToggle }: { visibility: VisibilityLevel; onToggle: () => void }) {
-    const cfg = VISIBILITY_CONFIG[visibility] || VISIBILITY_CONFIG.public;
-    const Icon = cfg.icon;
-    return (
-      <button
-        onClick={onToggle}
-        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-colors hover:opacity-80 ${cfg.color} ${cfg.bg}`}
-        title="Change who can see this list"
-      >
-        <Icon className="w-3 h-3" /> {cfg.label}
-      </button>
-    );
-  }
-
-  // ── Claim button (shared by recs and product hints) ───────────────────────────
-  function ClaimButton({ title }: { title: string }) {
-    const alreadyClaimed = isAlreadyClaimed(title);
-    const iMineThis = myClaims.includes(title);
-    if (confirmUnclaim === title) {
-      return (
-        <>
-          <button onClick={() => unclaimGift(title)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Release</button>
-          <button onClick={() => setConfirmUnclaim(null)} className="flex-1 py-2.5 bg-[#EAEAE0] hover:bg-[#D8D8D0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Keep</button>
-        </>
-      );
-    }
-    return (
-      <button
-        onClick={() => iMineThis ? setConfirmUnclaim(title) : claimGift(title)}
-        disabled={!iMineThis && (alreadyClaimed || claiming === title)}
-        className="flex-1 py-2.5 bg-[#C4D4B4] hover:bg-[#B4C8A4] disabled:bg-[#EAEAE0] disabled:text-[#888888] text-[#2D4A1E] font-bold rounded-full text-sm transition-colors"
-      >
-        {iMineThis ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> I&apos;m getting this</span> : alreadyClaimed ? <span className="flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5" /> Someone&apos;s on it</span> : "I'm getting this"}
-      </button>
-    );
-  }
-
-  // ── Product hint card ─────────────────────────────────────────────────────────
-  function ProductHintCard({ hint, showClaim = false }: { hint: Hint; showClaim?: boolean }) {
-    const claimKey = hint.product_title || hint.content;
-    const alreadyClaimed = isAlreadyClaimed(claimKey);
-    const iMineThis = myClaims.includes(claimKey);
-    return (
-      <div className={`bg-white rounded-2xl shadow-card overflow-hidden ${alreadyClaimed && !iMineThis ? "ring-1 ring-emerald-300" : ""}`}>
-        <div className="flex gap-3 p-4">
-          {hint.product_image && (
-            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F5F0]">
-              <img src={hint.product_image} alt={hint.product_title || ""} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-[#111111] text-sm leading-snug mb-1 line-clamp-2">{hint.product_title || hint.content}</p>
-            {hint.product_price && <p className="text-base font-bold text-[#111111] mb-1">{hint.product_price}</p>}
-            {alreadyClaimed && !iMineThis && <span className="text-xs font-semibold text-emerald-700 bg-[#C4D4B4] px-2 py-0.5 rounded-full">Someone&apos;s on it</span>}
-          </div>
-        </div>
-        {isOwner && editingProductHintId === hint.id ? (
-          <div className="px-4 pb-4 flex flex-col gap-2">
-            <input
-              value={editProductTitle}
-              onChange={e => setEditProductTitle(e.target.value)}
-              autoFocus
-              className="w-full px-3 py-2 rounded-xl bg-[#F5F5F0] border-0 text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
-            />
-            {occasions.length > 0 && (
-              <div className="flex gap-1.5 flex-wrap">
-                <span className="text-xs text-[#888888] self-center">List:</span>
-                <button onClick={() => setEditProductOccasionId("hints")}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editProductOccasionId === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                  Hints
-                </button>
-                {occasions.map(o => (
-                  <button key={o.id} onClick={() => setEditProductOccasionId(o.id)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editProductOccasionId === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                    {o.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <button onClick={() => saveProductHint(hint.id)} disabled={!editProductTitle.trim() || editProductSaving}
-                className="flex-1 py-2 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs transition-colors">
-                {editProductSaving ? "Saving..." : "Save"}
-              </button>
-              <button onClick={() => setEditingProductHintId(null)}
-                className="flex-1 py-2 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs transition-colors">
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="px-4 pb-4 flex gap-2">
-            <a href={hint.url!} target="_blank" rel="noopener noreferrer"
-              className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
-              View item <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-            {showClaim && <ClaimButton title={claimKey} />}
-            {!showClaim && isOwner && (
-              confirmDeleteId === hint.id ? (
-                <>
-                  <button onClick={() => deleteHint(hint.id)} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-full text-xs transition-colors">Delete</button>
-                  <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 bg-[#EAEAE0] text-[#888888] font-semibold rounded-full text-xs transition-colors">Cancel</button>
-                </>
-              ) : (
-                <div className="flex gap-1">
-                  <button onClick={() => startEditProductHint(hint)} className="p-2.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => setConfirmDeleteId(hint.id)} className="p-2.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-                </div>
-              )
-            )}
-          </div>
-        )}
-        {notifyPromptTitle === claimKey && (
-          <div className="mx-4 mb-4 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
-            <p className="text-xs text-[#888888]">Let {displayName} know something&apos;s on the way?</p>
-            <div className="flex gap-2 flex-shrink-0">
-              <button onClick={sendNotify} className="px-3 py-1.5 bg-[#ECC8AE] text-[#5C3118] font-bold rounded-full text-xs">Let them know</button>
-              <button onClick={() => setNotifyPromptTitle(null)} className="px-3 py-1.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Keep secret</button>
-            </div>
-          </div>
-        )}
-        {notifySent.has(claimKey) && <p className="mx-4 mb-4 text-xs text-emerald-600 font-semibold flex items-center gap-1"><Check className="w-3 h-3" /> Hint sent</p>}
-      </div>
-    );
-  }
-
-  // ── Text hint row ─────────────────────────────────────────────────────────────
-  function TextHintRow({ hint }: { hint: Hint }) {
-    const cat = CATEGORIES[hint.category as keyof typeof CATEGORIES] || CATEGORIES.general;
-    return (
-      <div className="px-4 py-3.5 group border-b border-[#F0F0E8] last:border-0">
-        {isOwner && editingHintId === hint.id ? (
-          <div>
-            <div className="flex gap-1.5 flex-wrap mb-2">
-              {HINT_CATEGORIES.map(c => (
-                <button key={c.id} onClick={() => setEditCategory(c.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${editCategory === c.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <textarea value={editContent} onChange={e => setEditContent(e.target.value)} maxLength={280} autoFocus rows={2}
-              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] border-0 focus:ring-2 focus:ring-[#111111] text-sm text-[#111111] focus:outline-none resize-none mb-2" />
-            {editCategory !== "avoid" && occasions.length > 0 && (
-              <div className="flex gap-1.5 flex-wrap mb-2">
-                <span className="text-xs text-[#888888] self-center flex-shrink-0">List:</span>
-                <button onClick={() => setEditHintOccasionId("hints")}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editHintOccasionId === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                  Hints
-                </button>
-                {occasions.map(o => (
-                  <button key={o.id} onClick={() => setEditHintOccasionId(o.id)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${editHintOccasionId === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                    {o.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <button onClick={() => saveHint(hint.id)} disabled={!editContent.trim() || hintSaving}
-                  className="px-4 py-1.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] text-white font-bold rounded-full text-xs">Save</button>
-                <button onClick={cancelEditHint} className="px-4 py-1.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-xs">Cancel</button>
-              </div>
-              <span className={`text-xs ${editContent.length >= 260 ? "text-red-600" : "text-[#888888]"}`}>{280 - editContent.length}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full inline-block mb-1.5 ${cat.color}`}>{cat.label}</span>
-              <p className="text-[#111111] text-sm">{hint.content}</p>
-            </div>
-            {isOwner && (
-              <div className="flex items-center gap-1 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                {confirmDeleteId === hint.id ? (
-                  <>
-                    <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                    <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEditHint(hint)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
+  // ── Prop bundles for module-level sub-components ─────────────────────────────
+  const claimProps: Omit<ClaimButtonProps, "title"> = { existingClaims, myClaims, claiming, confirmUnclaim, occasion, claimGift, unclaimGift, setConfirmUnclaim };
+  const productHintCardProps: Omit<ProductHintCardProps, "hint" | "showClaim"> = { ...claimProps, isOwner, editingProductHintId, editProductTitle, setEditProductTitle, editProductOccasionId, setEditProductOccasionId, occasions, editProductSaving, saveProductHint, setEditingProductHintId, confirmDeleteId, setConfirmDeleteId, deleteHint, startEditProductHint, notifyPromptTitle, displayName, sendNotify, setNotifyPromptTitle, notifySent };
+  const textHintRowProps: Omit<TextHintRowProps, "hint"> = { isOwner, editingHintId, editContent, setEditContent, editCategory, setEditCategory, editHintOccasionId, setEditHintOccasionId, occasions, hintSaving, saveHint, cancelEditHint, confirmDeleteId, setConfirmDeleteId, deleteHint, startEditHint };
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -1306,10 +1378,10 @@ export default function ProfileClient({
                     <div>
                       {occProducts.map(hint => (
                         <div key={hint.id} className="p-4 border-b border-[#F0F0E8] last:border-0">
-                          <ProductHintCard hint={hint} showClaim={false} />
+                          <ProductHintCard hint={hint} showClaim={false} {...productHintCardProps} />
                         </div>
                       ))}
-                      {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                      {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
                     </div>
                   )}
                 </div>
@@ -1342,10 +1414,10 @@ export default function ProfileClient({
                 <div>
                   {generalProductHints.map(hint => (
                     <div key={hint.id} className="p-4 border-b border-[#F0F0E8] last:border-0">
-                      <ProductHintCard hint={hint} showClaim={false} />
+                      <ProductHintCard hint={hint} showClaim={false} {...productHintCardProps} />
                     </div>
                   ))}
-                  {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                  {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
                 </div>
               )}
 
@@ -1425,10 +1497,10 @@ export default function ProfileClient({
                     <CalendarDays className="w-3.5 h-3.5" /> {occ.name}
                   </p>
                   <div className="flex flex-col gap-3">
-                    {occProducts.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} />)}
+                    {occProducts.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} {...productHintCardProps} />)}
                     {occTextHints.length > 0 && (
                       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-                        {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                        {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
                       </div>
                     )}
                   </div>
@@ -1446,7 +1518,7 @@ export default function ProfileClient({
               <div>
                 <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-3 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> What {displayName} wants</p>
                 <div className="flex flex-col gap-3">
-                  {generalProductHints.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} />)}
+                  {generalProductHints.map(hint => <ProductHintCard key={hint.id} hint={hint} showClaim={true} {...productHintCardProps} />)}
                 </div>
               </div>
             )}
@@ -1476,7 +1548,7 @@ export default function ProfileClient({
                     <div className="px-4 py-3.5 border-b border-[#F0F0E8]">
                       <p className="text-sm font-bold text-[#111111]">{displayName}&apos;s hints</p>
                     </div>
-                    {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} />)}
+                    {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
                   </div>
                 )}
               </div>
@@ -1646,7 +1718,7 @@ export default function ProfileClient({
                               className="flex-1 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm text-center transition-colors flex items-center justify-center gap-1.5">
                               Find this gift <ArrowRight className="w-3.5 h-3.5" />
                             </a>
-                            {isLoaded && user && <ClaimButton title={rec.title} />}
+                            {isLoaded && user && <ClaimButton title={rec.title} {...claimProps} />}
                           </div>
                           {notifyPromptTitle === rec.title && (
                             <div className="mt-3 pt-3 border-t border-[#F0F0E8] flex items-center justify-between gap-3">
