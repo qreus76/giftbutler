@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2,
-  Gift, Sparkles, Lightbulb, CalendarDays, Plus, Check,
+  Gift, Sparkles, Lightbulb, CalendarDays, Plus, Check, ChevronDown, ChevronRight,
   Globe, Lock, Users,
 } from "lucide-react";
 import BottomTabBar from "@/app/components/BottomTabBar";
@@ -464,6 +464,16 @@ export default function ProfileClient({
 
   // Add hint sheet
   const [addingHint, setAddingHint] = useState(false);
+
+  // Collapsible lists (owner view)
+  const [collapsedLists, setCollapsedLists] = useState<Set<string>>(new Set());
+  function toggleList(id: string) {
+    setCollapsedLists(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   // Occasions
   const [addingOccasion, setAddingOccasion] = useState(false);
@@ -1156,15 +1166,16 @@ export default function ProfileClient({
               const occTextHints = occHints.filter(h => !h.url);
               const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
               const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
+              const isCollapsed = collapsedLists.has(occ.id);
               return (
                 <div key={occ.id} id={`list-${occ.id}`} className="bg-white rounded-2xl shadow-card overflow-hidden">
-                  <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CalendarDays className="w-4 h-4 text-[#888888] flex-shrink-0" />
+                  <div className={`px-4 py-3.5 flex items-center justify-between ${!isCollapsed ? "border-b border-[#F0F0E8]" : ""}`}>
+                    <button onClick={() => toggleList(occ.id)} className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                      {isCollapsed ? <ChevronRight className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" />}
                       <span className="font-bold text-[#111111] text-sm truncate">{occ.name}</span>
                       {occHints.length > 0 && <span className="text-xs text-[#888888] flex-shrink-0">{occHints.length}</span>}
                       {isUpcoming && <span className="text-xs text-[#888888] flex-shrink-0">{daysUntil === 0 ? "· today" : `· in ${daysUntil}d`}</span>}
-                    </div>
+                    </button>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button onClick={() => shareList(`list-${occ.id}`)} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors" title="Copy link to this list">
                         {listCopied === `list-${occ.id}` ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Link2 className="w-3.5 h-3.5" />}
@@ -1190,10 +1201,10 @@ export default function ProfileClient({
                       )}
                     </div>
                   </div>
-                  {occHints.length === 0 ? (
+                  {!isCollapsed && (occHints.length === 0 ? (
                     <div className="px-4 py-5 text-center">
                       <p className="text-xs text-[#CCCCCC]">Nothing here yet</p>
-                      <p className="text-xs text-[#CCCCCC] mt-1">Pick <strong>{occ.name}</strong> in the list above, then add hints or paste a link</p>
+                      <p className="text-xs text-[#CCCCCC] mt-1">Tap <strong>Add hint</strong> and pick <strong>{occ.name}</strong> from the list</p>
                     </div>
                   ) : (
                     <div>
@@ -1204,34 +1215,34 @@ export default function ProfileClient({
                       ))}
                       {occTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
                     </div>
-                  )}
+                  ))}
                 </div>
               );
             })}
 
             {/* Hints list section */}
             <div id="list-hints" className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="px-4 py-3.5 border-b border-[#F0F0E8] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-[#888888]" />
+              <div className={`px-4 py-3.5 flex items-center justify-between ${!collapsedLists.has("hints") ? "border-b border-[#F0F0E8]" : ""}`}>
+                <button onClick={() => toggleList("hints")} className="flex items-center gap-2 flex-1 text-left">
+                  {collapsedLists.has("hints") ? <ChevronRight className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#CCCCCC] flex-shrink-0" />}
                   <span className="font-bold text-[#111111] text-sm">Hints</span>
                   {generalHints.length > 0 && <span className="text-xs text-[#888888]">{generalHints.length}</span>}
-                </div>
+                </button>
                 <div className="flex items-center gap-2">
                   <button onClick={() => shareList("list-hints")} className="p-1.5 text-[#CCCCCC] hover:text-[#111111] transition-colors" title="Copy link to hints">
                     {listCopied === "list-hints" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Link2 className="w-3.5 h-3.5" />}
                   </button>
                   <VisibilityToggle
-                  visibility={hintsVisibility}
-                  onToggle={() => {
-                    const idx = VISIBILITY_CYCLE.indexOf(hintsVisibility);
-                    updateHintsVisibility(VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]);
-                  }}
-                />
+                    visibility={hintsVisibility}
+                    onToggle={() => {
+                      const idx = VISIBILITY_CYCLE.indexOf(hintsVisibility);
+                      updateHintsVisibility(VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]);
+                    }}
+                  />
                 </div>
               </div>
 
-              {generalProductHints.length === 0 && generalTextHints.length === 0 ? (
+              {!collapsedLists.has("hints") && (generalProductHints.length === 0 && generalTextHints.length === 0 ? (
                 <div className="p-6 text-center">
                   <p className="font-bold text-[#111111] text-sm mb-1">Drop hints for AI-powered suggestions</p>
                   <p className="text-[#888888] text-xs leading-relaxed">The AI reads all your hints together and finds gifts you&apos;d genuinely love.</p>
@@ -1245,10 +1256,10 @@ export default function ProfileClient({
                   ))}
                   {generalTextHints.map(hint => <TextHintRow key={hint.id} hint={hint} {...textHintRowProps} />)}
                 </div>
-              )}
+              ))}
 
               {/* Progress nudge */}
-              {generalTextHints.length >= 1 && generalTextHints.length < 5 && (
+              {!collapsedLists.has("hints") && generalTextHints.length >= 1 && generalTextHints.length < 5 && (
                 <div className="mx-4 mb-4 mt-1 bg-[#C4D4B4] rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs font-bold text-[#2D4A1E]">{generalTextHints.length < 3 ? "Getting started" : "Almost there"}</p>
