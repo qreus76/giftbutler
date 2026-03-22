@@ -61,6 +61,7 @@ export default function ActivityPage() {
   const [loadError, setLoadError] = useState(false);
   const { followRequests, removeRequest } = useFollowRequests();
   const [requestLabels, setRequestLabels] = useState<Record<string, string>>({});
+  const [requestError, setRequestError] = useState("");
 
   useEffect(() => { if (user) loadProfile(); }, [user]);
 
@@ -82,7 +83,12 @@ export default function ActivityPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requester_id: requesterId, action, label: requestLabels[requesterId] || null }),
     });
-    if (res.ok) removeRequest(requesterId);
+    if (res.ok) {
+      removeRequest(requesterId);
+    } else {
+      setRequestError("Couldn't update request — try again");
+      setTimeout(() => setRequestError(""), 3000);
+    }
   }
 
   async function copyLink() {
@@ -222,6 +228,7 @@ export default function ActivityPage() {
         )}
 
         {/* Follow requests */}
+        {requestError && <p className="text-red-500 text-xs text-center font-semibold">{requestError}</p>}
         {followRequests.length > 0 && (
           <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="px-4 py-3 border-b border-[#F0F0E8] flex items-center gap-2">
