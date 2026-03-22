@@ -131,8 +131,15 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   async function handleLeaveOrDelete() {
     if (!circle) return;
     setLeaving(true);
-    await fetch(`/api/circles/${id}`, { method: "DELETE" });
-    router.push("/my-people");
+    const res = await fetch(`/api/circles/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      router.push("/my-people");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setDrawError(data.error || "Couldn't leave — try again");
+      setLeaving(false);
+      setConfirmLeave(false);
+    }
   }
 
   async function shareInviteLink() {
