@@ -88,7 +88,7 @@ export default function ActivityPage() {
   async function copyLink() {
     if (!profile) return;
     const url = `${window.location.origin}/for/${profile.username}`;
-    if (navigator.share && window.innerWidth < 768) {
+    if (navigator.share && navigator.maxTouchPoints > 0) {
       try { await navigator.share({ title: `${profile.name || profile.username}'s gift profile`, text: "Here's what I actually want — no more guessing!", url }); } catch { /* cancelled */ }
     } else {
       navigator.clipboard.writeText(url).catch(() => alert("Unable to copy."));

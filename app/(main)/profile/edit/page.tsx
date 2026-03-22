@@ -156,9 +156,11 @@ export default function EditProfilePage() {
                 maxLength={160}
                 className="w-full text-[#111111] text-base focus:outline-none resize-none placeholder-[#CCCCCC] mt-1"
               />
-              <p className={`text-xs text-right mt-1 ${bio.length >= 140 ? "text-red-500" : "text-[#CCCCCC]"}`}>
-                {160 - bio.length}
-              </p>
+              {bio.length > 0 && (
+                <p className={`text-xs text-right mt-1 ${bio.length >= 140 ? "text-red-500" : "text-[#CCCCCC]"}`}>
+                  {160 - bio.length}
+                </p>
+              )}
             </div>
           </div>
 

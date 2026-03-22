@@ -17,17 +17,24 @@ export default function LockedProfile({ displayName, username, avatarUrl, hintCo
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(connectionStatus === "pending");
+  const [requestError, setRequestError] = useState("");
 
   async function requestAccess() {
     if (!selectedLabel) return;
     setSending(true);
+    setRequestError("");
     const res = await fetch("/api/follows", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, label: selectedLabel }),
     });
     setSending(false);
-    if (res.ok) setSent(true);
+    if (res.ok) {
+      setSent(true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setRequestError(data.error || "Failed to send request — try again");
+    }
   }
 
   return (
@@ -97,6 +104,7 @@ export default function LockedProfile({ displayName, username, avatarUrl, hintCo
             >
               {sending ? "Sending..." : <><Check className="w-4 h-4" /> Request access</>}
             </button>
+            {requestError && <p className="text-red-500 text-xs text-center">{requestError}</p>}
           </div>
         )}
       </div>

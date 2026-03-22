@@ -152,7 +152,7 @@ export default function OnboardingPage() {
   }
 
   async function copyLink() {
-    if (navigator.share && window.innerWidth < 768) {
+    if (navigator.share && navigator.maxTouchPoints > 0) {
       try { await navigator.share({ title: "My GiftButler profile", text: "Here's what I actually want — no more guessing!", url: profileUrl }); } catch { /* cancelled */ }
     } else {
       navigator.clipboard.writeText(profileUrl).catch(() => alert("Unable to copy."));

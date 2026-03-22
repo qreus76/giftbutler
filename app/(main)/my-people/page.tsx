@@ -76,6 +76,7 @@ export default function MyPeoplePage() {
   const [searching, setSearching] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
+  const [sendError, setSendError] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbort = useRef<AbortController | null>(null);
   const [suggestions, setSuggestions] = useState<{ id: string; username: string; name: string; avatar: string | null; mutualCount: number }[]>([]);
@@ -155,7 +156,14 @@ export default function MyPeoplePage() {
   async function sendFollowRequest(username: string) {
     if (!selectedLabel) return;
     setSendingRequest(true);
+    setSendError("");
     const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label: selectedLabel }) });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setSendError(data.error || "Failed to send request — try again");
+      setSendingRequest(false);
+      return;
+    }
     if (res.ok) {
       const person = searchResults.find(r => r.username === username) || (referred?.username === username ? referred : null);
       if (person) {
@@ -343,6 +351,7 @@ export default function MyPeoplePage() {
                                   className="w-full py-2.5 bg-[#111111] hover:bg-[#333333] disabled:bg-[#CCCCCC] disabled:text-[#888888] text-white font-bold rounded-full text-sm transition-colors">
                                   {sendingRequest ? "Sending..." : "Send request"}
                                 </button>
+                                {sendError && <p className="text-red-500 text-xs mt-1.5">{sendError}</p>}
                               </div>
                             )}
                           </div>
@@ -544,7 +553,7 @@ export default function MyPeoplePage() {
                             <>
                               <button onClick={() => removeConnection(person.username)} disabled={removing === person.username}
                                 className="px-4 py-2.5 bg-red-500 text-white font-semibold rounded-full text-sm">
-                                {removing === person.username ? "..." : "Cancel"}
+                                {removing === person.username ? "..." : "Withdraw"}
                               </button>
                               <button onClick={() => setConfirmRemove(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm">Keep</button>
                             </>
