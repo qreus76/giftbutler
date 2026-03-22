@@ -711,7 +711,7 @@ export default function MyPeoplePage() {
               <div className="space-y-3">
                 {circles.map(circle => {
                   const eventDate = circle.event_date
-                    ? new Date(circle.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                    ? new Date(circle.event_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                     : null;
                   const isDrawn = circle.status === "drawn";
                   return (

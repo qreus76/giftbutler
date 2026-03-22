@@ -76,7 +76,7 @@ export default function JoinClient({ inviteCode }: { inviteCode: string }) {
 
   const isExchange = circle.circle_type !== "occasion";
   const isClosed = circle.status !== "open" && isExchange;
-  const eventDate = circle.event_date ? new Date(circle.event_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
+  const eventDate = circle.event_date ? new Date(circle.event_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
 
   return (
     <main className="min-h-screen bg-[#EAEAE0] flex items-center justify-center px-4">
