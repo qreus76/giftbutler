@@ -193,7 +193,14 @@ export default function MyPeoplePage() {
   async function sendFollowRequestFromSuggestion(username: string, label: string) {
     if (!label) return;
     setSendingRequest(true);
+    setSendError("");
     const res = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, label }) });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setSendError(data.error || "Failed to send request — try again");
+      setSendingRequest(false);
+      return;
+    }
     if (res.ok) {
       const person = suggestions.find(s => s.username === username) || (referred?.username === username ? referred : null);
       if (person) {
@@ -407,6 +414,7 @@ export default function MyPeoplePage() {
                             </button>
                             <button onClick={() => setExpandedSuggestion(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Cancel</button>
                           </div>
+                          {sendError && expandedSuggestion === referred.username && <p className="text-red-500 text-xs mt-1.5">{sendError}</p>}
                         </div>
                       )}
                     </div>
@@ -450,6 +458,7 @@ export default function MyPeoplePage() {
                             </button>
                             <button onClick={() => setExpandedSuggestion(null)} className="px-4 py-2.5 bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-xs">Cancel</button>
                           </div>
+                          {sendError && expandedSuggestion === s.username && <p className="text-red-500 text-xs mt-1.5">{sendError}</p>}
                         </div>
                       )}
                     </div>
