@@ -69,6 +69,7 @@ export default function MyPeoplePage() {
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
@@ -227,9 +228,14 @@ export default function MyPeoplePage() {
     const prev = people;
     setRemoving(username);
     setConfirmRemove(null);
+    setRemoveError("");
     setPeople(p => p.filter(p => p.username !== username));
     const res = await fetch("/api/follows", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username }) });
-    if (!res.ok) setPeople(prev);
+    if (!res.ok) {
+      setPeople(prev);
+      setRemoveError("Couldn't remove — try again");
+      setTimeout(() => setRemoveError(""), 3000);
+    }
     setRemoving(null);
   }
 
@@ -467,6 +473,7 @@ export default function MyPeoplePage() {
               </div>
             )}
 
+            {removeError && <p className="text-red-500 text-xs text-center font-semibold">{removeError}</p>}
             {loading && (
               <div className="flex justify-center py-12">
                 <div className="w-8 h-8 border-2 border-[#111111] border-t-transparent rounded-full animate-spin" />
