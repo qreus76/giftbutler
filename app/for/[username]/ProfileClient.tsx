@@ -120,10 +120,10 @@ function VisibilityToggle({ visibility, onToggle }: { visibility: VisibilityLeve
   return (
     <button
       onClick={onToggle}
-      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-colors hover:opacity-80 ${cfg.color} ${cfg.bg}`}
+      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all hover:opacity-80 active:scale-95 ${cfg.color} ${cfg.bg}`}
       title="Change who can see this list"
     >
-      <Icon className="w-3 h-3" /> {cfg.label}
+      <Icon className="w-3 h-3" /> {cfg.label} <ChevronDown className="w-3 h-3 opacity-60" />
     </button>
   );
 }
@@ -1097,21 +1097,21 @@ export default function ProfileClient({
               {followStatus === "none" && !showLabelPicker && (
                 <button onClick={() => setShowLabelPicker(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-                  + Add to my people
+                  Add to my people
                 </button>
               )}
               {followStatus === "pending" && <span className="px-4 py-2 bg-white text-[#888888] font-semibold rounded-full text-sm border border-[#E0E0D8]">Request sent</span>}
               {followStatus === "accepted" && <span className="px-4 py-2 bg-[#C4D4B4] text-[#2D4A1E] font-semibold rounded-full text-sm flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> In my people</span>}
               <button onClick={shareProfile}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
-                <Copy className="w-3.5 h-3.5" /> {shareCopied ? "Copied!" : "Share"}
+                <Share className="w-3.5 h-3.5" /> {shareCopied ? "Copied!" : "Share"}
               </button>
             </>
           )}
           {isLoaded && !user && (
             <button onClick={shareProfile}
               className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F0E8] text-[#111111] font-semibold rounded-full text-sm border border-[#E0E0D8] transition-colors shadow-card">
-              <Copy className="w-3.5 h-3.5" /> {shareCopied ? "Copied!" : "Share"}
+              <Share className="w-3.5 h-3.5" /> {shareCopied ? "Copied!" : "Share"}
             </button>
           )}
         </div>
@@ -1498,9 +1498,9 @@ export default function ProfileClient({
 
             {/* Avoid nudge */}
             {avoidHints.length === 0 && hints.length > 0 && (
-              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); setHintMode("text"); }}
+              <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); setHintMode("text"); setTimeout(() => addHintFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                 className="w-full px-4 py-3.5 bg-white rounded-2xl shadow-card text-left hover:bg-[#F0F0E8] transition-colors border-2 border-dashed border-[#E0E0D8] hover:border-red-300">
-                <p className="text-sm font-semibold text-[#888888] hover:text-red-500">+ What should people NOT get you?</p>
+                <p className="text-sm font-semibold text-[#888888]">What should people NOT get you?</p>
                 <p className="text-xs text-[#AAAAAA] mt-0.5">Candles? Socks? Tell them — it saves everyone.</p>
               </button>
             )}
@@ -1508,24 +1508,34 @@ export default function ProfileClient({
             {/* Avoid section */}
             {avoidHints.length > 0 && (
               <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-                <div className="px-4 py-3 border-b border-red-100">
-                  <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
+                <div className={`px-4 py-3.5 flex items-center justify-between ${!expandedLists.has("avoid") ? "" : "border-b border-red-100"}`}>
+                  <button onClick={() => toggleList("avoid")} className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                    {expandedLists.has("avoid") ? <ChevronDown className="w-4 h-4 text-red-300 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-red-300 flex-shrink-0" />}
+                    <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
+                    {!expandedLists.has("avoid") && <span className="text-xs text-[#AAAAAA] ml-1">· {avoidHints.length}</span>}
+                  </button>
+                  <button onClick={() => { setHintCategory("avoid"); setSelectedAddList("hints"); setHintMode("text"); if (!expandedLists.has("avoid")) toggleList("avoid"); setTimeout(() => addHintFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
+                    className="p-1.5 text-red-300 hover:text-red-500 transition-colors" title="Add avoid hint">
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="divide-y divide-[#F0F0E8]">
-                  {avoidHints.map(hint => (
-                    <div key={hint.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                      <span className="text-[#888888] text-sm">— {hint.content}</span>
-                      {confirmDeleteId === hint.id ? (
-                        <div className="flex gap-1">
-                          <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
-                          <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {expandedLists.has("avoid") && (
+                  <div className="divide-y divide-[#F0F0E8]">
+                    {avoidHints.map(hint => (
+                      <div key={hint.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                        <span className="text-[#888888] text-sm">— {hint.content}</span>
+                        {confirmDeleteId === hint.id ? (
+                          <div className="flex gap-1">
+                            <button onClick={() => deleteHint(hint.id)} className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-full">Delete</button>
+                            <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-[#F0F0E8] text-[#888888] text-xs font-semibold rounded-full">Cancel</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmDeleteId(hint.id)} className="p-1.5 text-[#CCCCCC] hover:text-red-600 transition-colors text-lg leading-none">×</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -1623,7 +1633,7 @@ export default function ProfileClient({
                         : followStatus !== "accepted" && (
                           <button onClick={() => setShowLabelPicker(true)}
                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#111111] hover:bg-[#333333] text-white font-bold rounded-full text-sm transition-colors">
-                            + Add to my people
+                            Add to my people
                           </button>
                         )
                     ) : (
@@ -1794,7 +1804,7 @@ export default function ProfileClient({
                     )}
                     <button onClick={() => { setRecommendations([]); setGenerateError(""); setShowFinder(true); setCategoryFilter("all"); setShowAllRecs(false); try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); setTimeout(() => relationshipRef.current?.focus(), 450); }}
                       className="w-full py-2.5 bg-white hover:bg-[#F0F0E8] text-[#888888] font-semibold rounded-full text-sm shadow-card transition-colors">
-                      Search again
+                      Try different options
                     </button>
                   </div>
                 </div>
@@ -1815,16 +1825,22 @@ export default function ProfileClient({
             {/* Avoid section — visible to all */}
             {avoidHints.length > 0 && (
               <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-                <div className="px-4 py-3 border-b border-red-100">
-                  <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
+                <div className={`px-4 py-3.5 flex items-center gap-2 ${expandedLists.has("avoid") ? "border-b border-red-100" : ""}`}>
+                  <button onClick={() => toggleList("avoid")} className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                    {expandedLists.has("avoid") ? <ChevronDown className="w-4 h-4 text-red-300 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-red-300 flex-shrink-0" />}
+                    <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Please avoid</p>
+                    {!expandedLists.has("avoid") && <span className="text-xs text-[#AAAAAA] ml-1">· {avoidHints.length}</span>}
+                  </button>
                 </div>
-                <div className="divide-y divide-[#F0F0E8]">
-                  {avoidHints.map(hint => (
-                    <div key={hint.id} className="px-4 py-3">
-                      <span className="text-[#888888] text-sm">— {hint.content}</span>
-                    </div>
-                  ))}
-                </div>
+                {expandedLists.has("avoid") && (
+                  <div className="divide-y divide-[#F0F0E8]">
+                    {avoidHints.map(hint => (
+                      <div key={hint.id} className="px-4 py-3">
+                        <span className="text-[#888888] text-sm">— {hint.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>
