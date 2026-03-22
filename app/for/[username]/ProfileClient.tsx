@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Copy, Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2,
+  Share, Cake, Pencil, X, ArrowRight, ExternalLink, Link2,
   Gift, Sparkles, Lightbulb, CalendarDays, Plus, Check, ChevronDown, ChevronRight,
   Globe, Lock, Users,
 } from "lucide-react";
@@ -797,6 +797,14 @@ export default function ProfileClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add hint");
       setHints([data, ...hints]); setNewHint("");
+      // Auto-expand the list the hint was just added to
+      const targetList = hintCategory === "avoid" ? "avoid" : (selectedAddList !== "hints" ? selectedAddList : "hints");
+      setExpandedLists(prev => {
+        if (prev.has(targetList)) return prev;
+        const next = new Set(prev); next.add(targetList);
+        try { localStorage.setItem(LIST_EXPANDED_KEY, JSON.stringify([...next])); } catch { }
+        return next;
+      });
     } catch (e: unknown) {
       setAddError(e instanceof Error ? e.message : "Failed to add — try again");
     } finally { setAdding(false); }
@@ -1057,24 +1065,6 @@ export default function ProfileClient({
         )}
 
         {/* Visitor: occasion chips as gift finder launchers */}
-        {!isOwner && occasions.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {occasions.map(occ => {
-              const daysUntil = occ.date ? getDaysUntilDate(occ.date) : null;
-              const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 60;
-              return (
-                <button key={occ.id}
-                  onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECC8AE] hover:bg-[#E4B89C] rounded-full text-xs font-semibold text-[#5C3118] transition-colors">
-                  <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>{occ.name}</span>
-                  {isUpcoming && <span className="text-[#5C3118]/60">· {daysUntil === 0 ? "today" : `in ${daysUntil}d`}</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
           {isOwner && (
@@ -1154,15 +1144,28 @@ export default function ProfileClient({
                   <p className="text-xs font-bold text-[#888888] uppercase tracking-wide mb-2">Add to list</p>
                   <div className="flex flex-wrap gap-1.5">
                     <button onClick={() => setSelectedAddList("hints")}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedAddList === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedAddList === "hints" ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
                       Hints
+                      {hintsToShow.filter(h => (h.occasion_id ?? null) === null && h.category !== "avoid").length > 0 && (
+                        <span className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${selectedAddList === "hints" ? "bg-white/20 text-white" : "bg-[#E0E0D8] text-[#888888]"}`}>
+                          {hintsToShow.filter(h => (h.occasion_id ?? null) === null && h.category !== "avoid").length}
+                        </span>
+                      )}
                     </button>
-                    {occasions.map(o => (
-                      <button key={o.id} onClick={() => setSelectedAddList(o.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedAddList === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
-                        {o.name}
-                      </button>
-                    ))}
+                    {occasions.map(o => {
+                      const count = hints.filter(h => (h.occasion_id ?? null) === o.id && h.category !== "avoid").length;
+                      return (
+                        <button key={o.id} onClick={() => setSelectedAddList(o.id)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedAddList === o.id ? "bg-[#111111] text-white" : "bg-[#F0F0E8] text-[#111111] hover:bg-[#E0E0D8]"}`}>
+                          {o.name}
+                          {count > 0 && (
+                            <span className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${selectedAddList === o.id ? "bg-white/20 text-white" : "bg-[#E0E0D8] text-[#888888]"}`}>
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                     <button onClick={() => setAddingOccasion(true)}
                       className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F0F0E8] text-[#888888] hover:bg-[#E0E0D8] hover:text-[#111111] transition-all flex items-center gap-1">
                       <Plus className="w-3 h-3" /> New list
@@ -1737,7 +1740,7 @@ export default function ProfileClient({
                     )}
                   </div>
                   <button
-                    onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { setOccasion(occ.name); setRecommendations([]); setShowFinder(true); setTimeout(() => finderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }}
                     className="mt-3 w-full py-2.5 bg-[#ECC8AE] hover:bg-[#E4B89C] text-[#5C3118] font-bold rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
                     <Sparkles className="w-3.5 h-3.5" /> Find a {occ.name} gift with AI
                   </button>
