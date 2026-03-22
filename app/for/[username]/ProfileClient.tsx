@@ -1319,6 +1319,7 @@ export default function ProfileClient({
                       <div className="flex flex-col gap-3">
                         {discoveryRecs.map((rec, idx) => {
                           const saved = savedDiscoveryRecs.has(idx);
+                          if (saved) return null;
                           const targetList = discoveryRecTargetList[idx] ?? selectedAddList;
                           return (
                             <div key={idx} className="bg-[#F5F5F0] rounded-2xl p-3">
