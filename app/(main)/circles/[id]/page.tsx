@@ -175,7 +175,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
   const isOpen = circle.status === "open";
   const isDrawn = circle.status === "drawn" && isExchange;
   const eventDate = circle.event_date
-    ? new Date(circle.event_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    ? new Date(circle.event_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
 
   return (
@@ -431,6 +431,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
                 <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
+                  autoFocus
                   className="w-full px-4 py-3 rounded-xl bg-[#F5F5F0] text-sm text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                 />
               </div>
