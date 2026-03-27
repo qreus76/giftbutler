@@ -688,33 +688,76 @@ export default function ProfileClient({
   async function generateGifts() {
     if (!relationship || !budget) return;
     setGenerating(true); setGenerateError(""); setRecommendations([]); setCategoryFilter("all"); setShowAllRecs(false);
+    const collected: GiftRecommendation[] = [];
     try {
       const res = await fetch("/api/recommend", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, relationship, budget, occasion }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate");
-      if (!data.recommendations?.length) throw new Error("No recommendations returned");
-      setRecommendations(data.recommendations);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to generate");
+      }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t) continue;
+          let parsed: GiftRecommendation & { error?: string };
+          try { parsed = JSON.parse(t); } catch { continue; }
+          if (parsed.error) throw new Error(parsed.error);
+          if (parsed.title) { collected.push(parsed); setRecommendations([...collected]); }
+        }
+      }
+      if (collected.length === 0) throw new Error("No recommendations returned");
       setShowFinder(false);
-      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ recommendations: data.recommendations, myClaims, relationship, budget, occasion })); } catch { /* unavailable */ }
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ recommendations: collected, myClaims, relationship, budget, occasion })); } catch { /* unavailable */ }
     } catch (e: unknown) {
-      setGenerateError(e instanceof Error ? e.message : "Something went wrong — please try again");
-    } finally { setGenerating(false); }
+      if (collected.length === 0) setGenerateError(e instanceof Error ? e.message : "Something went wrong — please try again");
+    } finally {
+      setGenerating(false);
+      if (collected.length > 0) setShowFinder(false);
+    }
   }
 
   async function generateSelfDiscovery(occasionOverride?: string) {
     if (!discoveryBudget) return;
     setDiscoveryGenerating(true); setDiscoveryError(""); setDiscoveryRecs([]); setSavedDiscoveryRecs(new Set()); setDiscoveryRecTargetList({});
+    const collected: GiftRecommendation[] = [];
     try {
       const res = await fetch("/api/recommend", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, budget: discoveryBudget, occasion: (occasionOverride ?? discoveryOccasion) || undefined, is_self_discovery: true }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate");
-      setDiscoveryRecs(data.recommendations || []);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to generate");
+      }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t) continue;
+          let parsed: GiftRecommendation & { error?: string };
+          try { parsed = JSON.parse(t); } catch { continue; }
+          if (parsed.error) throw new Error(parsed.error);
+          if (parsed.title) { collected.push(parsed); setDiscoveryRecs([...collected]); }
+        }
+      }
     } catch (e: unknown) {
       setDiscoveryError(e instanceof Error ? e.message : "Something went wrong");
     } finally { setDiscoveryGenerating(false); }

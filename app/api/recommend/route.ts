@@ -127,6 +127,8 @@ export async function POST(req: NextRequest) {
     ? `\nOCCASION: ${occasion.toUpperCase()} — tailor every recommendation to feel right for this specific occasion, not just generic gift ideas.`
     : "";
 
+  void occasionText;
+
   const prompt = `You are GiftButler, an expert gift recommendation AI. Your goal is to find gifts so personal and specific that the recipient will feel truly seen and understood.
 ${is_self_discovery ? `\nThis is a SELF-DISCOVERY session — ${name} is finding gifts for themselves. Every suggestion should be something they'd genuinely use and love, not a generic gift idea.\n` : ""}
 RECIPIENT: ${name}
@@ -136,19 +138,10 @@ BUDGET: ${budget}${birthdayContext}${occasionContext}
 THEIR HINTS:
 ${hintsText}
 ${specificWantsContext}
-
 Generate exactly 8 specific, emotionally resonant gift recommendations. Each gift must feel personally connected to this specific person — not generic suggestions that could work for anyone.
 
-Respond with ONLY a JSON array in this exact format:
-[
-  {
-    "title": "Specific product or experience name",
-    "why": "Two sentences: the first connects directly to their hints, the second explains the emotional significance — why this will make them feel seen and understood.",
-    "priceRange": "$XX – $XX",
-    "category": "product|experience|subscription|consumable",
-    "searchQuery": "precise Amazon search terms to find this exact item"
-  }
-]
+Respond with EXACTLY 8 JSON objects, one per line (newline-delimited JSON). No array brackets, no markdown fences, no extra text. Each line must be a complete, standalone JSON object in this exact format:
+{"title":"Specific product or experience name","why":"Two sentences: the first connects directly to their hints, the second explains the emotional significance.","priceRange":"$XX – $XX","category":"product","searchQuery":"precise Amazon search terms"}
 
 Rules:
 - Be HYPER-SPECIFIC (not "golf club" but "Callaway Rogue ST Max Driver", not "book" but the actual title and author)
@@ -159,52 +152,82 @@ Rules:
 - Style & Preferences hints are GOLD — use them to make sure every recommendation matches their aesthetic, size, or taste
 - CRITICAL: Anything under [MUST AVOID] is absolutely off-limits — do not recommend it, do not suggest anything adjacent to it
 - category must be exactly one of: product, experience, subscription, consumable
-- If no hints are provided, make thoughtful suggestions based on the relationship and what makes that relationship special`;
+- If no hints are provided, make thoughtful suggestions based on the relationship and what makes that relationship special
+- Output each JSON object on its own line with no trailing comma`;
 
-  let message;
-  try {
-    message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
-    });
-  } catch (e) {
-    console.error("[recommend] Anthropic API error:", e);
-    return NextResponse.json({ error: "AI service unavailable — please try again" }, { status: 503 });
-  }
+  const AFFILIATE_TAG_VAL = AFFILIATE_TAG;
+  const encoder = new TextEncoder();
 
-  const content = message.content[0];
-  if (content.type !== "text") {
-    return NextResponse.json({ error: "Failed to generate" }, { status: 500 });
-  }
+  const readable = new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+      try {
+        const stream = anthropic.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 2048,
+          messages: [{ role: "user", content: prompt }],
+        });
 
-  let recommendations;
-  try {
-    // Strip markdown code fences Claude occasionally adds
-    const cleaned = content.text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
-    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error("No JSON found");
-    const parsed = JSON.parse(jsonMatch[0]);
-    recommendations = parsed.map((r: { title: string; why: string; priceRange: string; searchQuery: string; category: string }) => ({
-      title: r.title,
-      why: r.why,
-      priceRange: r.priceRange,
-      category: r.category || "product",
-      searchUrl: `https://www.amazon.com/s?k=${encodeURIComponent(r.searchQuery)}&tag=${AFFILIATE_TAG}`,
-    }));
-  } catch {
-    return NextResponse.json({ error: "Failed to parse recommendations" }, { status: 500 });
-  }
+        for await (const text of stream.textStream) {
+          buffer += text;
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const t = line.trim();
+            if (!t.startsWith("{")) continue;
+            let parsed: { title?: string; why?: string; priceRange?: string; category?: string; searchQuery?: string };
+            try { parsed = JSON.parse(t); } catch { continue; }
+            if (!parsed.title || !parsed.searchQuery) continue;
+            const rec = {
+              title: parsed.title,
+              why: parsed.why ?? "",
+              priceRange: parsed.priceRange ?? "",
+              category: parsed.category ?? "product",
+              searchUrl: `https://www.amazon.com/s?k=${encodeURIComponent(parsed.searchQuery)}&tag=${AFFILIATE_TAG_VAL}`,
+            };
+            controller.enqueue(encoder.encode(JSON.stringify(rec) + "\n"));
+          }
+        }
 
-  // Log this recommendation request (fire and forget)
-  supabaseAdmin.from("recommend_logs").insert({
-    profile_username: username,
-    relationship,
-    budget,
-    occasion: occasion || null,
-  }).then(({ error }) => {
-    if (error) console.error("[recommend_logs] Failed to log:", error.message);
+        // Flush any remaining buffered line
+        const t = buffer.trim();
+        if (t.startsWith("{")) {
+          let parsed: { title?: string; why?: string; priceRange?: string; category?: string; searchQuery?: string };
+          try {
+            parsed = JSON.parse(t);
+            if (parsed.title && parsed.searchQuery) {
+              const rec = {
+                title: parsed.title,
+                why: parsed.why ?? "",
+                priceRange: parsed.priceRange ?? "",
+                category: parsed.category ?? "product",
+                searchUrl: `https://www.amazon.com/s?k=${encodeURIComponent(parsed.searchQuery)}&tag=${AFFILIATE_TAG_VAL}`,
+              };
+              controller.enqueue(encoder.encode(JSON.stringify(rec) + "\n"));
+            }
+          } catch { /* skip */ }
+        }
+
+        // Log this recommendation request (fire and forget)
+        supabaseAdmin.from("recommend_logs").insert({
+          profile_username: username,
+          relationship,
+          budget,
+          occasion: occasion || null,
+        }).then(({ error }) => {
+          if (error) console.error("[recommend_logs] Failed to log:", error.message);
+        });
+
+      } catch (e) {
+        console.error("[recommend] Stream error:", e);
+        controller.enqueue(encoder.encode(JSON.stringify({ error: "AI service unavailable — please try again" }) + "\n"));
+      } finally {
+        controller.close();
+      }
+    }
   });
 
-  return NextResponse.json({ recommendations });
+  return new Response(readable, {
+    headers: { "Content-Type": "application/x-ndjson" },
+  });
 }
