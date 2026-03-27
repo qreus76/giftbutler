@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -66,8 +70,8 @@ export async function GET(req: NextRequest) {
       const email = clerkUser.emailAddresses[0]?.emailAddress;
       if (!email) continue;
 
-      const name = profile.name || profile.username;
-      const profileUrl = `${baseUrl}/for/${profile.username}`;
+      const name = escapeHtml(profile.name || profile.username);
+      const profileUrl = `${baseUrl}/for/${encodeURIComponent(profile.username)}`;
       const dashboardUrl = `${baseUrl}/home`;
       const hintCount = hintCountMap.get(profile.id) || 0;
       const lowHints = hintCount < 5;

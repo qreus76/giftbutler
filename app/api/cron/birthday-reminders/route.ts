@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // Secured with CRON_SECRET — called daily by Vercel cron
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -58,8 +62,8 @@ export async function GET(req: NextRequest) {
 
     if (!followers || followers.length === 0) continue;
 
-    const displayName = birthdayPerson.name || birthdayPerson.username;
-    const profileUrl = `${baseUrl}/for/${birthdayPerson.username}`;
+    const displayName = escapeHtml(birthdayPerson.name || birthdayPerson.username);
+    const profileUrl = `${baseUrl}/for/${encodeURIComponent(birthdayPerson.username)}`;
 
     for (const follow of followers) {
       // For accepted: notify the other person. For pending: notify the requester.
@@ -76,7 +80,7 @@ export async function GET(req: NextRequest) {
         const followerEmail = followerUser.emailAddresses[0]?.emailAddress;
         if (!followerEmail) continue;
 
-        const labelText = myLabel ? `your ${myLabel}` : "someone in your people";
+        const labelText = myLabel ? `your ${escapeHtml(myLabel)}` : "someone in your people";
         const subject = `🎂 ${displayName}'s birthday is in 7 days`;
 
         await fetch("https://api.resend.com/emails", {

@@ -106,7 +106,6 @@ export async function POST(req: NextRequest) {
   }
 
   const name = profile.name || username;
-  const occasionText = occasion ? ` for their ${occasion}` : "";
   const effectiveRelationship = is_self_discovery ? "yourself (self-gift — the buyer and recipient are the same person)" : relationship;
 
   let birthdayContext = "";
@@ -126,8 +125,6 @@ export async function POST(req: NextRequest) {
   const occasionContext = occasion
     ? `\nOCCASION: ${occasion.toUpperCase()} — tailor every recommendation to feel right for this specific occasion, not just generic gift ideas.`
     : "";
-
-  void occasionText;
 
   const prompt = `You are GiftButler, an expert gift recommendation AI. Your goal is to find gifts so personal and specific that the recipient will feel truly seen and understood.
 ${is_self_discovery ? `\nThis is a SELF-DISCOVERY session — ${name} is finding gifts for themselves. Every suggestion should be something they'd genuinely use and love, not a generic gift idea.\n` : ""}
